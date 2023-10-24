@@ -30,6 +30,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Added by me
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'  # Choose the Node.js version you need
+
+      # Added by me
+      - name: Install npm packages
+        working-directory: static  # Navigate to the "static" directory
+        run: npm install
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
