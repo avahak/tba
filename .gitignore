@@ -1,0 +1,12 @@
+# clear git cache: git rm -r --cached . 
+# Setting up as whitelist:
+/**
+
+!templates
+!templates/**
+
+!static
+!static/**
+
+!.gitignore
+!app.py
