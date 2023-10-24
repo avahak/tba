@@ -9,4 +9,5 @@
 !static/**
 
 !.gitignore
+!requirements.txt
 !app.py
