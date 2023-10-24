@@ -4,7 +4,7 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 const jsGlobals = { 
-	SHADOW_MAP_SIZE: 2048,
+	SHADOW_MAP_SIZE: 1024,
 	RESOURCES_PATH: "./static/resources/", 
 	objects: [], 
 	materials: [] 
