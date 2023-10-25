@@ -9,4 +9,5 @@
 !workflows/**
 
 !.gitignore
+!app.py
 !requirements.txt

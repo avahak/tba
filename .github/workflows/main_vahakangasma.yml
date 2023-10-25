@@ -69,7 +69,6 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # Changed by me (package)
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
@@ -77,4 +76,3 @@ jobs:
           app-name: 'vahakangasma'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C41F3A5680624588844BFA8F4DD581BC }}
-          package: tba/

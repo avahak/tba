@@ -1,16 +1,16 @@
 from flask import *
 
-wapp = Flask("TBA")
+app = Flask("TBA", template_folder='tba/templates', static_folder='tba/static')
 
-@wapp.route('/api/data')
+@app.route('/api/data')
 def get_data():
-    return wapp.send_static_file("package.json")
+    return app.send_static_file("package.json")
 
-@wapp.route('/hello/')
-@wapp.route('/hello/<name>')
+@app.route('/hello/')
+@app.route('/hello/<name>')
 def hello(name=None):
     return render_template("hello.html", name=name)
 
-@wapp.route('/')
+@app.route('/')
 def home():
     return render_template("design.html")
