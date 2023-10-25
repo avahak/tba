@@ -11,3 +11,7 @@
 !.gitignore
 !app.py
 !requirements.txt
+!package.json
+
+.txt
+**/*.txt
