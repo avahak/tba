@@ -2,12 +2,8 @@
 # Setting up as whitelist:
 /**
 
-!templates
-!templates/**
-
-!static
-!static/**
+!tba/
+!tba/**
 
 !.gitignore
 !requirements.txt
-!app.py
