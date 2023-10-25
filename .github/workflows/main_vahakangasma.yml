@@ -76,5 +76,5 @@ jobs:
         with:
           app-name: 'vahakangasma'
           slot-name: 'Production'
-          package: ./tba
+          package: tba/
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C41F3A5680624588844BFA8F4DD581BC }}
