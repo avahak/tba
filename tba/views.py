@@ -1,6 +1,9 @@
 from flask import *
+from . import app       # finds variable app defined in __init__.py
 
-app = Flask("TBA", template_folder='tba/templates', static_folder='tba/static')
+@app.route('/test')
+def test_it():
+    return "<h1>At least this works!</h1>"
 
 @app.route('/api/data')
 def get_data():
