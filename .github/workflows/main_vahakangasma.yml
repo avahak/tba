@@ -38,7 +38,7 @@ jobs:
 
       # Added by me
       - name: Install npm packages
-        working-directory: static  # Navigate to the "static" directory
+        working-directory: tba/static
         run: npm install
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
