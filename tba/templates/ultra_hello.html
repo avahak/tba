@@ -1,0 +1,10 @@
+{% extends "hello.html" %}
+
+{% block title %}
+ULTRA TITLE
+{% endblock %}
+
+{% block content %}
+<p></p><h1 style="color:red;">ULTRA CONTENT</h1></p>
+{{ alert_message("Macros will be used to make reusable content!", "danger") }}
+{% endblock %}

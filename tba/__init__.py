@@ -16,6 +16,10 @@
 # (typically named app.py) could lead to issues, as it restricts the app's use only to web
 # hosting, limiting its utility for other tasks or custom functionality and hindering testing.
 
-from flask import Flask, render_template
-app = Flask("TBA", template_folder='tba/templates', static_folder='tba/static')
-# app = Flask("TBA") 
+from flask import Flask
+# app = Flask("xxx", template_folder='tba/templates', static_folder='tba/static')
+app = Flask(__name__, template_folder='templates', static_folder='static')
+# app = Flask("tba") 
+# app = Flask(__name__) 
+# app.debug = True
+print(app.root_path)
