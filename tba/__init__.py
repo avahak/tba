@@ -17,9 +17,6 @@
 # hosting, limiting its utility for other tasks or custom functionality and hindering testing.
 
 from flask import Flask
-# app = Flask("xxx", template_folder='tba/templates', static_folder='tba/static')
-app = Flask(__name__, template_folder='templates', static_folder='static')
-# app = Flask("tba") 
-# app = Flask(__name__) 
-# app.debug = True
-print(app.root_path)
+# app = Flask(__name__, template_folder='templates', static_folder='static')
+app = Flask(__name__)
+# print(app.root_path)
