@@ -5,5 +5,8 @@
 !tba/
 !tba/**
 
+!workflows/
+!workflows/**
+
 !.gitignore
 !requirements.txt
