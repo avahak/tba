@@ -5,14 +5,14 @@
 !tba/
 !tba/**
 
-!workflows/
-!workflows/**
+!.github/
+!.github/**
+
+**/__pycache__/
+.txt
+**/*.txt
 
 !.gitignore
 !app.py
 !requirements.txt
 !package.json
-
-**/__pycache__/
-.txt
-**/*.txt
