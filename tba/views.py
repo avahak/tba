@@ -6,7 +6,7 @@ from . import app       # finds variable app defined in __init__.py
 
 @app.route('/test')
 def test_it():
-    return "<h1>At least this works!</h1>"
+    return "<h1>At least this works.</h1>"
 
 @app.route('/api/data')
 def get_data():
