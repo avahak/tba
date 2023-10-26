@@ -13,7 +13,7 @@
 !requirements.txt
 !package.json
 
-**/__pycache__
+**/__pycache__/
 
 .txt
 **/*.txt
