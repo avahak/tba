@@ -1,8 +1,8 @@
 {# Write comments like this #}
 
-{% macro alert_message(message, alert_type='info') %}
+{% macro alert_message(message, alert_type="info") %}
 <div class="alert alert-{{ alert_type }}" role="alert">
-    {{ message }}
+    {{ (message|upper) if alert_type=="danger" else message }}
 </div>
 {% endmacro %}
 
@@ -17,7 +17,7 @@
     <body>
         <h1>
         {%if name %}
-            <strong>Hello there, {{ name }}.</strong>
+            <strong>Hello there, {{ name|capitalize }}.</strong>
         {% else %}
             What's your name? Provide it after /hello/ in the URL.
         {% endif %}

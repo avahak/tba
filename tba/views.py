@@ -4,6 +4,14 @@
 from flask import *
 from . import app       # finds variable app defined in __init__.py
 
+@app.errorhandler(404)
+def error_404(e):
+    return "Put custom error page here with render_template", 404 # add status code like this if other than 200 (default)
+
+@app.route('/400')
+def not_found():
+    abort(400)
+
 @app.route('/test')
 def test_it():
     return "<h1>At least this works.</h1>"
@@ -28,6 +36,14 @@ def serve_node_modules(filename):
     """
     return send_from_directory(app.root_path + "/../node_modules", filename)
 
-@app.route('/')
+@app.route('/widget')
 def home():
+    return render_template("widget.html")
+
+@app.route('/box')
+def box():
+    return render_template("box.html")
+
+@app.route('/')
+def widget():
     return render_template("design.html")

@@ -1,4 +1,8 @@
-# clear git cache: git rm -r --cached . 
+# If you have previously committed something that you want to ignore later on, run
+# "git rm -r --cached ." to remove it from the repository. This is needed because Git only ignores 
+# files that are not already tracked. If you have already committed to a file or directory 
+# in your repository, it will continue to be tracked even if you add it to .gitignore later on.
+
 # Setting up as whitelist:
 /**
 
@@ -16,3 +20,4 @@
 !app.py
 !requirements.txt
 !package.json
+!tsconfig.json

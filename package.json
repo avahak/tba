@@ -1,5 +1,15 @@
 {
   "dependencies": {
     "three": "^0.157.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.158.0",
+    "terser": "^5.22.0"
+  },
+  "scripts": {
+    "start": "start /b npm run run-app && npm run compile-typescript-watch",
+    "run-app": "py app.py",
+    "compile-typescript-watch": "tsc -w -p tsconfig.json",
+    "minify": "npx terser --compress --mangle --output tba/static/js/tba.min.js -- tba/src/*.js"
   }
 }

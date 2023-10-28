@@ -3,7 +3,6 @@
 # crucial component for all Flask-related functions within this package.
 #
 # Placing it here provides several advantages:
-#
 #  - It centralizes app initialization, ensuring a consistent configuration across
 #    multiple modules.
 #  - It makes the app configuration always available and accessible, no matter how
