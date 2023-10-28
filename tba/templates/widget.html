@@ -5,18 +5,49 @@
     <style>
         body { margin: 0; }
     </style>
+
+    <!-- In actual use: import three.js from CDN. -->
     <script type="importmap">
-        {
-            "imports": {
-                "three": "/node_modules/three/build/three.module.js",
-                "three/addons/": "/node_modules/three/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/examples/": "/node_modules/three/examples/" 
         }
+    }
     </script>
+    <!-- <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+            "three/examples/": "https://unpkg.com/three@0.157.0/examples/"
+        }
+    }
+    </script> -->
+
+    <script defer type="module" src="./static/js/webglWidget.js"></script>
+    <!-- <script defer type="module" src="./static/js/webglWidget.js"></script> -->
+
 </head>
-<body>
-    <div id="widget-container" data-js-image="cat2.jpg"></div>
-    <script defer type="module" src="./static/js/widget.js"></script>
+<body style="background:#999;">
+    <div style="display:grid;grid-template-columns: repeat(5, 1fr);grid-template-rows: repeat(5, 1fr);gap: 10px;">
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat1.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat2.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat3.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat1.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat2.jpg"></div>
+
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat3.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat1.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat2.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat3.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat1.jpg"></div>
+
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat2.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat3.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat1.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat2.jpg"></div>
+    <div class="widget-container" data-image="http://localhost:5000/static/images/cat3.jpg"></div>
+    </div>
 </body>
 </html>
 

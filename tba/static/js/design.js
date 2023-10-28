@@ -1,34 +1,151 @@
-var _a;
-console.log("design.ts");
-import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-globalThis.jsGlobals = {
-    SHADOW_MAP_SIZE: 1024,
-    RESOURCES_PATH: "./static/",
-    objects: [],
-    materials: [],
-    animateCamera: false,
-    draggingBall: null,
-    defaultPositions: {},
-};
-console.log(jsGlobals);
-globalThis.mouse = {
-    lastX: null,
-    lastY: null,
-    isDragging: false
-};
+// TODO: change global variables to module-wide
+// Load the three.js modules fully before doing anything:
+let THREE;
+let OBJLoader;
+let MTLLoader;
+Promise.all([
+    import('three'),
+    import('three/examples/jsm/loaders/OBJLoader.js'),
+    import('three/examples/jsm/loaders/MTLLoader.js'),
+]).then(([module1, module2, module3]) => {
+    THREE = module1;
+    OBJLoader = module2.OBJLoader;
+    MTLLoader = module3.MTLLoader;
+    initGeneral();
+});
+let camera;
+let scene;
+let renderer;
+let time;
+let mouse;
+let designSettings;
+// Initialization for everything, done after imports
+function initGeneral() {
+    designSettings = {
+        SHADOW_MAP_SIZE: 1024,
+        RESOURCES_PATH: "./static/",
+        objects: [],
+        materials: [],
+        animateCamera: false,
+        draggingBall: null,
+        defaultPositions: {},
+    };
+    console.log(designSettings);
+    mouse = {
+        lastX: null,
+        lastY: null,
+        isDragging: false
+    };
+    let ar = 1000.0 / 600.0;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(30, ar, 0.1, 1000);
+    // const camera = new THREE.OrthographicCamera(-ar, ar, 1.0, -1.0, 0.1, 1000.0);
+    camera.position.set(0, 0, 3.5);
+    camera.lookAt(0.0, 0.0, 0.0);
+    for (let k = -1; k <= 1; k++) {
+        let light = new THREE.PointLight(0xffffff, 5, 10);
+        light.position.set(k, 0, 2);
+        light.castShadow = true;
+        light.shadow.mapSize.copy(new THREE.Vector2(designSettings.SHADOW_MAP_SIZE, designSettings.SHADOW_MAP_SIZE));
+        scene.add(light);
+    }
+    let light = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(light);
+    designSettings.element = document.getElementById("three-box");
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setClearColor(0x000000, 0);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize(designSettings.element.offsetWidth, designSettings.element.offsetHeight);
+    designSettings.element.appendChild(renderer.domElement);
+    const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target == designSettings.element) {
+                const newWidth = entry.contentRect.width;
+                const newHeight = entry.contentRect.height;
+                renderer.setSize(newWidth, newHeight);
+                camera.aspect = newWidth / newHeight;
+                // camera.fov = 30.0;
+                camera.updateProjectionMatrix();
+            }
+        }
+    }).observe(designSettings.element);
+    time = 0.0;
+    const textureLoader = new THREE.TextureLoader();
+    for (let k = 0; k < 16; k++) {
+        designSettings["materials"][`ball${k}`] = new THREE.MeshStandardMaterial({ color: 0x336699, roughness: 0.2, metalness: 0.2 });
+        textureLoader.load(`${designSettings.RESOURCES_PATH}models/images/balls/ball${k}.png`, (texture) => {
+            designSettings["materials"][`ball${k}`].color = undefined;
+            designSettings["materials"][`ball${k}`].map = texture;
+            designSettings["materials"][`ball${k}`].needsUpdate = true;
+        });
+    }
+    const resourcePromises = [
+        loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
+        loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
+        loadObjMtlPromise("ball", `${designSettings.RESOURCES_PATH}models/ball.obj`, null),
+        loadJsonPromise(),
+    ];
+    Promise.all(resourcePromises)
+        .then(() => {
+        let ball = designSettings.objects.ball;
+        for (let k = 0; k < 16; k++) {
+            const cball = ball.clone();
+            cball.traverse((child) => {
+                if (child instanceof THREE.Mesh)
+                    child.material = designSettings.materials[`ball${k}`];
+            });
+            let r = designSettings.specs.BALL_RADIUS;
+            cball.scale.set(r, r, r);
+            designSettings.defaultPositions[`ball${k}`] = defaultPosition(k);
+            cball.position.copy(designSettings.defaultPositions[`ball${k}`]);
+            // if (INITIAL_VALUES) {
+            // 	cball.position.x = INITIAL_VALUES[k][0];
+            // 	cball.position.y = INITIAL_VALUES[k][1];
+            // 	cball.position.z = INITIAL_VALUES[k][2];
+            // }
+            designSettings.objects[`ball${k}`] = cball;
+        }
+        scene.add(designSettings.objects.table);
+        scene.add(designSettings.objects.cushions);
+        setShadow(designSettings.objects.table, true, true);
+        setShadow(designSettings.objects.cushions, true, true);
+        for (let k = 0; k < 16; k++) {
+            scene.add(designSettings.objects[`ball${k}`]);
+            setShadow(designSettings.objects[`ball${k}`], true, true);
+        }
+        console.log(designSettings);
+        animate();
+    })
+        .catch(error => {
+        console.log("Error loading resources: ", error);
+    });
+    // document.getElementById('save')?.addEventListener('click', saveIt);
+    document.addEventListener('contextmenu', (event) => {
+        event.preventDefault(); // Disable the default context menu
+        // Handle your custom logic for right-click here
+        // dTime = (dTime) ? 0.0 : 0.001;
+        mouseAction({ action: "contextmenu", x: event.clientX, y: event.clientY });
+    });
+    document.addEventListener('wheel', handleScroll, { passive: false }); // {passive: true} is an indicator to browser that "Go ahead with scrolling without waiting for my code to execute, and you don't need to worry about me using event.preventDefault() to disable the default scrolling behavior. I guarantee that I won't block the scrolling, so you can optimize the scrolling performance."
+    // document.addEventListener('touchmove', handleScroll, {passive: false}); // For mobile, needs to compute deltaX, deltaY by hand from event.touches[0].clintX, .clientY
+    // Attach event listeners to the document
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+}
 // Returns a promise that is resolved after loading the .json file
 function loadJsonPromise() {
     return new Promise((resolve, reject) => {
-        fetch(`${jsGlobals.RESOURCES_PATH}models/pooltable.json`)
+        fetch(`${designSettings.RESOURCES_PATH}models/pooltable.json`)
             .then(response => {
             if (!response.ok)
                 throw new Error("Network response not ok.");
             return response.json();
         })
             .then(data => {
-            jsGlobals.specs = data;
+            designSettings.specs = data;
             resolve(data);
         })
             .catch(error => {
@@ -50,7 +167,7 @@ function loadObjMtlPromise(name, objPath, material) {
                 materials.preload();
                 loader.setMaterials(materials);
                 loader.load(objPath, (object) => {
-                    jsGlobals.objects[name] = object;
+                    designSettings.objects[name] = object;
                     resolve(object);
                 }, undefined, error => {
                     reject(error);
@@ -67,7 +184,7 @@ function loadObjMtlPromise(name, objPath, material) {
                         child.material = material;
                     // child.material = getRandomColor(0.2, 0.2, 0.7);
                 });
-                jsGlobals.objects[name] = object;
+                designSettings.objects[name] = object;
                 resolve(object);
             }, undefined, error => {
                 reject(error);
@@ -91,47 +208,11 @@ function getRandomColor(r, g, b) {
     return material;
 }
 function defaultPosition(ballNumber) {
-    return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.84, jsGlobals.specs.BALL_RADIUS);
+    return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.84, designSettings.specs.BALL_RADIUS);
 }
-let ar = 1000.0 / 600.0;
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(30, ar, 0.1, 1000);
-// const camera = new THREE.OrthographicCamera(-ar, ar, 1.0, -1.0, 0.1, 1000.0);
-camera.position.set(0, 0, 3.5);
-camera.lookAt(0.0, 0.0, 0.0);
-for (let k = -1; k <= 1; k++) {
-    let light = new THREE.PointLight(0xffffff, 5, 10);
-    light.position.set(k, 0, 2);
-    light.castShadow = true;
-    light.shadow.mapSize.copy(new THREE.Vector2(jsGlobals.SHADOW_MAP_SIZE, jsGlobals.SHADOW_MAP_SIZE));
-    scene.add(light);
-}
-let light = new THREE.AmbientLight(0xffffff, 0.2);
-scene.add(light);
-jsGlobals.element = document.getElementById("three-box");
-const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-renderer.setClearColor(0x000000, 0);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-// renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setSize(jsGlobals.element.offsetWidth, jsGlobals.element.offsetHeight);
-jsGlobals.element.appendChild(renderer.domElement);
-const observer = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-        if (entry.target == jsGlobals.element) {
-            const newWidth = entry.contentRect.width;
-            const newHeight = entry.contentRect.height;
-            renderer.setSize(newWidth, newHeight);
-            camera.aspect = newWidth / newHeight;
-            // camera.fov = 30.0;
-            camera.updateProjectionMatrix();
-        }
-    }
-}).observe(jsGlobals.element);
-let time = 0.0;
 function animate() {
     time += 0.002;
-    if (jsGlobals.animateCamera) {
+    if (designSettings.animateCamera) {
         camera.position.set(3 * Math.cos(time), 3 * Math.sin(time), 1.5);
         camera.up.set(0, 0, 1);
         camera.lookAt(0.0, 0.0, -0.25);
@@ -171,28 +252,16 @@ function handleMouseUp(event) {
         mouseAction({ action: "up", x: event.clientX, y: event.clientY });
     }
 }
-document.addEventListener('contextmenu', (event) => {
-    event.preventDefault(); // Disable the default context menu
-    // Handle your custom logic for right-click here
-    // dTime = (dTime) ? 0.0 : 0.001;
-    mouseAction({ action: "contextmenu", x: event.clientX, y: event.clientY });
-});
 function handleScroll(event) {
     // console.log(event);
     event.preventDefault(); // Disable the default scroll behavior
     // console.log(event);
     // camera.position.z *= Math.exp(0.005*event.deltaY);
     if (event.deltaY > 0)
-        jsGlobals.animateCamera = true;
+        designSettings.animateCamera = true;
     else
-        jsGlobals.animateCamera = false;
+        designSettings.animateCamera = false;
 }
-document.addEventListener('wheel', handleScroll, { passive: false }); // {passive: true} is an indicator to browser that "Go ahead with scrolling without waiting for my code to execute, and you don't need to worry about me using event.preventDefault() to disable the default scrolling behavior. I guarantee that I won't block the scrolling, so you can optimize the scrolling performance."
-// document.addEventListener('touchmove', handleScroll, {passive: false}); // For mobile, needs to compute deltaX, deltaY by hand from event.touches[0].clintX, .clientY
-// Attach event listeners to the document
-document.addEventListener('mousedown', handleMouseDown);
-document.addEventListener('mousemove', handleMouseMove);
-document.addEventListener('mouseup', handleMouseUp);
 function findGroupForObject(object) {
     do {
         if (object instanceof THREE.Group)
@@ -202,14 +271,14 @@ function findGroupForObject(object) {
     return object;
 }
 function findNameForObject(object) {
-    for (const key in jsGlobals.objects) {
-        if (jsGlobals.objects[key] == object)
+    for (const key in designSettings.objects) {
+        if (designSettings.objects[key] == object)
             return key;
     }
     return null;
 }
 function findObjectNameOnMouse(mouseAction) {
-    const rect = jsGlobals.element.getBoundingClientRect();
+    const rect = designSettings.element.getBoundingClientRect();
     const nMouse = new THREE.Vector2();
     nMouse.x = 2 * ((mouseAction.x - rect.left) / rect.width) - 1;
     nMouse.y = -2 * ((mouseAction.y - rect.top) / rect.height) + 1;
@@ -229,26 +298,26 @@ function mouseAction(mouseAction) {
         let y = findObjectNameOnMouse(mouseAction);
         if (y && y.startsWith("ball")) {
             const result = y.match(/\d+/);
-            jsGlobals.draggingBall = result ? parseInt(result[0]) : null;
+            designSettings.draggingBall = result ? parseInt(result[0]) : null;
         }
     }
     else if (mouseAction.action == "up") {
-        jsGlobals.draggingBall = null;
+        designSettings.draggingBall = null;
     }
     else if (mouseAction.action == "drag") {
-        const rect = jsGlobals.element.getBoundingClientRect();
+        const rect = designSettings.element.getBoundingClientRect();
         const mouse = new THREE.Vector2();
         mouse.x = 2 * ((mouseAction.x - rect.left) / rect.width) - 1;
         mouse.y = -2 * ((mouseAction.y - rect.top) / rect.height) + 1;
         const mouse3D = new THREE.Vector3(mouse.x, mouse.y, 0.5);
         let a = mouse3D.unproject(camera);
         const ray = new THREE.Ray(camera.position, a.clone().sub(camera.position).normalize());
-        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -jsGlobals.specs.BALL_RADIUS);
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -designSettings.specs.BALL_RADIUS);
         let intersect = new THREE.Vector3();
         ray.intersectPlane(plane, intersect);
         if (intersect) {
-            if (jsGlobals.draggingBall != null) {
-                const ball = jsGlobals.objects[`ball${jsGlobals.draggingBall}`];
+            if (designSettings.draggingBall != null) {
+                const ball = designSettings.objects[`ball${designSettings.draggingBall}`];
                 ball.position.x = intersect.x;
                 ball.position.y = intersect.y;
             }
@@ -257,8 +326,8 @@ function mouseAction(mouseAction) {
     else if (mouseAction.action == "contextmenu") {
         let y = findObjectNameOnMouse(mouseAction);
         if (y && y.startsWith("ball")) {
-            jsGlobals.draggingBall = null;
-            jsGlobals.objects[y].position.copy(jsGlobals.defaultPositions[y]);
+            designSettings.draggingBall = null;
+            designSettings.objects[y].position.copy(designSettings.defaultPositions[y]);
         }
     }
 }
@@ -270,61 +339,11 @@ function setShadow(object, castShadow, receiveShadow) {
         }
     });
 }
-for (let k = 0; k < 16; k++) {
-    jsGlobals["materials"][`ball${k}`] = new THREE.MeshStandardMaterial({ color: 0x336699, roughness: 0.2, metalness: 0.2 });
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(`${jsGlobals.RESOURCES_PATH}models/images/balls/ball${k}.png`, (texture) => {
-        jsGlobals["materials"][`ball${k}`].color = undefined;
-        jsGlobals["materials"][`ball${k}`].map = texture;
-        jsGlobals["materials"][`ball${k}`].needsUpdate = true;
-    });
-}
-const resourcePromises = [
-    loadObjMtlPromise("cushions", `${jsGlobals.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
-    loadObjMtlPromise("table", `${jsGlobals.RESOURCES_PATH}models/table.obj`, `${jsGlobals.RESOURCES_PATH}models/table.mtl`),
-    loadObjMtlPromise("ball", `${jsGlobals.RESOURCES_PATH}models/ball.obj`, null),
-    loadJsonPromise(),
-];
-Promise.all(resourcePromises)
-    .then(() => {
-    let ball = jsGlobals.objects.ball;
-    for (let k = 0; k < 16; k++) {
-        const cball = ball.clone();
-        cball.traverse((child) => {
-            if (child instanceof THREE.Mesh)
-                child.material = jsGlobals.materials[`ball${k}`];
-        });
-        let r = jsGlobals.specs.BALL_RADIUS;
-        cball.scale.set(r, r, r);
-        jsGlobals.defaultPositions[`ball${k}`] = defaultPosition(k);
-        cball.position.copy(jsGlobals.defaultPositions[`ball${k}`]);
-        // if (INITIAL_VALUES) {
-        // 	cball.position.x = INITIAL_VALUES[k][0];
-        // 	cball.position.y = INITIAL_VALUES[k][1];
-        // 	cball.position.z = INITIAL_VALUES[k][2];
-        // }
-        jsGlobals.objects[`ball${k}`] = cball;
-    }
-    scene.add(jsGlobals.objects.table);
-    scene.add(jsGlobals.objects.cushions);
-    setShadow(jsGlobals.objects.table, true, true);
-    setShadow(jsGlobals.objects.cushions, true, true);
-    for (let k = 0; k < 16; k++) {
-        scene.add(jsGlobals.objects[`ball${k}`]);
-        setShadow(jsGlobals.objects[`ball${k}`], true, true);
-    }
-    console.log(jsGlobals);
-    animate();
-})
-    .catch(error => {
-    console.log("Error loading resources: ", error);
-});
-(_a = document.getElementById('save')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', saveIt);
 function saveIt() {
     const currentURL = window.location.origin + window.location.pathname;
     const postData = [];
     for (let k = 0; k < 16; k++) {
-        const bp = jsGlobals.objects[`ball${k}`].position;
+        const bp = designSettings.objects[`ball${k}`].position;
         postData[k] = [bp.x, bp.y, bp.z];
     }
     const headers = new Headers({
@@ -349,3 +368,4 @@ function saveIt() {
         console.error('There was a problem with the fetch operation:', error);
     });
 }
+export {};
