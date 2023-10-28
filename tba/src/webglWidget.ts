@@ -5,23 +5,12 @@
 
 export {};
 
-// Load the three.js modules fully before doing anything:
-let THREE: typeof import('three');
-let OBJLoader: typeof import('three/examples/jsm/loaders/OBJLoader.js').OBJLoader;
-let MTLLoader: typeof import('three/examples/jsm/loaders/MTLLoader.js').MTLLoader;
-Promise.all([
-    import('three'),
-    import('three/examples/jsm/loaders/OBJLoader.js'),
-    import('three/examples/jsm/loaders/MTLLoader.js'),
-]).then(([module1, module2, module3]) => {
-    THREE = module1;
-    OBJLoader = module2.OBJLoader;
-    MTLLoader = module3.MTLLoader;
-    initGeneral();
-});
+import * as THREE from 'three';
 
 let widgets: Map<Element, any>;   // cannot use object but Map can use any kind of keys
 let camera: THREE.OrthographicCamera;
+
+initGeneral();
 
 function initElement(element: Element, texture: THREE.Texture): void {
     let scene = new THREE.Scene();

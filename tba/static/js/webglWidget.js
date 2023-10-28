@@ -2,22 +2,10 @@
 // canvas elements for each element, you can render the 3D graphics to a 
 // hidden render target, and then copy the rendered image to the relevant 
 // canvas element's context when needed.
-// Load the three.js modules fully before doing anything:
-let THREE;
-let OBJLoader;
-let MTLLoader;
-Promise.all([
-    import('three'),
-    import('three/examples/jsm/loaders/OBJLoader.js'),
-    import('three/examples/jsm/loaders/MTLLoader.js'),
-]).then(([module1, module2, module3]) => {
-    THREE = module1;
-    OBJLoader = module2.OBJLoader;
-    MTLLoader = module3.MTLLoader;
-    initGeneral();
-});
+import * as THREE from 'three';
 let widgets; // cannot use object but Map can use any kind of keys
 let camera;
+initGeneral();
 function initElement(element, texture) {
     let scene = new THREE.Scene();
     let aspectRatio = texture.image.width / texture.image.height;
@@ -60,4 +48,3 @@ function onMouseClick(event) {
     // Render the scene after the click
     render(element);
 }
-export {};

@@ -2,23 +2,9 @@
 
 export {};
 
-// Load the three.js modules fully before doing anything:
-let THREE: typeof import('three');
-let OBJLoader: typeof import('three/examples/jsm/loaders/OBJLoader.js').OBJLoader;
-let MTLLoader: typeof import('three/examples/jsm/loaders/MTLLoader.js').MTLLoader;
-Promise.all([
-    import('three'),
-    import('three/examples/jsm/loaders/OBJLoader.js'),
-    import('three/examples/jsm/loaders/MTLLoader.js'),
-]).then(([module1, module2, module3]) => {
-    THREE = module1;
-    OBJLoader = module2.OBJLoader;
-    MTLLoader = module3.MTLLoader;
-    initGeneral();
-});
-// import * as THREE from 'three';
-// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-// import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
 interface DesignSettings {
 	SHADOW_MAP_SIZE: number;
@@ -46,6 +32,8 @@ type MouseAction = {
 	dx: number | null;
 	dy: number | null;
 };
+
+initGeneral();
 
 // Initialization for everything, done after imports
 function initGeneral() {

@@ -1,24 +1,14 @@
 // TODO: change global variables to module-wide
-// Load the three.js modules fully before doing anything:
-let THREE;
-let OBJLoader;
-let MTLLoader;
-Promise.all([
-    import('three'),
-    import('three/examples/jsm/loaders/OBJLoader.js'),
-    import('three/examples/jsm/loaders/MTLLoader.js'),
-]).then(([module1, module2, module3]) => {
-    THREE = module1;
-    OBJLoader = module2.OBJLoader;
-    MTLLoader = module3.MTLLoader;
-    initGeneral();
-});
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 let camera;
 let scene;
 let renderer;
 let time;
 let mouse;
 let designSettings;
+initGeneral();
 // Initialization for everything, done after imports
 function initGeneral() {
     designSettings = {
@@ -368,4 +358,3 @@ function saveIt() {
         console.error('There was a problem with the fetch operation:', error);
     });
 }
-export {};
