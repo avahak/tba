@@ -6,10 +6,8 @@ export {};
 import * as THREE from 'three';
 
 interface WidgetInfo {
-    mesh: THREE.Mesh;
     scene: THREE.Scene;
-    canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
+    canvasContext: CanvasRenderingContext2D;
 }
 
 let widgets: Map<Element, WidgetInfo>;   // cannot use object but Map can use any kind of keys
@@ -24,7 +22,6 @@ function initElement(element: Element, texture: THREE.Texture): void {
     let geometry = new THREE.PlaneGeometry(2*aspectRatio, 2);
     let material = new THREE.MeshBasicMaterial({ map: texture });
     let mesh: THREE.Mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, 0, 0);
     scene.add(mesh);
 
     // Create and add a Canvas for the element:
@@ -32,9 +29,9 @@ function initElement(element: Element, texture: THREE.Texture): void {
     canvas.width = 200;
     canvas.height = 100;
     element.appendChild(canvas);
-    let context = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-    widgets.set(element, { mesh: mesh, scene: scene, canvas: canvas, context: context });
+    widgets.set(element, { scene: scene, canvasContext: canvasContext });
 
     // Add a click event listener to the element
     (element as HTMLElement).addEventListener('click', onMouseClick, false);
@@ -63,7 +60,7 @@ function initGeneral() {
 function render(element: Element) {
     let widgetInfo = widgets.get(element) as WidgetInfo;
     renderer.render(widgetInfo.scene, camera);
-    widgetInfo.context.drawImage(renderer.domElement, 0, 0);
+    widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
 }
 
 // Function to handle mouse click
@@ -74,7 +71,7 @@ function onMouseClick(event: MouseEvent) {
     let x = ((event.clientX-rect.left) / 100) * 2 - 2;
     let y = -((event.clientY-rect.top) / 100) * 2 + 1;
 
-    widgets.get(element)?.mesh.position.set(x, y, 0);
+    widgets.get(element)?.scene.position.set(x, y, 0);
 
     // Render the scene after the click
     render(element);

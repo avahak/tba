@@ -11,15 +11,14 @@ function initElement(element, texture) {
     let geometry = new THREE.PlaneGeometry(2 * aspectRatio, 2);
     let material = new THREE.MeshBasicMaterial({ map: texture });
     let mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, 0, 0);
     scene.add(mesh);
     // Create and add a Canvas for the element:
     let canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 100;
     element.appendChild(canvas);
-    let context = canvas.getContext("2d");
-    widgets.set(element, { mesh: mesh, scene: scene, canvas: canvas, context: context });
+    let canvasContext = canvas.getContext("2d");
+    widgets.set(element, { scene: scene, canvasContext: canvasContext });
     // Add a click event listener to the element
     element.addEventListener('click', onMouseClick, false);
 }
@@ -42,7 +41,7 @@ function initGeneral() {
 function render(element) {
     let widgetInfo = widgets.get(element);
     renderer.render(widgetInfo.scene, camera);
-    widgetInfo.context.drawImage(renderer.domElement, 0, 0);
+    widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
 }
 // Function to handle mouse click
 function onMouseClick(event) {
@@ -52,7 +51,7 @@ function onMouseClick(event) {
     // console.log(event.clientX, event.clientY);
     let x = ((event.clientX - rect.left) / 100) * 2 - 2;
     let y = -((event.clientY - rect.top) / 100) * 2 + 1;
-    (_a = widgets.get(element)) === null || _a === void 0 ? void 0 : _a.mesh.position.set(x, y, 0);
+    (_a = widgets.get(element)) === null || _a === void 0 ? void 0 : _a.scene.position.set(x, y, 0);
     // Render the scene after the click
     render(element);
 }
