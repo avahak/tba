@@ -1,14 +1,20 @@
-// By creating a single THREE.WebGLRenderer instance and using separate 
-// canvas elements for each element, you can render the 3D graphics to a 
-// hidden render target, and then copy the rendered image to the relevant 
-// canvas element's context when needed.
+// Using just one Renderer, and copying the image from the renderer.domElement to 
+// the canvas associated with the current widget.
 
 export {};
 
 import * as THREE from 'three';
 
-let widgets: Map<Element, any>;   // cannot use object but Map can use any kind of keys
+interface WidgetInfo {
+    mesh: THREE.Mesh;
+    scene: THREE.Scene;
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+}
+
+let widgets: Map<Element, WidgetInfo>;   // cannot use object but Map can use any kind of keys
 let camera: THREE.OrthographicCamera;
+let renderer: THREE.WebGLRenderer;
 
 initGeneral();
 
@@ -21,11 +27,14 @@ function initElement(element: Element, texture: THREE.Texture): void {
     mesh.position.set(0, 0, 0);
     scene.add(mesh);
 
-    let renderer = new THREE.WebGLRenderer();
-    renderer.setSize(200, 100);
-    element.appendChild(renderer.domElement);
+    // Create and add a Canvas for the element:
+    let canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    element.appendChild(canvas);
+    let context = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-    widgets.set(element, { mesh: mesh, scene: scene, renderer: renderer });
+    widgets.set(element, { mesh: mesh, scene: scene, canvas: canvas, context: context });
 
     // Add a click event listener to the element
     (element as HTMLElement).addEventListener('click', onMouseClick, false);
@@ -43,12 +52,18 @@ function initGeneral() {
         });
     });
 
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(200, 100);
+    // element.appendChild(renderer.domElement);  // NO!
+
     camera = new THREE.OrthographicCamera(-2, 2, 1, -1, 0.1, 1000);
     camera.position.z = 1;
 }
 
 function render(element: Element) {
-    widgets.get(element).renderer.render(widgets.get(element).scene, camera);
+    let widgetInfo = widgets.get(element) as WidgetInfo;
+    renderer.render(widgetInfo.scene, camera);
+    widgetInfo.context.drawImage(renderer.domElement, 0, 0);
 }
 
 // Function to handle mouse click
@@ -59,7 +74,7 @@ function onMouseClick(event: MouseEvent) {
     let x = ((event.clientX-rect.left) / 100) * 2 - 2;
     let y = -((event.clientY-rect.top) / 100) * 2 + 1;
 
-    widgets.get(element).mesh.position.set(x, y, 0);
+    widgets.get(element)?.mesh.position.set(x, y, 0);
 
     // Render the scene after the click
     render(element);
