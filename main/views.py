@@ -3,6 +3,7 @@
 # you insert into templates are automatically escaped by default
 from flask import *
 from . import app       # finds variable app defined in __init__.py
+from . import send_mail
 
 @app.errorhandler(404)
 def error_404(e):
@@ -43,6 +44,10 @@ def home():
 @app.route('/box')
 def box():
     return render_template("box.html")
+
+@app.route('/send_mail')
+def send_mail_route():
+    return send_mail.send_mail("multi.avahak@gmail.com", "Test subject")
 
 @app.route('/')
 def widget():

@@ -16,7 +16,24 @@
 # hosting, limiting its utility for other tasks or custom functionality and hindering testing.
 
 from flask import Flask
+from flask_mail import Mail
+import os, json
+
 # app = Flask(__name__, template_folder='templates', static_folder='static')
-app = Flask(__name__)
 # app.debug = True
 # print(app.root_path)
+
+def load_settings():
+    file_path = 'd:/projects/tba/localhost_settings.json'
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as json_file:
+            data = json.load(json_file)
+    else:
+        data = {}
+        for key, value in os.environ.items():
+            data[key] = value
+    return data
+
+app = Flask(__name__)
+mail = Mail(app)
+app_data = load_settings()
