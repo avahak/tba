@@ -143,6 +143,8 @@ def create_pooltable_json():
     add_spec(specs, "TABLE_POCKET_LINERS_NUM_POINTS", 10, comment)
     comment = "First number controls the number of vertical slices, second number controls number or points on the arc segments."
     add_spec(specs, "TABLE_SLATE_NUM_POINTS", (5, 10), comment)
+    comment = "First number controls number of points on the rounded edge of the casing, second number controls number of points for the bevel on the casing."
+    add_spec(specs, "TABLE_CASING_NUM_POINTS", (5, 5), comment)
     
     return specs
 
@@ -465,6 +467,17 @@ def create_one_pocket_liner(data, pocket):
 def create_pocket_liners(data):
     liners = [create_one_pocket_liner(data, k) for k in range(1, 7)]
     return merge_vertices_and_faces(liners)
+
+def casing_circuit(data, t):
+    """
+
+    """
+    # Creates a path around the table, following the outer edge of the casing
+    pass
+
+def create_casing(data):
+    pass
+    # TABLE_CASING_NUM_POINTS (like (5,5))
 
 def main():
     WRITE_FILE = True
