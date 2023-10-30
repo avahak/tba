@@ -4,6 +4,7 @@
 from flask import *
 from . import app       # finds variable app defined in __init__.py
 from . import send_mail
+from . import mail
 
 @app.errorhandler(404)
 def error_404(e):

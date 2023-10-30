@@ -4,22 +4,6 @@ from flask_mail import Message
 
 from . import app_data
 
-app.config.update(
-    MAIL_SERVER = 'smtp.googlemail.com',
-    MAIL_PORT = 587,
-    MAIL_USE_TLS = True,
-    MAIL_USERNAME = app_data["GOOGLE_EMAIL_SENDER"],
-    MAIL_PASSWORD = app_data["GOOGLE_APP_PASSWORD"]
-)
-
-# app.config.update(
-#     MAIL_SERVER = 'smtp.gmail.com',
-#     MAIL_PORT = 465,
-#     MAIL_USE_SSL = True,
-#     MAIL_USERNAME = app_data["GOOGLE_EMAIL_SENDER"],
-#     MAIL_PASSWORD = app_data["GOOGLE_APP_PASSWORD"]
-# )
-
 def send_mail(to, subject):
     msg = Message("[TBA] " + subject, sender="TBA Webteam", recipients=[to])
     msg.body = "Body of the msg"

@@ -23,6 +23,8 @@ import os, json
 # app.debug = True
 # print(app.root_path)
 
+app = Flask(__name__)
+
 def load_settings():
     file_path = 'd:/projects/tba/localhost_settings.json'
     if os.path.exists(file_path):
@@ -34,6 +36,24 @@ def load_settings():
             data[key] = value
     return data
 
-app = Flask(__name__)
-mail = Mail(app)
 app_data = load_settings()
+
+# app.config.update(
+#     MAIL_SERVER = 'smtp.googlemail.com',
+#     MAIL_PORT = 587,
+#     MAIL_USE_TLS = True,
+#     MAIL_USE_SSL = False,
+#     MAIL_USERNAME = app_data["GOOGLE_EMAIL_SENDER"],
+#     MAIL_PASSWORD = app_data["GOOGLE_APP_PASSWORD"]
+# )
+
+app.config.update(
+    MAIL_SERVER = 'smtp.gmail.com',
+    MAIL_PORT = 465,
+    MAIL_USE_TLS = False,
+    MAIL_USE_SSL = True,
+    MAIL_USERNAME = app_data["GOOGLE_EMAIL_SENDER"],
+    MAIL_PASSWORD = app_data["GOOGLE_APP_PASSWORD"]
+)
+
+mail = Mail(app)
