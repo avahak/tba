@@ -49,6 +49,18 @@ def merge_vertices_and_faces(dict_list):
 
     return { "vertices": merge_vertices, "faces": merge_faces }
 
+def apply_reflections(points, reflect_plane_list):
+    """Applies one or multiple reflections to a point or list of points.
+    """
+    if isinstance(reflect_plane_list, geometry.Plane):
+        reflect_plane_list = [reflect_plane_list]
+    if isinstance(points, np.ndarray) and points.ndim == 1:
+        p = points
+        for reflect_plane in reflect_plane_list:
+            p = reflect_plane.reflect(p)
+        return p
+    return [apply_reflections(p) for p in points]
+
 # Defines pool table measurements and their explanations
 def create_pooltable_json():
     def add_spec(obj, name, value, comment):
@@ -138,6 +150,7 @@ def create_pooltable_json():
     
     add_spec(specs, "TABLE_CASING_VERTICAL_ANGLE", 15.0*DEGREE, None)
     add_spec(specs, "TABLE_CASING_HEIGHT", 10.0*INCH, None)
+    add_spec(specs, "TABLE_CASING_EDGE_RADIUS", 8.0*INCH)
 
     comment = "Controls number of points on the pocket liner arc segments."
     add_spec(specs, "TABLE_POCKET_LINERS_NUM_POINTS", 10, comment)
@@ -430,8 +443,9 @@ def create_pocket_liner_arc(data, pocket, bulge, height):
         arc.append(bisector.reflect(p))
 
     # Finally, apply final_reflections:
-    for reflect_plane in final_reflects:
-        arc = [reflect_plane.reflect(p) for p in arc]
+    # for reflect_plane in final_reflects:
+    #     arc = [reflect_plane.reflect(p) for p in arc]
+    arc = apply_reflections(arc, final_reflects)
 
     return arc
 
@@ -468,16 +482,35 @@ def create_pocket_liners(data):
     liners = [create_one_pocket_liner(data, k) for k in range(1, 7)]
     return merge_vertices_and_faces(liners)
 
-def casing_circuit(data, t):
+def casing_circuit(data, bulge, height):
     """
+    Creates a path around the table, following the outer edge of the casing.
+    The radius is extended by bulge and z=height.
+    """
+    r = data["specs"]["TABLE_CASING_EDGE_RADIUS"] + bulge
+    arc3 = []
+    center = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["TABLE_RAIL_WIDTH"]-r,
+            data["specs"]["TABLE_LENGTH"]/2+data["specs"]["TABLE_RAIL_WIDTH"]-r, height))
+    n = data["specs"]["TABLE_CASING_NUM_POINTS"][0]
+    for k in range(n):
+        t = np.pi/2*k/(n-1)
+        arc3.append(np.array(center[0]+r*np.cos(t), center[1]+r*np.sin(t), center[2]))
+    arc1 = apply_reflections(arc3, [geometry.Plane(E1, 0.0), data["planes"]["bisector_1"]])
+    arc6 = apply_reflections(arc3, [geometry.Plane(E1, 0.0), geometry.Plane(E2, 0.0)])
+    arc4 = apply_reflections(arc3, [geometry.Plane(E2, 0.0), data["planes"]["bisector_4"]])
+    circuit = []
+    circuit.extend(arc3)
+    circuit.extend(arc1)
+    circuit.extend(arc6)
+    circuit.extend(arc4)
+    return circuit
 
-    """
-    # Creates a path around the table, following the outer edge of the casing
-    pass
 
 def create_casing(data):
-    pass
-    # TABLE_CASING_NUM_POINTS (like (5,5))
+    """Returns vertices and faces for the casing
+    """
+    n = data["specs"]["TABLE_CASING_NUM_POINTS"][1]
+    
 
 def main():
     WRITE_FILE = True
