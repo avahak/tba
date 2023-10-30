@@ -1,5 +1,10 @@
 // Using just one Renderer, and copying the image from the renderer.domElement to 
 // the canvas associated with the current widget.
+// This same approach works for more complex scenes and models as well.
+// For example displaying multiple 3d pooltables: keep one shared scene
+// and renderer and before drawing to a specific element initialize the
+// balls in the scene and the camera to match the element data.
+// Only thing that would not work is animation for multiple elements at the same time.
 
 export {};
 

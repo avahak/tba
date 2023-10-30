@@ -5,10 +5,14 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-const geometry = new THREE.BoxGeometry(1, 1.5, 2);
-const colors = [0x990000, 0x009900, 0x000099, 0x999900, 0x990099, 0x009999];
-const materials = colors.map(color => new THREE.MeshBasicMaterial({ color }));
-const cube = new THREE.Mesh(geometry, materials);
+// const geometry = new THREE.BoxGeometry(1, 1.5, 2);
+// const colors = [0x990000, 0x009900, 0x000099, 0x999900, 0x990099, 0x009999];
+// const materials = colors.map(color => new THREE.MeshBasicMaterial({ color }));
+// const geometry = new THREE.DodecahedronGeometry(1.0);
+const geometry = new THREE.TorusGeometry(1.0, 0.4, 30, 100);
+const material = new THREE.MeshNormalMaterial();
+// const material = new THREE.MeshDepthMaterial();
+const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 camera.position.set(0, 0, 5);
 // Load the cube texture

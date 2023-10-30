@@ -23,6 +23,13 @@ class Plane:
 
     def reflect(self, p):
         return p - 2*self.signed_distance(p)*self.abc
+    
+    def __repr__(self):
+        return f"Plane(abc={self.abc}, d={self.d})"
+    
+    @staticmethod
+    def translate(plane, length):
+        return Plane(np.copy(plane.abc), plane.d+length)
 
     @staticmethod
     def from_points(p1, p2, p3):
