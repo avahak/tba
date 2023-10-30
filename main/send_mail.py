@@ -24,5 +24,5 @@ def send_mail(to, subject):
     msg = Message("[TBA] " + subject, sender="TBA Webteam", recipients=[to])
     msg.body = "Body of the msg"
     msg.html = "<h1>Body of the msg</h1>"
-    # return app_data["GOOGLE_EMAIL_SENDER"]
     mail.send(msg)
+    return app_data["GOOGLE_EMAIL_SENDER"][0:5]
