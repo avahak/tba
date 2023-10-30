@@ -10,6 +10,6 @@
     "start": "start /b npm run run-app && npm run compile-typescript-watch",
     "run-app": "py app.py",
     "compile-typescript-watch": "tsc -w -p tsconfig.json",
-    "minify": "npx terser --compress --mangle --output tba/static/js/tba.min.js -- tba/src/*.js"
+    "minify": "npx terser --compress --mangle --output app/static/js/tba.min.js -- app/src/*.js"
   }
 }
