@@ -6,8 +6,8 @@
 # Setting up as whitelist:
 /**
 
-!tba/
-!tba/**
+!main/
+!main/**
 
 !.github/
 !.github/**
