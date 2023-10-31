@@ -47,7 +47,7 @@ def send_mail_route():
     to = app_settings.get("GOOGLE_EMAIL_SENDER")
     subject = "Test subject"
     body = "<h1>Email body goes here.</h1>"
-    return send_email.send_mail(to, subject, body)
+    return send_mail.send_email(to, subject, body)
 
 @app.route('/')
 def widget():
