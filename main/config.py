@@ -1,5 +1,5 @@
 import os, json
-# from flask_mail import Mail
+from flask_mail import Mail
 
 def load_app_settings():
     """Loads environment variables from a file if it exists (localhost), 
