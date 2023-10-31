@@ -21,4 +21,3 @@ from . import config
 app = Flask(__name__)
 app_settings = config.load_app_settings()
 mail = config.setup_mail(app, app_settings)
-# print(f"\n__init__.py finished, app_data: {app_data}\n")
