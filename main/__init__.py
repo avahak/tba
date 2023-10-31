@@ -19,8 +19,6 @@ from flask import Flask
 from . import config
 
 app = Flask(__name__)
-app_settings = {}
-mail = None
-# app_settings = config.load_app_settings()
-# mail = config.setup_mail(app, app_settings)
+app_settings = config.load_app_settings()
+mail = config.setup_mail(app, app_settings)
 # print(f"\n__init__.py finished, app_data: {app_data}\n")
