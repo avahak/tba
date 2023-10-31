@@ -1,7 +1,7 @@
-pass
-# from flask_mail import Message
-# from . import mail, app_settings
+from flask_mail import Message
+from . import mail, app_settings
 
+pass
 # def send_email(to, subject, html_body, text_body=None):
 #     s = f"Email sender is {app_settings.get("EMAIL_SENDER")}. "
 #     if mail is None:
