@@ -44,7 +44,7 @@ def box():
 
 @app.route('/send_mail')
 def send_mail_route():
-    to = app_settings["GOOGLE_EMAIL_SENDER"]
+    to = app_settings.get("GOOGLE_EMAIL_SENDER")
     subject = "Test subject"
     body = "<h1>Email body goes here.</h1>"
     return send_mail.send_mail(to, subject, body)

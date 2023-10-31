@@ -2,7 +2,7 @@ from flask_mail import Message
 from . import mail, app_settings
 
 def send_mail(to, subject, html_body, text_body=None):
-    s = f"Email sender is {app_settings["EMAIL_SENDER"]}. "
+    s = f"Email sender is {app_settings.get("EMAIL_SENDER")}. "
     if mail is None:
         return s + "Not sending anything (mail is None)."
     msg = Message("[TBA] " + subject, sender="TBA Webteam", recipients=[to])
