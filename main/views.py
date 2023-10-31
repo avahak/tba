@@ -1,8 +1,5 @@
-# from flask import escape      # use escape("...") to html-sanitize a string
-# Note: When you use Flask's templating system (Jinja2), variables and content that 
-# you insert into templates are automatically escaped by default
 from flask import *
-from . import app, app_settings       # finds variable app defined in __init__.py
+from . import app, app_settings       # app is defined in __init__.py
 from . import send_mail
 
 @app.errorhandler(404)

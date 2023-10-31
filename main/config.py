@@ -19,7 +19,7 @@ def setup_mail(app, app_settings: dict):
     """Sets up mail for the app. Depending on app_settings returns Mail instance or None.
     """
     if app_settings.get("EMAIL_SENDER") == "GOOGLE":
-        print("Using gmail settings for mail.")
+        # print("Using gmail settings for mail.")
         app.config.update(
             # Note: Can use TLS or SSL but do not mix them.
             MAIL_SERVER = 'smtp.googlemail.com',
@@ -35,7 +35,7 @@ def setup_mail(app, app_settings: dict):
         )
         return Mail(app)
     elif app_settings.get("EMAIL_SENDER") == "MAILTRAP_IO":
-        print("Using mailtrap.io settings for mail.")
+        # print("Using mailtrap.io settings for mail.")
         app.config.update(
             MAIL_SERVER = 'sandbox.smtp.mailtrap.io',
             MAIL_PORT = 2525,
@@ -45,5 +45,5 @@ def setup_mail(app, app_settings: dict):
             MAIL_PASSWORD = app_settings["MAILTRAP_IO_PASSWORD"]
         )
         return Mail(app)
-    print("Using no settings for mail.")
+    # print("Using no settings for mail.")
     return None
