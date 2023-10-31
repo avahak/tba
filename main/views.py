@@ -1,6 +1,6 @@
 from flask import *
 from . import app#, app_settings       # app is defined in __init__.py
-# from . import send_mail
+from . import send_mail
 
 @app.errorhandler(404)
 def error_404(e):
