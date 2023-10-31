@@ -1,3 +1,4 @@
+import sys
 from flask import *
 from . import app, app_settings       # app is defined in __init__.py
 from . import send_mail
@@ -51,7 +52,7 @@ def send_mail_route():
 
 @app.route('/config')
 def config_route():
-    return f"<h1>SITE setting: {app_settings.get('SITE')}</h1>"
+    return f"<h1>SITE setting: {app_settings.get('SITE')}<br>Python version: {sys.version}.</h1>"
 
 @app.route('/')
 def widget_route():
