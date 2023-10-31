@@ -1,20 +1,19 @@
-pass
-# import os, json
+import os, json
 # from flask_mail import Mail
 
-# def load_app_settings():
-#     """Loads environment variables from a file if it exists (localhost), 
-#     otherwise uses os.environ settings.
-#     """
-#     file_path = 'd:/projects/tba/localhost_settings.json'
-#     if os.path.exists(file_path):
-#         with open(file_path, 'r') as json_file:
-#             settings = json.load(json_file)
-#     else:
-#         settings = {}
-#         for key, value in os.environ.items():
-#             settings[key] = value
-#     return settings
+def load_app_settings():
+    """Loads environment variables from a file if it exists (localhost), 
+    otherwise uses os.environ settings.
+    """
+    file_path = 'd:/projects/tba/localhost_settings.json'
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as json_file:
+            settings = json.load(json_file)
+    else:
+        settings = {}
+        for key, value in os.environ.items():
+            settings[key] = value
+    return settings
 
 # def setup_mail(app, app_settings: dict):
 #     """Sets up mail for the app. Depending on app_settings returns Mail instance or None.
