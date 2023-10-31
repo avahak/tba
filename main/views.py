@@ -1,6 +1,6 @@
 from flask import *
 from . import app#, app_settings       # app is defined in __init__.py
-# from . import send_mail
+from . import send_mail
 
 @app.errorhandler(404)
 def error_404(e):
@@ -47,7 +47,7 @@ def send_mail_route():
     to = app_settings.get("GOOGLE_EMAIL_SENDER")
     subject = "Test subject"
     body = "<h1>Email body goes here.</h1>"
-    return send_mail.send_mail(to, subject, body)
+    return send_email.send_mail(to, subject, body)
 
 @app.route('/')
 def widget():
