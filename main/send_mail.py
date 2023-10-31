@@ -1,16 +1,15 @@
-from . import mail, app
-import json, os
 from flask_mail import Message
+from . import mail, app_settings
 
-from . import app_data
-
-def send_mail(to, subject):
+def send_mail(to, subject, html_body, text_body=None):
+    s = f"Email sender is {app_settings["EMAIL_SENDER"]}. "
+    if mail is None:
+        return s + "Not sending anything (mail is None)."
     msg = Message("[TBA] " + subject, sender="TBA Webteam", recipients=[to])
-    msg.body = "Body of the msg"
-    msg.html = "<h1>Body of the msg</h1>"
-    s = app_data["GOOGLE_EMAIL_SENDER"][0:4] + " - "
+    msg.body = text_body if text_body is not None else html_body
+    msg.html = html_body
     try:
         mail.send(msg)
     except Exception as e:
         return s + str(e)
-    return s + "send_mail SUCCESS!"
+    return s + "SUCCESS! Email sent."

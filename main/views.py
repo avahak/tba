@@ -2,9 +2,8 @@
 # Note: When you use Flask's templating system (Jinja2), variables and content that 
 # you insert into templates are automatically escaped by default
 from flask import *
-from . import app       # finds variable app defined in __init__.py
+from . import app, app_settings       # finds variable app defined in __init__.py
 from . import send_mail
-from . import mail
 
 @app.errorhandler(404)
 def error_404(e):
@@ -48,7 +47,10 @@ def box():
 
 @app.route('/send_mail')
 def send_mail_route():
-    return send_mail.send_mail("multi.avahak@gmail.com", "Test subject")
+    to = app_settings["GOOGLE_EMAIL_SENDER"]
+    subject = "Test subject"
+    body = "<h1>Email body goes here.</h1>"
+    return send_mail.send_mail(to, subject, body)
 
 @app.route('/')
 def widget():
