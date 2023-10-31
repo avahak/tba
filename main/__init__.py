@@ -16,7 +16,7 @@
 # hosting, limiting its utility for other tasks or custom functionality and hindering testing.
 
 from flask import Flask
-from . import config
+# from . import config
 
 app = Flask(__name__)
 app_settings = {}
