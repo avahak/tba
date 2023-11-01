@@ -17,7 +17,6 @@
 **/*.txt
 
 !.gitignore
-!app.py
 !run.py
 !config.py
 !requirements.txt

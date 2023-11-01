@@ -6,7 +6,6 @@ mail = Mail()
 logger = config.get_logger(__name__)
 
 def create_app():
-    print(__name__)
     config_name = "default"
     app = Flask(__name__)
     
