@@ -5,7 +5,7 @@ import config
 mail = Mail()
 logger = config.get_logger(__name__)
 
-def create_app(config_name):
+def create_app(config_name="default"):
     app = Flask(__name__)
     
     app.config.from_object(config.getConfig(config_name))
