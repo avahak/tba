@@ -6,8 +6,8 @@
 # Setting up as whitelist:
 /**
 
-!main/
-!main/**
+!app/
+!app/**
 
 !.github/
 !.github/**

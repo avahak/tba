@@ -26,6 +26,6 @@
             <p style="color:#444;">Default content</p>
             {{ alert_message("Macros can be used to make reusable content.", "info") }}
         {% endblock %}
-        <a href="{{ url_for('serve_node_modules', filename='three/package.json')}}">url_for test</a>
+        <a href="{{ url_for('main.serve_node_modules_route', filename='three/package.json')}}">url_for test</a>
     </body>
 </html>

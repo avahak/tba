@@ -7,9 +7,15 @@
     "terser": "^5.22.0"
   },
   "scripts": {
-    "start": "start /b npm run run-app && npm run compile-typescript-watch",
+    "start": "npm run start-dev",
+    "start-dev": "npm run activate-env-dev && start /b npm run run-app && npm run compile-typescript-watch",
+    "start-test": "npm run activate-env-test && start /b npm run run-app && npm run compile-typescript-watch",
+    "start-production": "npm run activate-env-production && start /b npm run run-app && npm run compile-typescript-watch",
+    "activate-env-dev": "set FLASK_APP=app.py && set FLASK_ENV=dev",
+    "activate-env-test": "set FLASK_APP=app.py && set FLASK_ENV=test",
+    "activate-env-production": "set FLASK_APP=app.py && set FLASK_ENV=production",
     "run-app": "py app.py",
     "compile-typescript-watch": "tsc -w -p tsconfig.json",
-    "minify": "npx terser --compress --mangle --output main/static/js/tba.min.js -- main/src/*.js"
+    "minify": "npx terser --compress --mangle --output app/static/js/tba.min.js -- app/ts/*.js"
   }
 }
