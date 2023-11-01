@@ -7,14 +7,16 @@
     "terser": "^5.22.0"
   },
   "scripts": {
+    "__comment1": "NOTE! Using set to set environment variables does not work (they are process specific).",
     "start": "npm run start-dev",
-    "start-dev": "npm run activate-env-dev && start /b npm run run-app && npm run compile-typescript-watch",
-    "start-test": "npm run activate-env-test && start /b npm run run-app && npm run compile-typescript-watch",
-    "start-production": "npm run activate-env-production && start /b npm run run-app && npm run compile-typescript-watch",
-    "activate-env-dev": "set FLASK_APP=app.py && set FLASK_ENV=dev",
-    "activate-env-test": "set FLASK_APP=app.py && set FLASK_ENV=test",
-    "activate-env-production": "set FLASK_APP=app.py && set FLASK_ENV=production",
-    "run-app": "py app.py",
+    "start-dev": "start /b npm run run-app && npm run compile-typescript-watch",
+    "start-test": "start /b npm run run-app && npm run compile-typescript-watch",
+    "start-production": "start /b npm run run-app",
+    "set-env-development": "setx FLASK_APP run.app && setx FLASK_ENV development",
+    "set-env-testing": "setx FLASK_APP run.app && setx FLASK_ENV testing",
+    "set-env-production": "setx FLASK_APP run.app && setx FLASK_ENV production",
+    "set-env-clear": "setx FLASK_APP \"\" && setx FLASK_ENV \"\"",
+    "run-app": "py run.py",
     "compile-typescript-watch": "tsc -w -p tsconfig.json",
     "minify": "npx terser --compress --mangle --output app/static/js/tba.min.js -- app/ts/*.js"
   }
