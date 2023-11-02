@@ -36,12 +36,15 @@ Config.MAIL_USE_SSL = not Config.MAIL_USE_TLS
 
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = load.get("DATABASE_URL", "") or ("sqlite:///" + os.path.join(basedir, 'data-dev.sqlite'))
+    CONFIG_SETTING = "development"
 
 class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
+    CONFIG_SETTING = "testing"
 
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = load.get("DATABASE_URL", "") or ("sqlite://" + os.path.join(basedir, 'data-dev.sqlite'))
+    CONFIG_SETTING = "production"
     
 def getConfig(config_name):
     config = {

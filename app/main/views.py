@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 from flask import *
 from . import main
 from .. import email, logger
@@ -11,16 +12,12 @@ def error_404(e):
 def not_found_route():
     abort(400)
 
-@main.route('/exception/<name>')
-def create_exception_route(name: str):
-    if (hash(name)%2 == 0):
+@main.route('/exception')
+def exception_route(name: str):
+    if (np.random.rand() < 0.5):
         1 / 0
     else:
         '2' + 2
-
-@main.route('/test')
-def test_it_route():
-    return "<h1>At least this works.</h1>"
 
 @main.route('/api/data')
 def get_data_route():
@@ -33,7 +30,7 @@ def hello_route(name=None):
 
 @main.route('/ultra/')
 @main.route('/ultra/<name>')
-def ultra_hello_route(name=None):
+def ultra_route(name=None):
     return render_template("ultra_hello.html", name=name)
 
 @main.route('/node_modules/<path:filename>')
@@ -43,7 +40,7 @@ def serve_node_modules_route(filename):
     return send_from_directory(current_app.root_path + "/../node_modules", filename)
 
 @main.route('/widget')
-def home_route():
+def widget_route():
     return render_template("widget.html")
 
 @main.route('/box')
@@ -66,8 +63,10 @@ def email_route():
 def config_route():
     s = f"LOG_FILE_NAME: {current_app.config.get('LOG_FILE_NAME')}<br>"
     s += f"SITE: {current_app.config.get('SITE')}<br>"
+    s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
     s += f"MAIL_SENDER: {current_app.config.get('MAIL_SENDER')}<br>"
     s += f"MAIL_USE_TLS: {current_app.config.get('MAIL_USE_TLS')}<br>"
+    s += f"SQLALCHEMY_DATABASE_URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}<br>"
     s += f"Python version: {sys.version}.<br>"
     return f"<h1>{s}</h1>"
 
@@ -77,6 +76,10 @@ def logs_route():
         s = "<br>".join(f.readlines())
     return f"{s}"
 
-@main.route('/')
-def widget_route():
+@main.route('/design')
+def design_route():
     return render_template("design.html")
+
+@main.route("/")
+def test():
+    return render_template("test.html")
