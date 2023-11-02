@@ -26,4 +26,6 @@ def fake_route():
 
 @auth.route("/show")
 def show_route():
-    return "Show route.."
+    users = User.query.all()
+    roles = Role.query.all()
+    return render_template("auth/show.html", users=users, roles=roles)
