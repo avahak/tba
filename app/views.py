@@ -45,8 +45,9 @@ def box():
     return render_template("box.html")
 
 @app.route('/julia')
-def box():
-    return send_from_directory('static/html', "julia.html")
+def julia():
+    return send_from_directory(app.root_path + "/static/html", "julia.html")
+    # return send_from_directory('static/html', "julia.html")
 
 @app.route('/')
 def widget():
