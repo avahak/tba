@@ -33,6 +33,7 @@
 
         const juliaFragmentShader = `
             uniform vec2 mouse;
+            uniform vec2 resolution;
             void main() {
                 vec2 c = vec2(mouse.x * 2.0 - 1.0, mouse.y * 2.0 - 1.0);
                 vec2 z = gl_FragCoord.xy / resolution - 0.5;
@@ -47,11 +48,16 @@
             }
         `;
 
+        
         juliaShaderMaterial = new THREE.ShaderMaterial({
-            uniforms: { mouse: { value: new THREE.Vector2() } },
+            uniforms: {
+                mouse: { value: new THREE.Vector2() },
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            },
             vertexShader: juliaVertexShader,
             fragmentShader: juliaFragmentShader
         });
+
 
         // Create a quad to render the Julia set
         const geometry = new THREE.BufferGeometry();
