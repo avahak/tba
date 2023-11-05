@@ -122,6 +122,7 @@
         document.addEventListener('touchmove', (event) => {
             let firstTouch = event.touches[0];
             move(firstTouch.clientX, firstTouch.clientY);
+            event.preventDefault();
         });
 
         // Animate the scene
