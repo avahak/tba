@@ -83,7 +83,6 @@ def design_route():
 @main.route('/julia')
 def julia_route():
     return send_from_directory(current_app.root_path + "/static/html", "julia.html")
-    # return send_from_directory('static/html', "julia.html")
 
 @main.route("/")
 def test():
