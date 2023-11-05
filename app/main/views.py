@@ -80,6 +80,11 @@ def logs_route():
 def design_route():
     return render_template("design.html")
 
+@main.route('/julia')
+def julia_route():
+    return send_from_directory(current_app.root_path + "/static/html", "julia.html")
+    # return send_from_directory('static/html', "julia.html")
+
 @main.route("/")
 def test():
     return render_template("test.html")
