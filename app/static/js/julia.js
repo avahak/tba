@@ -1,33 +1,26 @@
-export {};
-
+var _a;
 import * as THREE from 'three';
-
 // Setup variables
-let scene: any;
-let camera: any;
-let renderer: any;
+let scene;
+let camera;
+let renderer;
 let mouse = { x: 0, y: 0 };
-let juliaShaderMaterial: any;
-
+let juliaShaderMaterial;
 // Initialize scene
 scene = new THREE.Scene();
-
 // Create a camera
 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 1;
-
 // Create a WebGL renderer
 renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.getElementById("webgl-container")?.appendChild(renderer.domElement);
-
+(_a = document.getElementById("webgl-container")) === null || _a === void 0 ? void 0 : _a.appendChild(renderer.domElement);
 // Create the Julia set shader
 const juliaVertexShader = `
     void main() {
         gl_Position = vec4(position, 1.0);
     }
 `;
-
 const juliaFragmentShader = `
     uniform vec2 mouse;
     uniform vec2 resolution;
@@ -72,7 +65,6 @@ const juliaFragmentShader = `
         return;
     }
 `;
-
 console.log(window.innerWidth, window.innerHeight);
 juliaShaderMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -82,8 +74,6 @@ juliaShaderMaterial = new THREE.ShaderMaterial({
     vertexShader: juliaVertexShader,
     fragmentShader: juliaFragmentShader
 });
-
-
 // Create a quad to render the Julia set
 const geometry = new THREE.BufferGeometry();
 const vertices = new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]);
@@ -96,34 +86,28 @@ const vertices = new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]);
 geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 const quad = new THREE.Mesh(geometry, juliaShaderMaterial);
 scene.add(quad);
-
-function move(clientX: number, clientY: number) {
+function move(clientX, clientY) {
     const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = -2.0 + 4.0*(clientX - rect.left) / rect.width;
-    mouse.y = 1.0 - 2.0*(clientY - rect.top) / rect.height;
+    mouse.x = -2.0 + 4.0 * (clientX - rect.left) / rect.width;
+    mouse.y = 1.0 - 2.0 * (clientY - rect.top) / rect.height;
     juliaShaderMaterial.uniforms.mouse.value = new THREE.Vector2(mouse.x, mouse.y);
     requestAnimationFrame(animate);
 }
-
 // Handle mouse movement
 document.addEventListener('mousemove', (event) => {
     move(event.clientX, event.clientY);
 });
-
 document.addEventListener('touchstart', (event) => {
     let firstTouch = event.touches[0];
     move(firstTouch.clientX, firstTouch.clientY);
 });
-
 document.addEventListener('touchmove', (event) => {
     let firstTouch = event.touches[0];
     move(firstTouch.clientX, firstTouch.clientY);
     event.preventDefault();
 });
-
 // Animate the scene
 function animate() {
     renderer.render(scene, camera);
 }
-
 animate();

@@ -84,6 +84,10 @@ def design_route():
 def julia_route():
     return send_from_directory(current_app.root_path + "/static/html", "julia.html")
 
+@main.route('/mandelbrot')
+def mandelbrot_route():
+    return send_from_directory(current_app.root_path + "/static/html", "mandelbrot.html")
+
 @main.route("/")
 def test():
     return render_template("test.html")
