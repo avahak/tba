@@ -40,6 +40,18 @@ def write_obj_file(file_name, obj_data):
                 s += f"{k+1} "
             file.write(s + "\n")
 
+def convert_numpy_to_lists(obj):
+    """Converts numpy ndarray objects to lists so that they can be serialized.
+    """
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (list, tuple)):
+        return [convert_numpy_to_lists(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_to_lists(value) for key, value in obj.items()}
+    else:
+        return obj
+
 def merge_vertices_and_faces(dict_list):
     """
     Given multiple OBJ style vertices and faces in a list with each element like {"vertices":[...], "faces":[...]},
@@ -161,6 +173,8 @@ def create_pooltable_json():
     add_spec(specs, "TABLE_SLATE_THICKNESS", 1.0*INCH, comment)
     comment = "Height of rail from table bed (1.6\" for 23deg CUSHION_K66_PROFILE_ANGLE)"
     add_spec(specs, "TABLE_RAIL_HEIGHT", specs["CUSHION_NOSE_HEIGHT"]+specs["CUSHION_RUBBER_SIDE_LENGTH"]*np.sin(specs["CUSHION_SLOPE"]), comment)
+    comment = "Depth of sights from cushion nose, WPA requires 3\"11/16(+1/8\")."
+    add_spec(specs, "TABLE_SIGHTS_DEPTH", (3+11/16)*INCH, comment)
 
     comment = "Width of the pocket liner part visible from above."
     add_spec(specs, "TABLE_POCKET_LINER_WIDTH", 0.5*INCH, comment)
@@ -216,7 +230,7 @@ def create_pocket_points(data):
     points[f"fall_center_1"] = points[f"mouth_center_1"]*(E1 + E2) + dc*normalize(-E1 + E2)
     points[f"fall_center_3"] = points[f"mouth_center_3"]*(E1 + E2) + dc*normalize(E1 + E2)
     points[f"fall_center_4"] = points[f"mouth_center_4"]*(E1 + E2) + dc*normalize(E1 - E2)
-    points[f"center_6"] = points[f"mouth_center_6"]*(E1 + E2) + dc*normalize(-E1 - E2)
+    points[f"fall_center_6"] = points[f"mouth_center_6"]*(E1 + E2) + dc*normalize(-E1 - E2)
     # side pockets (2, 5)
     points[f"fall_center_2"] = points[f"mouth_center_2"]*(E1 + E2) + ds*(E2)
     points[f"fall_center_5"] = points[f"mouth_center_5"]*(E1 + E2) + ds*(-E2)
@@ -638,22 +652,24 @@ def create_sights(data):
     x0 = data["specs"]["TABLE_LENGTH"]/2
     y0 = data["specs"]["TABLE_LENGTH"]/4
     h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
-    sights_b = [np.array((x0*k/4, y0, h0)) for k in range(1, 3)]
-    sights_c = [np.array((x0, y0-(2*y0)*k/4, h0)) for k in range(1, 3)]
+    depth = data["specs"]["TABLE_SIGHTS_DEPTH"]
+    sights_b = [np.array((x0*k/4, y0+depth, h0)) for k in range(1, 4)]
+    sights_c = [np.array((x0+depth, y0-(2*y0)*k/4, h0)) for k in range(1, 4)]
     return { "A": plane_E1.reflect(reversed(sights_b)), "B": sights_b, "C": sights_c,
              "D": plane_E2.reflect(reversed(sights_b)), "E": plane_E2.reflect(plane_E1.reflect(sights_b)),
              "F": plane_E1.reflect(reversed(sights_c)) }
 
 def create_metadata(data):
-    meta = {}
+    meta = { "specs": data["specs"] }
     for k in range(1, 7):
-        meta["pocket_fall_{k}"] = data["points"][f"pocket_fall_{k}"]
-        pocket_type = "SIDE" if k in (2, 5) else "CORNER"
+        meta[f"pocket_fall_center_{k}"] = data["points"][f"fall_center_{k}"]
+        pocket_type = "SIDE" if (k in (2, 5)) else "CORNER"
         meta[f"pocket_fall_radius_{k}"] = data["specs"][f"{pocket_type}_POCKET_RADIUS"]
     # Box from rail back to rail back:
-    meta["railbox"] = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["TABLE_CUSHION_WIDTH"], data["specs"]["TABLE_LENGTH"]/4+data["specs"]["TABLE_CUSHION_WIDTH"]))
+    meta["railbox"] = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_LENGTH"]/4+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_RAIL_HEIGHT"]))
     
     meta["sights"] = create_sights(data)
+    return meta
 
 
 def main():
@@ -668,13 +684,12 @@ def main():
     data["liners"] = create_pocket_liners(data)
     data["casing"] = create_casing(data)
     data["rails"] = create_rail_tops(data)
+    meta = create_metadata(data)
 
     if WRITE_FILE:
         # Write to file:
-        with open("specs.json", "w") as file:
-            file.write(json.dumps(data["specs"], indent=4))
-        # with open("cushions.json", "w") as file:
-        #     file.write(json.dumps(data["cushions"]))
+        with open("pooltable_metadata.json", "w") as file:
+            file.write(json.dumps(convert_numpy_to_lists(meta), indent=4))
         write_obj_file("cushions.obj", data["cushions"])
         write_obj_file("slate.obj", data["slate"])
         write_obj_file("liners.obj", data["liners"])
@@ -690,6 +705,7 @@ def main():
     # print(f"{data["liners"] = }")
     # print(f"{data["casing"] = }")
     # print(f"{data["rails"] = }")
+    # print(f"{meta = }")
 
 if __name__ == "__main__":
     main()
