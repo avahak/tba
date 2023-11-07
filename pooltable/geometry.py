@@ -8,6 +8,13 @@ def normalize(p):
 def closest_point(p, a, b, c):
     """Computes the closest point on the triangle a, b, c to p.
     """
+    # Below lambda_a, lambda_b, lambda_c are barycentric coordinates for p*=proj_{abc plane}(p).
+    # Lambda_c, lambda_b can be obtained requiring that a+lambda_b*(b-a)+lambda_c*(c-a) = p* 
+    # and then testing this by taking inner product of both sides with b-a and c-a. 
+    # After that \lambda_a=1-\lambda_b-\lambda_c. The formulas below are optimized forms
+    # that avoid the need for intermediate calculations. I am not aware of the derivation 
+    # of these formulas, only the proof that they work.
+    # See https://github.com/embree/embree/blob/master/tutorials/common/math/closest_point.h
     ab = b - a
     ac = c - a
 
@@ -32,12 +39,6 @@ def closest_point(p, a, b, c):
     if ((ac_cp >= 0.0) and (ab_cp <= ac_cp)):
         return c
     
-    # Below lambda_c, lambda_b can be obtained by setting p*=projection of p to plane of triangle
-    # and requiring that a+lambda_b*(b-a)+lambda_c*(c-a) = p* and then testing this 
-    # by taking inner product with b-a and c-a.
-    # lambda_a below is pretty far from "bc_bc*ba_bp - bc_ba*bc_bp" that is obtained
-    # by this scheme but evaluates to the same value by at least brute force term by term calculation.
-
     # Closest point on edge (a, b): (lambda_c is barycentric coordinate coefficient for c)
     lambda_c = ab_ap*ac_bp - ab_bp*ac_ap    # = ab_ab*ac_ap - ab_ac*ab_ap
     if (lambda_c <= 0.0 and ab_ap >= 0.0 and ab_bp <= 0.0):
@@ -117,7 +118,9 @@ def main():
 
     print(f"{p = }\n{a = }\n{b = }\n{c = }\n")
 
-    closest_point(p, a, b, c)
+    q = closest_point(p, a, b, c)
+    qq = closest_point(q, a, b, c)
+    print(f"{q = }\n{qq =}")
 
 
 if __name__ == "__main__":

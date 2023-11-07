@@ -73,9 +73,9 @@ class JSONLogFormatter(logging.Formatter):
             log_data['traceback'] = traceback.format_list(traceback.extract_tb(tb))
         return json.dumps(log_data)
 
-"""Returns a custom logger that writes entries to a file in machine readable JSON format.
-"""
 def get_logger(name: str) -> logging.Logger:
+    """Returns a custom logger that writes entries to a file in machine readable JSON format.
+    """
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)   # Change if you get spammed
 
@@ -107,6 +107,7 @@ def get_logger(name: str) -> logging.Logger:
     logger.makeRecord = partial(make_record_with_extra, logger)
 
     sys.excepthook = unhandled_exception_handler
+
     logger.init_app = init_app
 
     return logger

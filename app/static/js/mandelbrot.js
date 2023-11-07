@@ -4,8 +4,10 @@ import * as THREE from 'three';
 let scene;
 let camera;
 let renderer;
-let mouse = { x: 0, y: 0 };
 let mandelbrotShaderMaterial;
+let z0 = { x: 0.0, y: 0.0 };
+let zoom = 1.0;
+let resolution;
 // Initialize scene
 scene = new THREE.Scene();
 // Create a camera
@@ -22,7 +24,6 @@ const mandelbrotVertexShader = `
     }
 `;
 const mandelbrotFragmentShader = `
-    uniform vec2 mouse;
     uniform vec2 resolution;
     void main() {
         vec2 c = 2.0*vec2(1.2, 1.0)*gl_FragCoord.xy / resolution - 1.0;
@@ -44,11 +45,11 @@ const mandelbrotFragmentShader = `
         return;
     }
 `;
+resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 console.log(window.innerWidth, window.innerHeight);
 mandelbrotShaderMaterial = new THREE.ShaderMaterial({
     uniforms: {
-        mouse: { value: new THREE.Vector2() },
-        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        resolution: { value: resolution }
     },
     vertexShader: mandelbrotVertexShader,
     fragmentShader: mandelbrotFragmentShader
@@ -65,25 +66,18 @@ const vertices = new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]);
 geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 const quad = new THREE.Mesh(geometry, mandelbrotShaderMaterial);
 scene.add(quad);
-function move(clientX, clientY) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = -2.0 + 4.0 * (clientX - rect.left) / rect.width;
-    mouse.y = 1.0 - 2.0 * (clientY - rect.top) / rect.height;
-    mandelbrotShaderMaterial.uniforms.mouse.value = new THREE.Vector2(mouse.x, mouse.y);
-    requestAnimationFrame(animate);
-}
 // Handle mouse movement
-document.addEventListener('mousemove', (event) => {
-    move(event.clientX, event.clientY);
+document.addEventListener('mousedown', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    let x = (event.clientX - rect.left) / rect.width;
+    let y = (event.clientY - rect.top) / rect.height;
+    requestAnimationFrame(animate);
 });
-document.addEventListener('touchstart', (event) => {
-    let firstTouch = event.touches[0];
-    move(firstTouch.clientX, firstTouch.clientY);
-});
-document.addEventListener('touchmove', (event) => {
-    let firstTouch = event.touches[0];
-    move(firstTouch.clientX, firstTouch.clientY);
-    event.preventDefault();
+// Handle mouse movement
+document.addEventListener('wheel', (event) => {
+    let dy = event.deltaY;
+    zoom = zoom * Math.exp(dy / 100.0);
+    requestAnimationFrame(animate);
 });
 // Animate the scene
 function animate() {
