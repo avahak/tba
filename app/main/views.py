@@ -87,11 +87,15 @@ def julia_route():
 def mandelbrot_route():
     return send_from_directory(current_app.root_path + "/static/html", "mandelbrot.html")
 
-@main.route("/reset")
-def reset_route():
+@main.route("/drop_all")
+def drop_all_route():
     db.drop_all()
+    return "Drop all done."
+
+@main.route("/create_all")
+def create_all_route():
     db.create_all()
-    return "Reset done."
+    return "Create all done."
 
 @main.route("/fake")
 def fake_route():
