@@ -27,6 +27,10 @@ class Config:
     LOG_FILE_NAME = os.path.abspath("logs/tba.log")
     EMAIL_SERVICE_PROVIDER = esp
     
+# TODO REMOVE, BUG FIXING
+for name in ["DB_SERVER", "DB_DATABASE", "DB_USERNAME", "DB_PASSWORD", "DB_PORT"]:
+    setattr(Config, name, load.get(name, ""))
+
 for name in ["SERVER", "PORT", "USE_TLS", "SENDER", "USERNAME", "PASSWORD"]:
     setattr(Config, f"MAIL_{name}", load.get(f"{esp}_MAIL_{name}", ""))
 Config.MAIL_PORT = int(Config.MAIL_PORT or "0")

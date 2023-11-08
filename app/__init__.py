@@ -20,6 +20,7 @@ def create_app():
     app = Flask(__name__)
     
     app.config.from_object(config.getConfig(config_name))
+    print(app.config)
     mail.init_app(app)
     bootstrap.init_app(app)
     db.init_app(app)

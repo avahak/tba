@@ -7,6 +7,8 @@ from ..models import *
 from ..fake_data import *
 from sqlalchemy.exc import IntegrityError
 
+import pyodbc   # TODO REMOVE
+
 @main.route('/400')
 def not_found_route():
     abort(400)
@@ -127,6 +129,26 @@ def admin_tool_route():
     users = pagination.items
     fields = ["id", "email", "role", "is_confirmed", "is_active"]
     return render_template("admin_tool.html", fields=fields, users=users, pagination=pagination)
+
+@main.route("/test_db")
+def test_db_route():
+    db_server = current_app.config.get("DB_SERVER", "-")
+    db_database = current_app.config.get("DB_DATABASE", "-")
+    db_username = current_app.config.get("DB_USERNAME", "-")
+    db_password = current_app.config.get("DB_PASSWORD", "-")
+    db_port = current_app.config.get("DB_PORT", "-")
+    driver = '{ODBC Driver 17 for SQL Server}'
+
+    conn_str = f"DRIVER={driver};SERVER={db_server};DATABASE={db_database},{db_port};UID={db_username};PWD={db_password}"
+    s = db_server
+    try:
+        conn = pyodbc.connect(conn_str)
+        s = s + ", Connection successful!"
+        conn.close()
+    except Exception as e:
+        s = s + f", Error: {e}"
+    return s
+
 
 @main.route("/")
 def front():
