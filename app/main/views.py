@@ -65,7 +65,7 @@ def config_route():
     s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
     s += f"MAIL_SENDER: {current_app.config.get('MAIL_SENDER')}<br>"
     s += f"MAIL_USE_TLS: {current_app.config.get('MAIL_USE_TLS')}<br>"
-    s += f"SQLALCHEMY_DATABASE_URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}<br>"
+    # s += f"SQLALCHEMY_DATABASE_URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}<br>"
     s += f"Python version: {sys.version}.<br>"
     return f"<h1>{s}</h1>"
 
