@@ -6,8 +6,7 @@ from .. import email, logger
 from ..models import *
 from ..fake_data import *
 from sqlalchemy.exc import IntegrityError
-
-import pyodbc   # TODO REMOVE
+from sqlalchemy import create_engine, text
 
 @main.route('/400')
 def not_found_route():
@@ -89,20 +88,45 @@ def julia_route():
 def mandelbrot_route():
     return send_from_directory(current_app.root_path + "/static/html", "mandelbrot.html")
 
-@main.route("/drop_all")
-def drop_all_route():
-    db.drop_all()
-    return "Drop all done."
+# @main.route("/drop_all")
+# def drop_all_route():
+#     db.drop_all()
+#     return "Drop all done."
 
-@main.route("/create_all")
-def create_all_route():
-    db.create_all()
-    return "Create all done."
+# @main.route("/create_all")
+# def create_all_route():
+#     db.create_all()
+#     return "Create all done."
+
+@main.route("/recreate_database")
+def recreate_database_route():
+    url = current_app.config.get("DATABASE_URL", "")
+    drop_str = "DROP DATABASE IF EXISTS flask_db;"
+    create_str = "CREATE DATABASE IF NOT EXISTS flask_db;"
+    connection = None
+    try:
+        if url:
+            engine = create_engine(url)
+            connection = engine.connect()
+            connection.execute(text(drop_str))
+            connection.execute(text(create_str))
+            connection.execute(text("USE flask_db;"))
+        else:
+            db.drop_all()
+        db.create_all()
+        db.session.commit()
+    except Exception as e:
+        return f"ERROR! {e}"
+    finally:
+        # Close the database connection
+        if connection:
+            connection.close()
+    return "SUCCESS! DB CREATED"
 
 @main.route("/fake")
 def fake_route():
     fake_roles()
-    fake_users(173)
+    fake_users(73)
     return "Fake done."
 
 @main.route("/show")
@@ -129,26 +153,6 @@ def admin_tool_route():
     users = pagination.items
     fields = ["id", "email", "role", "is_confirmed", "is_active"]
     return render_template("admin_tool.html", fields=fields, users=users, pagination=pagination)
-
-@main.route("/test_db")
-def test_db_route():
-    db_server = current_app.config.get("DB_SERVER", "-")
-    db_database = current_app.config.get("DB_DATABASE", "-")
-    db_username = current_app.config.get("DB_USERNAME", "-")
-    db_password = current_app.config.get("DB_PASSWORD", "-")
-    db_port = current_app.config.get("DB_PORT", "-")
-    driver = '{ODBC Driver 17 for SQL Server}'
-
-    conn_str = f"DRIVER={driver};SERVER={db_server};DATABASE={db_database},{db_port};UID={db_username};PWD={db_password}"
-    s = db_server
-    try:
-        conn = pyodbc.connect(conn_str)
-        s = s + ", Connection successful!"
-        conn.close()
-    except Exception as e:
-        s = s + f", Error: {e}"
-    return s
-
 
 @main.route("/")
 def front():

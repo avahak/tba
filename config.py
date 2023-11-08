@@ -27,10 +27,6 @@ class Config:
     LOG_FILE_NAME = os.path.abspath("logs/tba.log")
     EMAIL_SERVICE_PROVIDER = esp
     
-# TODO REMOVE, BUG FIXING
-for name in ["DB_SERVER", "DB_DATABASE", "DB_USERNAME", "DB_PASSWORD", "DB_PORT"]:
-    setattr(Config, name, load.get(name, ""))
-
 for name in ["SERVER", "PORT", "USE_TLS", "SENDER", "USERNAME", "PASSWORD"]:
     setattr(Config, f"MAIL_{name}", load.get(f"{esp}_MAIL_{name}", ""))
 Config.MAIL_PORT = int(Config.MAIL_PORT or "0")
@@ -38,8 +34,11 @@ Config.MAIL_USE_TLS = Config.MAIL_USE_TLS if isinstance(Config.MAIL_USE_TLS, boo
     (Config.MAIL_USE_TLS.lower() == "true")
 Config.MAIL_USE_SSL = not Config.MAIL_USE_TLS
 
+db_url = load.get("DATABASE_URL", "")
+db_name = load.get("DATABASE_NAME", "")
+
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = load.get("DATABASE_URL", "") or ("sqlite:///" + os.path.join(basedir, 'data-dev.sqlite'))
+    SQLALCHEMY_DATABASE_URI = db_url+"/"+db_name if db_url else ("sqlite:///" + os.path.join(basedir, f"{db_name}-dev.sqlite"))
     CONFIG_SETTING = "development"
 
 class TestingConfig(Config):
@@ -47,7 +46,7 @@ class TestingConfig(Config):
     CONFIG_SETTING = "testing"
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = load.get("DATABASE_URL", "") or ("sqlite://" + os.path.join(basedir, 'data-dev.sqlite'))
+    SQLALCHEMY_DATABASE_URI = db_url+"/"+db_name if db_url else ("sqlite://" + os.path.join(basedir, f"{db_name}.sqlite"))
     CONFIG_SETTING = "production"
     
 def getConfig(config_name):

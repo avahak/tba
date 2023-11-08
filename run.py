@@ -2,7 +2,7 @@
 # https://stackoverflow.com/questions/50157243/error-gunicorn-failed-to-find-application-object-app-in-app
 # gunicorn --bind=0.0.0.0 --timeout 600 run:app
 from app import create_app, db
-from app.models import User, Role
+# from app.models import User, Role
 
 app = create_app()
 
