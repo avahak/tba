@@ -1,0 +1,49 @@
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh; /* Ensure the body covers the full viewport height */
+    display: flex;
+    flex-direction: column;
+    background:#335;
+}
+
+.custom-footer {
+    background-color: #555; /* Background color of the footer */
+    color: #fff; /* Text color */
+    padding: 10px; /* Adjust as needed */
+    text-align: center;
+    position: sticky;
+    margin-top: auto; /* Push the footer to the bottom. */
+}
+
+/* Apply dark mode styles to the pagination */
+.dark-pagination {
+    background-color: #333; /* Background color for the pagination */
+    color: #fff; /* Text color for the pagination links */
+}
+
+/* Dark mode styles for the page links */
+.dark-pagination .page-link {
+    background-color: #555; /* Background color for page links */
+    border-color: #555; /* Border color for page links */
+    color: #fff; /* Text color for page links */
+}
+
+/* Dark mode styles for the active page link */
+.dark-pagination .page-item.active .page-link {
+    background-color: #007bff; /* Background color for the active page link */
+    border-color: #007bff; /* Border color for the active page link */
+    color: #fff; /* Text color for the active page link */
+}
+
+/* Dark mode styles for the previous and next buttons */
+.dark-pagination .page-item:first-child .page-link,
+.dark-pagination .page-item:last-child .page-link {
+    background-color: #555; /* Background color for previous and next buttons */
+    border-color: #555; /* Border color for previous and next buttons */
+    color: #fff; /* Text color for previous and next buttons */
+}
+
+.dark-pagination li {
+    margin: 1px; /* Adjust the margin as needed for spacing between items */
+}

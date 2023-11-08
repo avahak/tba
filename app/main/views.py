@@ -3,10 +3,9 @@ import numpy as np
 from flask import *
 from . import main
 from .. import email, logger
-
-@main.app_errorhandler(404)
-def error_404(e):
-    return "Put custom error page here with render_template", 404 # add status code like this if other than 200 (default)
+from ..models import *
+from ..fake_data import *
+from sqlalchemy.exc import IntegrityError
 
 @main.route('/400')
 def not_found_route():
@@ -53,10 +52,10 @@ def email_route():
     subject = "Test subject"
     body = "<h1>Email body goes here.</h1>"
     # return f"to: {to}, subject: {subject}, body: {body}"
-    server = current_app.config.get('MAIL_SERVER', "")
-    port = current_app.config.get('MAIL_PORT', "")
-    username = current_app.config.get('MAIL_USERNAME', "")
-    use_tls = current_app.config.get('MAIL_USE_TLS', "")
+    # server = current_app.config.get('MAIL_SERVER', "")
+    # port = current_app.config.get('MAIL_PORT', "")
+    # username = current_app.config.get('MAIL_USERNAME', "")
+    # use_tls = current_app.config.get('MAIL_USE_TLS', "")
     return email.send_mail(to, subject, body)
 
 @main.route('/config')
@@ -88,6 +87,43 @@ def julia_route():
 def mandelbrot_route():
     return send_from_directory(current_app.root_path + "/static/html", "mandelbrot.html")
 
+@main.route("/reset")
+def reset_route():
+    db.drop_all()
+    db.create_all()
+    return "Reset done."
+
+@main.route("/fake")
+def fake_route():
+    fake_roles()
+    fake_users(173)
+    return "Fake done."
+
+@main.route("/show")
+def show_route():
+    users = User.query.all()
+    roles = Role.query.all()
+    user_count = len(users)
+    return render_template("auth/show.html", user_count=user_count, users=users, roles=roles)
+
+@main.route('/admin_tool/', methods=["GET", "POST"])
+def admin_tool_route():
+    page = request.args.get("page", 1, type=int)
+    if request.method == "POST":
+        delete_user_id = request.form.get("hidden-user-id")
+        user_to_delete = User.query.get(delete_user_id)
+        db.session.delete(user_to_delete)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+        return redirect(url_for('main.admin_tool_route', page=page))
+    page = request.args.get("page", 1, type=int)
+    pagination = User.query.order_by(User.role_id.asc()).paginate(page=page, per_page=10, error_out=False)
+    users = pagination.items
+    fields = ["id", "email", "role", "is_confirmed", "is_active"]
+    return render_template("admin_tool.html", fields=fields, users=users, pagination=pagination)
+
 @main.route("/")
-def test():
+def front():
     return render_template("test.html")

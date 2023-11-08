@@ -36,9 +36,16 @@
                 <div class="col col-sm-4">
                     <h1>Database</h1>
                     <ul>
-                        <li><a href="{{ url_for('auth.reset_route') }}">Reset (drop all, create all)</a></li>
-                        <li><a href="{{ url_for('auth.fake_route') }}">Fake data</a></li>
-                        <li><a href="{{ url_for('auth.show_route') }}">Show data</a></li>
+                        <li><a href="{{ url_for('main.reset_route') }}">Reset (drop all, create all)</a></li>
+                        <li><a href="{{ url_for('main.fake_route') }}">Fake data</a></li>
+                        <li><a href="{{ url_for('main.show_route') }}">Show data</a></li>
+                    </ul>
+                </div>
+                <div class="col col-sm-4">
+                    <h1>Users</h1>
+                    <ul>
+                        <li><a href="{{ url_for('auth.login_route') }}">Login</a></li>
+                        <li><a href="{{ url_for('main.admin_tool_route') }}">Admin tool</a></li>
                     </ul>
                 </div>
             </div>

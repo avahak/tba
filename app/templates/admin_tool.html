@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Admin Tool{% endblock %}
+{% block body_attr %}{% endblock %}
+
+{% block content %}
+
+<div class="container bg-dark text-light pt-2">
+<div class="">
+<table id="user-table" class="table table-dark table-bordered">
+    <thead>
+        <tr>
+            {% for field in fields %}
+            <th id="table-header-{{ field }}" class="bg-secondary">{{ field }}</th>
+            {% endfor %}
+            <th class="bg-secondary"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            {% for field in fields %}
+            <td>
+                {% if field == 'role' %}
+                    {{ user.role.name }}
+                {% else %}
+                    {{ user[field] }}
+                {% endif %}
+            </td>
+            {% endfor %}
+            <td>
+                <button class="btn btn-sm btn-primary {% if user.role.name == 'Admin' %}disabled{% endif %}" 
+                onclick="deleteButton({{ user.id }})">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<form id="admin-form" method="POST">
+    <!-- Form to delete users -->
+    <input type="hidden" name="hidden-user-id" id="hidden-user-id" value="">
+</form>
+{{ macros.pagination_widget(pagination, "main.admin_tool_route") }}
+
+</div>
+</div>
+
+<script>
+function deleteButton(user_id) {
+    form = document.getElementById("admin-form");
+    input = document.getElementById("hidden-user-id");
+    input.value = user_id;
+    form.submit();
+}
+</script>
+
+{% endblock %}

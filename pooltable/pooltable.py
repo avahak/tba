@@ -520,7 +520,7 @@ def casing_circuit(data, bulge_radius, bulge_length, height):
     The radius is extended by bulge_radius and edge lengths by 2*budge_length.
     """
     r = data["specs"]["TABLE_CASING_EDGE_RADIUS"] + bulge_radius
-    x = data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_EDGE_RADIUS"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
+    x = data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_EDGE_RADIUS"] #- data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     arc3 = []
     center = np.array((bulge_length+data["specs"]["TABLE_LENGTH"]/2+x,
             bulge_length+data["specs"]["TABLE_LENGTH"]/4+x, height))
