@@ -100,17 +100,19 @@ def mandelbrot_route():
 
 @main.route("/recreate_database")
 def recreate_database_route():
+    """Drops the database and creates it again. Then creates the tables.
+    WARNING! Destroys all data in the database.
+    """
     url = current_app.config.get("DATABASE_URL", "")
-    drop_str = "DROP DATABASE IF EXISTS flask_db;"
-    create_str = "CREATE DATABASE IF NOT EXISTS flask_db;"
+    name = current_app.config.get("DATABASE_NAME", "")
     connection = None
     try:
         if url:
             engine = create_engine(url)
             connection = engine.connect()
-            connection.execute(text(drop_str))
-            connection.execute(text(create_str))
-            connection.execute(text("USE flask_db;"))
+            connection.execute(text(f"DROP DATABASE IF EXISTS {name};"))
+            connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {name};"))
+            connection.execute(text(f"USE {name};"))
         else:
             db.drop_all()
         db.create_all()
@@ -118,7 +120,6 @@ def recreate_database_route():
     except Exception as e:
         return f"ERROR! {e}"
     finally:
-        # Close the database connection
         if connection:
             connection.close()
     return "SUCCESS! DB CREATED"
