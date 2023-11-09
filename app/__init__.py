@@ -4,14 +4,26 @@ from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
+from sqlalchemy.pool import NullPool
 import config
 
 mail = Mail()
 bootstrap = Bootstrap5()
 # db = SQLAlchemy()
 db = SQLAlchemy(
-    engine_options={ 'connect_args': { 'connect_timeout': 5 }}
+    engine_options={
+        "pool_pre_ping": True,    # Detect and remove stale connections
+        "pool_recycle": 3600,     # Recycle connections every hour
+        "pool_timeout": 5,        # Maximum time to wait for a connection
+        "pool_size": 10,          # Set the pool size to 10
+        "max_overflow": 20        # Allow up to 20 additional connections
+    }
 )
+# db = SQLAlchemy(
+#     engine_options={
+#         "poolclass": NullPool,
+#     }
+# )
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login_route"

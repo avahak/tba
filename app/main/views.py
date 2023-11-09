@@ -14,7 +14,7 @@ def inject_context():
     active_page = request.path.strip('/')
 
     # NOTE! Just for DEBUGGING, remove after!
-    pool_status = db.engine.pool.status()       
+    pool_status = db.engine.pool.status()
 
     return { "active_page": active_page, "current_user": current_user, "pool_status": pool_status }
 
