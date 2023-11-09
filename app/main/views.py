@@ -18,7 +18,7 @@ def not_found():
     abort(400)
 
 @main.route('/exception')
-def exception(name: str):
+def exception():
     if (np.random.rand() < 0.5):
         1 / 0
     else:
@@ -146,6 +146,7 @@ def show():
 def test():
     sys.stderr.write(f"Testing sys.stderr.write {np.random.randn()}.")
     sys.stderr.flush()
+    print(f"Testing print {np.random.randn()}.")
     return "Test complete."
 
 @main.route("/")
