@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+
+{% block styles %}
+    <!-- Bootstrap CSS -->
+    {{ bootstrap.load_css() }}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/site.css') }}">
+{% endblock %}
+
+{% block body %}
+    {% block content %}{% endblock %}
+
+    <footer class="custom-footer" id="custom-footer" style="position:relative;">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-sm-6 text-center text-sm-left">
+                    <p class="m-0">&copy; 2023 Aleksi V</p>
+                </div>
+                <div class="col-12 col-sm-6 text-center text-sm-right">
+                    <a href="{{ url_for('main.front') }}">Frontpage</a>
+                    <span class="separator">|</span>
+                    <a class="link-primary" href="./contact.php">Contact Us</a>
+                    <span class="separator">|</span>
+                    <a class="link-primary" href="./privacy.php">Privacy Statement</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}
+        {{ bootstrap.load_js() }}
+    {% endblock %}
+{% endblock %}

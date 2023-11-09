@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+        <!-- Required meta tags -->
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        {% block styles %}{% endblock %}
+
+        <title>{% block title %}Title Placeholder{% endblock %}</title>
+    {% endblock %}
+</head>
+
+<body {% block body_attr %}{% endblock %}>
+    {% block body %}
+        {% block content %}{% endblock %}
+
+        {% block scripts %}{% endblock %}
+    {% endblock %}
+</body>
+</html>
