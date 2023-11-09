@@ -18,7 +18,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255))
     is_confirmed = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), index=True)
 
     @property
     def password(self):
