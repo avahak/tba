@@ -5,11 +5,11 @@ from ..models import User
 from sqlalchemy.exc import IntegrityError
 
 @userbase.route('/login', methods=['GET', 'POST'])
-def login_route():
+def login():
     return "TODO IMPLEMENT"
 
 @userbase.route('/admin_tool/', methods=["GET", "POST"])
-def admin_tool_route():
+def admin_tool():
     page = request.args.get("page", 1, type=int)
     if request.method == "POST":
         delete_user_id = request.form.get("hidden-user-id")

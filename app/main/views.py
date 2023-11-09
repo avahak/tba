@@ -14,46 +14,46 @@ def inject_context():
     return { "active_page": active_page, "current_user": current_user }
 
 @main.route('/400')
-def not_found_route():
+def not_found():
     abort(400)
 
 @main.route('/exception')
-def exception_route(name: str):
+def exception(name: str):
     if (np.random.rand() < 0.5):
         1 / 0
     else:
         '2' + 2
 
 @main.route('/api/data')
-def get_data_route():
+def get_data():
     return send_from_directory(current_app.root_path + "/../", "package.json")
 
 @main.route('/hello/')
 @main.route('/hello/<name>')
-def hello_route(name=None):
+def hello(name=None):
     return render_template("hello.html", name=name)
 
 @main.route('/ultra/')
 @main.route('/ultra/<name>')
-def ultra_route(name=None):
+def ultra(name=None):
     return render_template("ultra_hello.html", name=name)
 
 @main.route('/node_modules/<path:filename>')
-def serve_node_modules_route(filename):
+def serve_node_modules(filename):
     """Used by javascript imports.
     """
     return send_from_directory(current_app.root_path + "/../node_modules", filename)
 
 @main.route('/widget')
-def widget_route():
+def widget():
     return render_template("widget.html")
 
 @main.route('/box')
-def box_route():
+def box():
     return render_template("box.html")
 
 @main.route('/email')
-def email_route():
+def email():
     to = current_app.config.get("MAIL_SENDER")
     subject = "Test subject"
     body = "<h1>Email body goes here.</h1>"
@@ -65,7 +65,7 @@ def email_route():
     return email.send_mail(to, subject, body)
 
 @main.route('/config')
-def config_route():
+def config():
     s = f"LOG_FILE_NAME: {current_app.config.get('LOG_FILE_NAME')}<br>"
     s += f"SITE: {current_app.config.get('SITE')}<br>"
     s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
@@ -76,35 +76,35 @@ def config_route():
     return f"<h1>{s}</h1>"
 
 @main.route('/logs')
-def logs_route():
+def logs():
     with open(current_app.config.get("LOG_FILE_NAME"), 'r') as f:
         s = "<br>".join(f.readlines())
     return f"{s}"
 
 @main.route('/design')
-def design_route():
+def design():
     return render_template("design.html")
 
 @main.route('/julia')
-def julia_route():
+def julia():
     return send_from_directory(current_app.root_path + "/static/html", "julia.html")
 
 @main.route('/mandelbrot')
-def mandelbrot_route():
+def mandelbrot():
     return send_from_directory(current_app.root_path + "/static/html", "mandelbrot.html")
 
 # @main.route("/drop_all")
-# def drop_all_route():
+# def drop_all():
 #     db.drop_all()
 #     return "Drop all done."
 
 # @main.route("/create_all")
-# def create_all_route():
+# def create_all():
 #     db.create_all()
 #     return "Create all done."
 
 @main.route("/recreate_database")
-def recreate_database_route():
+def recreate_database():
     """Drops the database and creates it again. Then creates the tables.
     WARNING! Destroys all data in the database.
     """
@@ -130,13 +130,13 @@ def recreate_database_route():
     return "Success! Database recreated."
 
 @main.route("/fake")
-def fake_route():
+def fake():
     fake_roles()
     fake_users(73)
     return "Fake done."
 
 @main.route("/show")
-def show_route():
+def show():
     users = User.query.all()
     roles = Role.query.all()
     user_count = len(users)

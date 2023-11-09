@@ -23,9 +23,9 @@
         <ul class="navbar-nav order-3 order-md-5">
             <li class="nav-item">
                 {% if current_user %}
-                    <a href="{{ url_for('main.front_route') }}" class="nav-link">Log out</a>
+                    <a href="{{ url_for('main.front') }}" class="nav-link">Log out</a>
                 {% else %}
-                    <a href="{{ url_for('userbase.login_route') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
+                    <a href="{{ url_for('userbase.login') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
                 {% endif %}
             </li>
             <li class="nav-item">
