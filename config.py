@@ -75,9 +75,11 @@ class JSONLogFormatter(logging.Formatter):
             log_data['exception_message'] = str(exception_message)
             log_data['traceback'] = traceback.format_list(traceback.extract_tb(tb))
         json_log_entry = json.dumps(log_data)
+
         # sys.stderr.write(json_log_entry)
         # sys.stderr.flush()
-        print(json_log_entry, flush=True)
+        print(json_log_entry, flush=True)   # print outputs to log stream on Azure
+
         return json_log_entry
 
 def get_logger(name: str) -> logging.Logger:

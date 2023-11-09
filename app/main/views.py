@@ -66,14 +66,23 @@ def email():
 
 @main.route('/config')
 def config():
-    s = f"LOG_FILE_NAME: {current_app.config.get('LOG_FILE_NAME')}<br>"
+    s = "<h1>"
+    s += f"LOG_FILE_NAME: {current_app.config.get('LOG_FILE_NAME')}<br>"
     s += f"SITE: {current_app.config.get('SITE')}<br>"
     s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
     s += f"MAIL_SENDER: {current_app.config.get('MAIL_SENDER')}<br>"
     s += f"MAIL_USE_TLS: {current_app.config.get('MAIL_USE_TLS')}<br>"
     # s += f"SQLALCHEMY_DATABASE_URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}<br>"
     s += f"Python version: {sys.version}.<br>"
-    return f"<h1>{s}</h1>"
+    s += "<br>URL MAP:<br></h1><h4>"
+    for rule in current_app.url_map.iter_rules():
+        s += f"Rule: {rule.rule}<br>"
+        s += f"Endpoint: {rule.endpoint}<br>"
+        s += f"Methods: {', '.join(rule.methods)}<br>"
+        s += f"Defaults: {rule.defaults}<br>"
+        s += f"Arguments: {rule.arguments}<br>"
+        s += "<br>"
+    return f"{s}<h4>"
 
 @main.route('/logs')
 def logs():
@@ -140,7 +149,7 @@ def show():
     users = User.query.all()
     roles = Role.query.all()
     user_count = len(users)
-    return render_template("userbase/show.html", user_count=user_count, users=users, roles=roles)
+    return render_template("userkit/show.html", user_count=user_count, users=users, roles=roles)
 
 @main.route("/test")
 def test():

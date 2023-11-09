@@ -10,7 +10,7 @@
 {% block body %}
     {% block top_menu %}
     
-    {# Use @userbase.app_context_processor for the variables here #}
+    {# Use @userkit.app_context_processor for the variables here #}
 
     <nav id="top-menu" class="navbar navbar-expand-md navbar-dark p-0">
     <div class="container d-flex px-3 py-1" style="overflow:hidden">
@@ -25,7 +25,7 @@
                 {% if current_user %}
                     <a href="{{ url_for('main.front') }}" class="nav-link">Log out</a>
                 {% else %}
-                    <a href="{{ url_for('userbase.login') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
+                    <a href="{{ url_for('userkit.login') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
                 {% endif %}
             </li>
             <li class="nav-item">
@@ -57,7 +57,7 @@
                 {% endif %}
                 {% if current_user and (current_user_role == 'ADMIN') %}
                     <li class="nav-item">
-                        <a href="{{ url_for('userbase.admin_user_management') }}" class="nav-link">Users</a>
+                        <a href="{{ url_for('userkit.admin_user_management') }}" class="nav-link">Users</a>
                     </li>
                 {% endif %}
             </ul>
@@ -76,8 +76,6 @@
                     <p class="m-0">&copy; 2023 Aleksi V</p>
                 </div>
                 <div class="col-12 col-sm-6 text-center text-sm-right">
-                    <a href="{{ url_for('main.front') }}">Frontpage</a>
-                    <span class="separator">|</span>
                     <a class="link-primary" href="./contact.php">Contact Us</a>
                     <span class="separator">|</span>
                     <a class="link-primary" href="./privacy.php">Privacy Statement</a>

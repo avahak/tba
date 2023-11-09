@@ -13,7 +13,7 @@
             {% for field in fields %}
             <th id="table-header-{{ field }}" class="bg-secondary">{{ field }}</th>
             {% endfor %}
-            <th class="bg-secondary"></th>
+            <th class="bg-secondary">Delete</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +23,8 @@
             <td>
                 {% if field == 'role' %}
                     {{ user.role.name }}
+                {% elif field == 'is_active' %}
+                    <input type="checkbox" {% if user.role.name == 'Admin' %}disabled{% endif %} {{ 'checked' if user[field] }} onchange="toggleIsActive('{{ user.id }}')">
                 {% else %}
                     {{ user[field] }}
                 {% endif %}
@@ -38,19 +40,27 @@
 </table>
 
 <form id="admin-form" method="POST">
-    <!-- Form to delete users -->
+    <!-- Form to modify users -->
     <input type="hidden" name="hidden-user-id" id="hidden-user-id" value="">
 </form>
-{{ macros.pagination_widget(pagination, "userbase.admin_tool") }}
+{{ macros.pagination_widget(pagination, "userkit.admin_tool") }}
 
 </div>
 </div>
 
 <script>
+function toggleIsActive(user_id) {
+    form = document.getElementById("admin-form");
+    input = document.getElementById("hidden-user-id");
+    actionData = { action: "toggleIsActive", user_id: user_id };
+    input.value = JSON.stringify(actionData);
+    form.submit();
+}
 function deleteButton(user_id) {
     form = document.getElementById("admin-form");
     input = document.getElementById("hidden-user-id");
-    input.value = user_id;
+    actionData = { action: "deleteUser", user_id: user_id };
+    input.value = JSON.stringify(actionData);
     form.submit();
 }
 </script>

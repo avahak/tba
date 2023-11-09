@@ -27,8 +27,8 @@ body {
     color: #fff; /* Text color */
     padding: 10px; /* Adjust as needed */
     text-align: center;
-    position: sticky;
-    margin-top: auto; /* Push the footer to the bottom. */
+    /* position: sticky; */
+    /* margin-top: auto; */
 }
 
 /* Apply dark mode styles to the pagination */

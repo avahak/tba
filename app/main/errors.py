@@ -3,5 +3,9 @@ from . import main
 from .. import logger
 
 @main.app_errorhandler(404)
-def error_404(e):
-    return f"Put custom error page here with render_template<br>{e}", 404 # add status code like this if other than 200 (default)
+def error_404(error):
+    return render_template("errors/404.html", error=error), 404
+
+# @main.app_errorhandler(500)
+# def error_500(error):
+#     return render_template("errors/500.html", error=error), 500
