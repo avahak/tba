@@ -5,9 +5,11 @@
 
 {% block content %}
 
-<div class="container bg-dark text-light pt-2">
-<div class="">
-<table id="user-table" class="table table-dark table-bordered">
+
+<div class="m-4 col-12 col-lg-8">
+<div class="bg-dark text-light p-2 m-2" style="overflow:auto;">
+{{ macros.pagination_widget(pagination, "userkit.admin_tool") }}
+<table id="user-table" class="table table-dark table-bordered table-striped">
     <thead>
         <tr>
             {% for field in fields %}
@@ -43,7 +45,6 @@
     <!-- Form to modify users -->
     <input type="hidden" name="hidden-user-id" id="hidden-user-id" value="">
 </form>
-{{ macros.pagination_widget(pagination, "userkit.admin_tool") }}
 
 </div>
 </div>

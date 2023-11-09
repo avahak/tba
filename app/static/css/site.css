@@ -22,6 +22,12 @@ body {
     background:#335;
 }
 
+#base-template-content {
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+}
+
 .custom-footer {
     background-color: #555; /* Background color of the footer */
     color: #fff; /* Text color */
