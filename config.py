@@ -29,6 +29,7 @@ class Config:
 
     SQLALCHEMY_POOL_SIZE = 20       # default 5
     SQLALCHEMY_MAX_OVERFLOW = 10    # default 10
+    SQLALCHEMY_POOL_RECYCLE = 30
     
 for name in ["SERVER", "PORT", "USE_TLS", "SENDER", "USERNAME", "PASSWORD"]:
     setattr(Config, f"MAIL_{name}", load.get(f"{esp}_MAIL_{name}", ""))
