@@ -34,6 +34,6 @@ def admin_tool():
     s = render_template("userkit/admin_tool.html", fields=fields, users=users, pagination=pagination)
 
     # NOTE! EXPERIMENTAL trying to fix Azure hangup.
-    db.session.close()
+    # db.session.close()
 
     return s
