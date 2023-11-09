@@ -32,5 +32,8 @@ def admin_tool():
     users = pagination.items
     fields = ["id", "email", "role", "is_confirmed", "is_active"]
     s = render_template("userkit/admin_tool.html", fields=fields, users=users, pagination=pagination)
-    db.session.close()      # NOTE! EXPERIMENTAL trying to fix Azure hangup.
+
+    # NOTE! EXPERIMENTAL trying to fix Azure hangup.
+    db.session.close()
+
     return s

@@ -12,7 +12,11 @@ from sqlalchemy import create_engine, text
 def inject_context():
     current_user = ""   # 'user_id' in session?
     active_page = request.path.strip('/')
-    return { "active_page": active_page, "current_user": current_user }
+
+    # NOTE! Just for DEBUGGING, remove after!
+    pool_status = db.engine.pool.status()       
+
+    return { "active_page": active_page, "current_user": current_user, "pool_status": pool_status }
 
 @main.route('/400')
 def not_found():
