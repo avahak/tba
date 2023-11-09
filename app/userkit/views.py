@@ -3,6 +3,7 @@ from . import userkit
 from .. import db
 from ..models import User
 from sqlalchemy.exc import IntegrityError
+from ..decorators import *
 
 @userkit.route('/login', methods=['GET', 'POST'])
 def login():

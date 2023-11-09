@@ -4,6 +4,7 @@ from flask import *
 from . import main
 from .. import email, logger
 from ..models import *
+from ..decorators import *
 from ..fake_data import *
 from sqlalchemy import create_engine, text
 

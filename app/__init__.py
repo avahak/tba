@@ -8,7 +8,10 @@ import config
 
 mail = Mail()
 bootstrap = Bootstrap5()
-db = SQLAlchemy()
+# db = SQLAlchemy()
+db = SQLAlchemy(
+    engine_options={ 'connect_args': { 'connect_timeout': 5 }}
+)
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login_route"
