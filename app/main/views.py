@@ -142,6 +142,12 @@ def show():
     user_count = len(users)
     return render_template("userbase/show.html", user_count=user_count, users=users, roles=roles)
 
+@main.route("/test")
+def test():
+    sys.stderr.write(f"Testing sys.stderr.write {np.random.randn()}.")
+    sys.stderr.flush()
+    return "Test complete."
+
 @main.route("/")
 def front():
-    return render_template("test.html")
+    return render_template("front.html")
