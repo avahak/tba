@@ -5,8 +5,13 @@ from . import main
 from .. import email, logger
 from ..models import *
 from ..fake_data import *
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine, text
+
+@main.app_context_processor
+def inject_context():
+    current_user = ""   # 'user_id' in session?
+    active_page = request.path.strip('/')
+    return { "active_page": active_page, "current_user": current_user }
 
 @main.route('/400')
 def not_found_route():
@@ -118,11 +123,11 @@ def recreate_database_route():
         db.create_all()
         db.session.commit()
     except Exception as e:
-        return f"ERROR! {e}"
+        return f"Error! {e}"
     finally:
         if connection:
             connection.close()
-    return "SUCCESS! DB CREATED"
+    return "Success! Database recreated."
 
 @main.route("/fake")
 def fake_route():
@@ -135,25 +140,7 @@ def show_route():
     users = User.query.all()
     roles = Role.query.all()
     user_count = len(users)
-    return render_template("auth/show.html", user_count=user_count, users=users, roles=roles)
-
-@main.route('/admin_tool/', methods=["GET", "POST"])
-def admin_tool_route():
-    page = request.args.get("page", 1, type=int)
-    if request.method == "POST":
-        delete_user_id = request.form.get("hidden-user-id")
-        user_to_delete = User.query.get(delete_user_id)
-        db.session.delete(user_to_delete)
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-        return redirect(url_for('main.admin_tool_route', page=page))
-    page = request.args.get("page", 1, type=int)
-    pagination = User.query.order_by(User.role_id.asc()).paginate(page=page, per_page=10, error_out=False)
-    users = pagination.items
-    fields = ["id", "email", "role", "is_confirmed", "is_active"]
-    return render_template("admin_tool.html", fields=fields, users=users, pagination=pagination)
+    return render_template("userbase/show.html", user_count=user_count, users=users, roles=roles)
 
 @main.route("/")
 def front():

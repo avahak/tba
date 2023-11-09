@@ -1,14 +1,74 @@
 {% extends "base/base.html" %}
 
 {% block styles %}
-    <!-- Bootstrap CSS -->
+    {# Bootstrap CSS #}
     {{ bootstrap.load_css() }}
+    {# <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.10.2/css/all.css"> #}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/site.css') }}">
 {% endblock %}
 
 {% block body %}
+    {% block top_menu %}
+    
+    {# Use @userbase.app_context_processor for the variables here #}
+
+    <nav id="top-menu" class="navbar navbar-expand-md navbar-dark p-0">
+    <div class="container d-flex px-3 py-1" style="overflow:hidden">
+        <button class="navbar-toggler order-1" data-bs-toggle="collapse" data-bs-target="#nav">
+            <div class="navbar-toggler-icon"></div>
+        </button>
+        <a href="{{ url_for('main.front') }}" class="navbar-brand order-2" style="height:0">
+            <img src="{{ url_for('static', filename='images/tba.png') }}" style="width:120px;margin-top:-30px;" alt="TBA">
+        </a>
+        <ul class="navbar-nav order-3 order-md-5">
+            <li class="nav-item">
+                {% if current_user %}
+                    <a href="{{ url_for('main.front_route') }}" class="nav-link">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('userbase.login_route') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
+                {% endif %}
+            </li>
+            <li class="nav-item">
+                {% if current_user %}
+                    <a href="{{ url_for('main.front') }}" class="nav-link {{ 'active' if active_page == 'profile' }}">Profile</a>
+                {% else %}
+                    <a href="{{ url_for('main.front') }}" class="nav-link {{ 'active' if active_page == 'signup' }}">Sign up</a>
+                {% endif %}
+            </li>
+        </ul>
+        <div class="collapse navbar-collapse order-4" id="nav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a href="{{ url_for('main.front') }}" class="nav-link{{ ' active' if active_page == 'design' }}">Design</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('main.front') }}" class="nav-link{{ ' active' if active_page == 'shots' }}">Shots</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('main.front') }}" class="nav-link{{ ' active' if active_page == 'contact' }}">Contact</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('main.front') }}" class="nav-link{{ ' active' if active_page == 'insights' }}">Insights</a>
+                </li>
+                {% if current_user %}
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Confidential</a>
+                    </li>
+                {% endif %}
+                {% if current_user and (current_user_role == 'ADMIN') %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('userbase.admin_user_management') }}" class="nav-link">Users</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    </nav>
+    {% endblock %}
+
     {% block content %}{% endblock %}
 
+    {% block footer %}
     <footer class="custom-footer" id="custom-footer" style="position:relative;">
         <div class="container">
             <div class="row">
@@ -25,6 +85,7 @@
             </div>
         </div>
     </footer>
+    {% endblock %}
 
     {% block scripts %}
         {{ bootstrap.load_js() }}

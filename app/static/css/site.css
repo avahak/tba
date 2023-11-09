@@ -1,3 +1,18 @@
+#top-menu {
+    background-color: #424;
+    color: #fff;
+    border-bottom: 2px solid #555;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.form-control {
+    border-radius: 5px;
+    border-color: #333; /* Add a border to input fields for better visibility */
+}
+
 body {
     margin: 0;
     padding: 0;

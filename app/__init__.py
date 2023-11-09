@@ -11,7 +11,7 @@ bootstrap = Bootstrap5()
 db = SQLAlchemy()
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
-login_manager.login_view = "auth.login_route"
+login_manager.login_view = "userbase.login_route"
 
 def create_app():
     config_name = os.environ.get("FLASK_ENV", "default")
@@ -29,7 +29,7 @@ def create_app():
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    from .auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint, ur_prefix="/auth")
+    from .userbase import userbase as userbase_blueprint
+    app.register_blueprint(userbase_blueprint, url_prefix="/userbase")
 
     return app
