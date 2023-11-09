@@ -22,6 +22,8 @@ def fake_roles():
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
+        finally:
+            db.session.close()
 
 def _add_user(user):
     db.session.add(user)
@@ -30,6 +32,8 @@ def _add_user(user):
         return True
     except IntegrityError:
         db.session.rollback()
+    finally:
+        db.session.close()
     return False
 
 def fake_users(count=50):

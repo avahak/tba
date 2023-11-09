@@ -23,6 +23,8 @@ def admin_tool():
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
+        finally:
+            db.session.close()
         return redirect(url_for('userkit.admin_tool', page=page))
     page = request.args.get("page", 1, type=int)
     pagination = User.query.order_by(User.role_id.asc()).paginate(page=page, per_page=10, error_out=False)
