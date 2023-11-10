@@ -12,11 +12,13 @@ bootstrap = Bootstrap5()
 # db = SQLAlchemy()
 db = SQLAlchemy(
     engine_options={
-        "pool_pre_ping": True,    # Detect and remove stale connections
-        "pool_recycle": 3600,     # Recycle connections every hour
-        "pool_timeout": 5,        # Maximum time to wait for a connection
-        "pool_size": 10,          # Set the pool size to 10
-        "max_overflow": 20        # Allow up to 20 additional connections
+        "pool_pre_ping": True,          # Detect and remove stale connections
+        # "pool_pre_ping_timeout": 5,     # Sets timeout to pre ping
+        "pool_recycle": 3600,           # Recycle connections every hour
+        "pool_timeout": 5,              # Maximum time to wait for a connection
+        "pool_size": 10,                # Set the pool size to 10
+        "max_overflow": 20,             # Allow up to 20 additional connections
+        "pool_reset_on_return": True    # Resets connection when returned to pool
     }
 )
 # db = SQLAlchemy(

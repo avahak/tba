@@ -26,14 +26,14 @@
                 {% if field == 'role' %}
                     {{ user.role.name }}
                 {% elif field == 'is_active' %}
-                    <input type="checkbox" {% if user.role.name == 'Admin' %}disabled{% endif %} {{ 'checked' if user[field] }} onchange="toggleIsActive('{{ user.id }}')">
+                    <input type="checkbox" {{ 'disabled' if user.role.name == 'Admin' }} {{ 'checked' if user[field] }} onchange="toggleIsActive('{{ user.id }}')">
                 {% else %}
                     {{ user[field] }}
                 {% endif %}
             </td>
             {% endfor %}
             <td>
-                <button class="btn btn-sm btn-primary {% if user.role.name == 'Admin' %}disabled{% endif %}" 
+                <button class="btn btn-sm btn-primary {{ 'disabled' if user.role.name == 'Admin' }}" 
                 onclick="deleteButton({{ user.id }})">Delete</button>
             </td>
         </tr>
