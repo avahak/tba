@@ -102,6 +102,12 @@ def sqlalchemy_logs():
         s = "<br>".join(f.readlines())
     return f"{s}"
 
+@main.route('/sqlalchemy_engine_logs')
+def sqlalchemy_engine_logs():
+    with open('sqlalchemy_engine.log', 'r') as f:
+        s = "<br>".join(f.readlines())
+    return f"{s}"
+
 @main.route('/design')
 def design():
     return render_template("design.html")

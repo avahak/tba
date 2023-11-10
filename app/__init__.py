@@ -30,14 +30,24 @@ logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login_route"
 
-# setting up logging for sqlalchemy.engine:
-sqlalchemy_logger = logging.getLogger('sqlalchemy.engine')
+# setting up logging for sqlalchemy:
+sqlalchemy_logger = logging.getLogger('sqlalchemy')
 sqlalchemy_logger.setLevel(logging.DEBUG)
 log_file = 'sqlalchemy.log'
 handler = logging.FileHandler(log_file)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 sqlalchemy_logger.addHandler(handler)
+
+# setting up logging for sqlalchemy.engine:
+sqlalchemy_engine_logger = logging.getLogger('sqlalchemy.engine')
+sqlalchemy_engine_logger.setLevel(logging.DEBUG)
+log_file = 'sqlalchemy_engine.log'
+handler = logging.FileHandler(log_file)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+sqlalchemy_engine_logger.addHandler(handler)
+
 
 def create_app():
     config_name = os.environ.get("FLASK_ENV", "default")
