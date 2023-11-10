@@ -77,6 +77,7 @@ def config():
     s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
     s += f"MAIL_SENDER: {current_app.config.get('MAIL_SENDER')}<br>"
     s += f"MAIL_USE_TLS: {current_app.config.get('MAIL_USE_TLS')}<br>"
+    s += f"SQLALCHEMY_TRACK_MODIFICATIONS: {current_app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS')}<br>"
     # s += f"SQLALCHEMY_DATABASE_URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}<br>"
     s += f"Python version: {sys.version}.<br>"
     s += "<br>URL MAP:<br></h1><h4>"
@@ -92,6 +93,12 @@ def config():
 @main.route('/logs')
 def logs():
     with open(current_app.config.get("LOG_FILE_NAME"), 'r') as f:
+        s = "<br>".join(f.readlines())
+    return f"{s}"
+
+@main.route('/sqlalchemy_logs')
+def sqlalchemy_logs():
+    with open('sqlalchemy.log', 'r') as f:
         s = "<br>".join(f.readlines())
     return f"{s}"
 

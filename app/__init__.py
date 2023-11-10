@@ -1,4 +1,4 @@
-import os
+import os, logging
 from flask import Flask
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
@@ -14,7 +14,7 @@ db = SQLAlchemy(
     engine_options={
         "pool_pre_ping": True,          # Detect and remove stale connections
         # "pool_pre_ping_timeout": 5,     # Sets timeout to pre ping
-        "pool_recycle": 3600,           # Recycle connections every hour
+        "pool_recycle": 1800,           # Recycle connections every hour
         "pool_timeout": 5,              # Maximum time to wait for a connection
         "pool_size": 10,                # Set the pool size to 10
         "max_overflow": 20,             # Allow up to 20 additional connections
@@ -29,6 +29,15 @@ db = SQLAlchemy(
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login_route"
+
+# setting up logging for sqlalchemy.engine:
+sqlalchemy_logger = logging.getLogger('sqlalchemy.engine')
+sqlalchemy_logger.setLevel(logging.DEBUG)
+log_file = 'sqlalchemy.log'
+handler = logging.FileHandler(log_file)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+sqlalchemy_logger.addHandler(handler)
 
 def create_app():
     config_name = os.environ.get("FLASK_ENV", "default")
