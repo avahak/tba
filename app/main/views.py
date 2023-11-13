@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import datetime
 from flask import *
 from . import main
 from .. import email, logger
@@ -14,9 +15,14 @@ def inject_context():
     active_page = request.path.strip('/')
 
     # NOTE! Just for DEBUGGING, remove after!
-    pool_status = db.engine.pool.status()
+    # pool_status = db.engine.pool.status()
+    app_uptime = str(datetime.datetime.now() - current_app.config.get("APP_START_TIME"))
 
-    return { "active_page": active_page, "pool_status": pool_status }
+    return { 
+        # "pool_status": pool_status, 
+        "active_page": active_page, 
+        "app_uptime": app_uptime 
+    }
 
 @main.route('/400')
 def not_found():

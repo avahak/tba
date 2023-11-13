@@ -15,10 +15,10 @@ db = SQLAlchemy(
         # "poolclass": SingletonThreadPool,
         "pool_pre_ping": True,          # Detect and remove stale connections
         # "pool_pre_ping_timeout": 5,    # Sets timeout to pre ping
-        "pool_recycle": 180,           # Recycle connections interval
+        "pool_recycle": 120,           # maximum number of seconds a connection can persist
         "pool_timeout": 10,             # Maximum time to wait for a connection
-        "pool_size": 8,                 # Set the pool size
-        "max_overflow": 8,              # Allow additional connections
+        "pool_size": 5,                 # Set the pool size
+        "max_overflow": 5,              # Allow additional connections
         "pool_reset_on_return": True,    # Resets connection when returned to pool
         'connect_args': { 
             'connect_timeout': 5        # Set connection timeout

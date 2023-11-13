@@ -1,5 +1,6 @@
 import os, sys, json, logging, traceback
 from functools import partial
+import datetime
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -26,6 +27,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     LOG_FILE_NAME = os.path.abspath("logs/tba.log")
     EMAIL_SERVICE_PROVIDER = esp
+    APP_START_TIME = datetime.datetime.now()
 
 for name in ["SERVER", "PORT", "USE_TLS", "SENDER", "USERNAME", "PASSWORD"]:
     setattr(Config, f"MAIL_{name}", load.get(f"{esp}_MAIL_{name}", ""))
