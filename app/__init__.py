@@ -4,7 +4,7 @@ from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, SingletonThreadPool
 import config
 
 mail = Mail()
@@ -12,13 +12,17 @@ bootstrap = Bootstrap5()
 # db = SQLAlchemy()
 db = SQLAlchemy(
     engine_options={
+        # "poolclass": SingletonThreadPool,
         "pool_pre_ping": True,          # Detect and remove stale connections
-        # "pool_pre_ping_timeout": 5,     # Sets timeout to pre ping
+        # "pool_pre_ping_timeout": 5,    # Sets timeout to pre ping
         "pool_recycle": 1800,           # Recycle connections every hour
-        "pool_timeout": 5,              # Maximum time to wait for a connection
-        "pool_size": 10,                # Set the pool size to 10
-        "max_overflow": 20,             # Allow up to 20 additional connections
-        "pool_reset_on_return": True    # Resets connection when returned to pool
+        "pool_timeout": 10,             # Maximum time to wait for a connection
+        "pool_size": 8,                 # Set the pool size
+        "max_overflow": 8,              # Allow additional connections
+        "pool_reset_on_return": True,    # Resets connection when returned to pool
+        'connect_args': { 
+            'connect_timeout': 5        # Set connection timeout
+        }
     }
 )
 # db = SQLAlchemy(

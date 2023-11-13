@@ -12,6 +12,7 @@ def error_404(error):
 #     """Internal Server Error"""
 #     return render_template("errors/500.html", error=error), 500
 
+# NOTE! Maybe this cannot show up: 504 is issued by the proxy server, not gunicorn.
 @main.app_errorhandler(504)
 def error_504(error):
     """Gateway Timeout"""

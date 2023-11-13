@@ -7,7 +7,7 @@ from ..decorators import *
 
 @userkit.route('/login', methods=['GET', 'POST'])
 def login():
-    return "TODO IMPLEMENT"
+    return render_template("userkit/login.html")
 
 @userkit.route('/admin_tool/', methods=["GET", "POST"])
 def admin_tool():
