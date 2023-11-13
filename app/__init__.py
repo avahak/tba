@@ -13,9 +13,9 @@ bootstrap = Bootstrap5()
 db = SQLAlchemy(
     engine_options={
         # "poolclass": SingletonThreadPool,
-        "pool_pre_ping": True,          # Detect and remove stale connections
+        "pool_pre_ping": False,          # Detect and remove stale connections
         # "pool_pre_ping_timeout": 5,    # Sets timeout to pre ping
-        "pool_recycle": 1800,           # Recycle connections every hour
+        "pool_recycle": 180,           # Recycle connections every hour
         "pool_timeout": 10,             # Maximum time to wait for a connection
         "pool_size": 8,                 # Set the pool size
         "max_overflow": 8,              # Allow additional connections
