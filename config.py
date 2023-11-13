@@ -53,7 +53,7 @@ class Config:
     SITE = load.get("SITE", "")
     SECRET_KEY = load.get("SECRET_KEY", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    LOG_FILE_DIRECTORY = f"{load.get("LOG_FILE_DIRECTORY", "")}"
+    LOG_FILE_DIRECTORY = f"{load.get('LOG_FILE_DIRECTORY', '')}"
     EMAIL_SERVICE_PROVIDER = esp
     APP_START_TIME = datetime.datetime.now()
 
