@@ -1,8 +1,36 @@
 import os, sys, json, logging, traceback
 from functools import partial
 import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+def initialize_directories():
+    """Creates log directory if it does not exist yet.
+    """
+    if not os.path.exists(f"{load.get('LOG_FILE_DIRECTORY', '')}/"):
+        os.mkdir(f"{load.get('LOG_FILE_DIRECTORY', '')}/")
+
+def initialize_sqlalchemy_loggers(load):
+    """Sets up logging for sqlalchemy and sqlalchemy.engine.
+    """
+    # Setting up logging for sqlalchemy:
+    sqlalchemy_logger = logging.getLogger('sqlalchemy')
+    sqlalchemy_logger.setLevel(logging.DEBUG)
+    log_file = f"{load.get('LOG_FILE_DIRECTORY', '')}/sqlalchemy.log"
+    handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    sqlalchemy_logger.addHandler(handler)
+
+    # Setting up logging for sqlalchemy.engine:
+    sqlalchemy_engine_logger = logging.getLogger('sqlalchemy.engine')
+    sqlalchemy_engine_logger.setLevel(logging.DEBUG)
+    log_file = f"{load.get('LOG_FILE_DIRECTORY', '')}/sqlalchemy_engine.log"
+    handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    sqlalchemy_engine_logger.addHandler(handler)
 
 def load_raw_app_settings():
     """Loads environment variables from a file if it exists (localhost), 
@@ -25,9 +53,15 @@ class Config:
     SITE = load.get("SITE", "")
     SECRET_KEY = load.get("SECRET_KEY", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    LOG_FILE_NAME = os.path.abspath("logs/tba.log")
+    LOG_FILE_DIRECTORY = f"{load.get("LOG_FILE_DIRECTORY", "")}"
     EMAIL_SERVICE_PROVIDER = esp
     APP_START_TIME = datetime.datetime.now()
+
+    @staticmethod
+    def init_app(app):
+        initialize_directories()
+        initialize_sqlalchemy_loggers(load)
+
 
 for name in ["SERVER", "PORT", "USE_TLS", "SENDER", "USERNAME", "PASSWORD"]:
     setattr(Config, f"MAIL_{name}", load.get(f"{esp}_MAIL_{name}", ""))
@@ -97,11 +131,7 @@ def get_logger(name: str) -> logging.Logger:
     def init_app(app):
         """Initialized logger to write to file specified in config variable LOG_FILE_NAME.
         """
-        file_name = app.config.get("LOG_FILE_NAME")
-        print(os.path.abspath(file_name))
-        if not os.path.exists(file_name):
-            # Create the log directory if it doesn't exist
-            os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        file_name = f"{app.config.get('LOG_FILE_DIRECTORY', '')}/tba.log"
         handler = logging.FileHandler(file_name)
         formatter = JSONLogFormatter()
         handler.setFormatter(formatter)

@@ -34,37 +34,20 @@ logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login_route"
 
-# setting up logging for sqlalchemy:
-sqlalchemy_logger = logging.getLogger('sqlalchemy')
-sqlalchemy_logger.setLevel(logging.DEBUG)
-log_file = 'sqlalchemy.log'
-handler = logging.FileHandler(log_file)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-sqlalchemy_logger.addHandler(handler)
-
-# setting up logging for sqlalchemy.engine:
-sqlalchemy_engine_logger = logging.getLogger('sqlalchemy.engine')
-sqlalchemy_engine_logger.setLevel(logging.DEBUG)
-log_file = 'sqlalchemy_engine.log'
-handler = logging.FileHandler(log_file)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-sqlalchemy_engine_logger.addHandler(handler)
-
-
 def create_app():
-    config_name = os.environ.get("FLASK_ENV", "default")
-    print("config_name:", config_name)
-    
     app = Flask(__name__)
-    
-    app.config.from_object(config.getConfig(config_name))
+
+    config_name = os.environ.get("FLASK_ENV", "default")
+    current_config = config.getConfig(config_name)
+    current_config.init_app(app)
+    app.config.from_object(current_config)
+
     mail.init_app(app)
     bootstrap.init_app(app)
     db.init_app(app)
     logger.init_app(app)
     login_manager.init_app(app)
+    current_config.init_app(app)
 
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)

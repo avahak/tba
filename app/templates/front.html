@@ -17,7 +17,6 @@
                     <ul>
                         <li><a href="{{ url_for('main.config') }}">Config</a></li>
                         <li><a href="{{ url_for('main.email') }}">Email</a></li>
-                        <li><a href="{{ url_for('main.logs') }}">Logs</a></li>
                         <li><a href="{{ url_for('main.hello') }}">Hello</a></li>
                         <li><a href="{{ url_for('main.ultra') }}">Ultra (hello)</a></li>
                         <li><a href="{{ url_for('main.exception')}}" disabled>Exception</a></li>
@@ -40,8 +39,6 @@
                         <li><a href="{{ url_for('main.recreate_database') }}">Drop and create database, tables</a></li>
                         <li><a href="{{ url_for('main.fake') }}">Fake data</a></li>
                         <li><a href="{{ url_for('main.show') }}">Show data</a></li>
-                        <li><a href="{{ url_for('main.sqlalchemy_logs') }}">sqlalchemy Logs</a></li>
-                        <li><a href="{{ url_for('main.sqlalchemy_engine_logs') }}">sqlalchemy.engine Logs</a></li>
                     </ul>
                 </div>
                 <div class="col col-sm-4">
@@ -49,6 +46,14 @@
                     <ul>
                         <li><a href="{{ url_for('userkit.login') }}">Login</a></li>
                         <li><a href="{{ url_for('userkit.admin_tool') }}">Admin tool</a></li>
+                    </ul>
+                </div>
+                <div class="col col-sm-4">
+                    <h1>Logs</h1>
+                    <ul>
+                        <li><a href="{{ url_for('main.logs') }}">Logs</a></li>
+                        <li><a href="{{ url_for('main.sqlalchemy_logs') }}">sqlalchemy Logs</a></li>
+                        <li><a href="{{ url_for('main.sqlalchemy_engine_logs') }}">sqlalchemy.engine Logs</a></li>
                     </ul>
                 </div>
             </div>
