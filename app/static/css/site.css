@@ -20,13 +20,11 @@ body {
     display: flex;
     flex-direction: column;
     background:#335;
+    color: #fff;
 }
 
-#base-template-content {
-    display: flex;
-    flex-grow: 1;
-    justify-content: center;
-}
+/* #base-template-content {
+} */
 
 .custom-footer {
     background-color: #555; /* Background color of the footer */

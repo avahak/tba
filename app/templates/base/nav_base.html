@@ -22,17 +22,17 @@
         </a>
         <ul class="navbar-nav order-3 order-md-5">
             <li class="nav-item">
-                {% if current_user %}
+                {% if current_user.is_authenticated %}
                     <a href="{{ url_for('main.front') }}" class="nav-link">Log out {{ current_user }}</a>
                 {% else %}
-                    <a href="{{ url_for('userkit.login') }}" class="nav-link{{ ' active' if active_page == 'login' }}">Log in</a>
+                    <a href="{{ url_for('userkit.login') }}" class="nav-link{{ ' active' if active_page == 'userkit/login' }}">Log in</a>
                 {% endif %}
             </li>
             <li class="nav-item">
-                {% if current_user %}
-                    <a href="{{ url_for('main.front') }}" class="nav-link {{ 'active' if active_page == 'profile' }}">Profile</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('main.front') }}" class="nav-link {{ 'active' if active_page == 'userkit/profile' }}">Profile</a>
                 {% else %}
-                    <a href="{{ url_for('main.front') }}" class="nav-link {{ 'active' if active_page == 'signup' }}">Sign up</a>
+                    <a href="{{ url_for('userkit.register') }}" class="nav-link {{ 'active' if active_page == 'userkit/register' }}">Sign up</a>
                 {% endif %}
             </li>
         </ul>
@@ -50,12 +50,12 @@
                 <li class="nav-item">
                     <a href="{{ url_for('main.front') }}" class="nav-link{{ ' active' if active_page == 'insights' }}">Insights</a>
                 </li>
-                {% if current_user %}
+                {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a href="#" class="nav-link">Confidential</a>
                     </li>
                 {% endif %}
-                {% if current_user and (current_user_role == 'ADMIN') %}
+                {% if current_user.is_authenticated and (current_user_role == 'ADMIN') %}
                     <li class="nav-item">
                         <a href="{{ url_for('userkit.admin_user_management') }}" class="nav-link">Users</a>
                     </li>
@@ -71,12 +71,17 @@
     </div>
 
     {% block footer %}
+    <div style="display:flex;flex-grow:1;"></div>
     <footer class="custom-footer" id="custom-footer" style="position:relative;">
         <div class="container">
             <div class="row">
                 <div class="col-12 col-sm-6 text-center text-sm-left">
                     <!-- <p class="m-0">&copy; 2023 Aleksi V <small><small>{{ pool_status }}</small></small></p> -->
-                    <p class="m-0" style="white-space:nowrap;">App Uptime: {{ app_uptime }}</p>
+                    <p class="m-0" style="white-space:nowrap;font-size:smaller;">
+                        App Uptime: {{ app_uptime }}, 
+                        User: {{ current_user }}, 
+                        active_page: {{ active_page }}
+                    </p>
                 </div>
                 <div class="col-12 col-sm-6 text-center text-sm-right">
                     <a class="link-primary" href="./contact.php">Contact Us</a>

@@ -16,7 +16,7 @@
     "set-env-testing": "setx FLASK_APP run.app && setx FLASK_ENV testing",
     "set-env-production": "setx FLASK_APP run.app && setx FLASK_ENV production",
     "set-env-clear": "setx FLASK_APP \"\" && setx FLASK_ENV \"\"",
-    "run-app": "py run.py",
+    "run-app": "py -m flask --debug run",
     "compile-typescript-watch": "tsc -w -p tsconfig.json",
     "minify": "npx terser --compress --mangle --output app/static/js/tba.min.js -- app/ts/*.js"
   }

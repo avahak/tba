@@ -8,6 +8,8 @@ from ..models import *
 from ..decorators import *
 from ..fake_data import *
 from sqlalchemy import create_engine, text
+from flask_login import login_required
+from ..tokens import *
 
 @main.app_context_processor
 def inject_context():
@@ -175,12 +177,30 @@ def show():
     user_count = len(users)
     return render_template("userkit/show.html", user_count=user_count, users=users, roles=roles)
 
+@main.route("/fernet")
+def fernet():
+    import time
+    user_id = 42069
+    obj = { "user_id": user_id }
+
+    enc_obj = encrypt(obj, 1)
+    # enc_obj = "gksahkaeh"
+    # time.sleep(0.5)
+    obj2 = decrypt(enc_obj)
+    
+    if obj2 is None:
+        return "Invalid or expired token."
+
+    s = "<h1>Fernet test</h1><br>"
+    s += f"{enc_obj = }<br>"
+    s += f"{len(enc_obj) = }<br>"
+    s += f"{obj2 = }"
+    return s
+
 @main.route("/test")
 def test():
-    sys.stderr.write(f"Testing sys.stderr.write {np.random.randn()}.")
-    sys.stderr.flush()
-    print(f"Testing print {np.random.randn()}.")
-    return "Test complete."
+    token = encrypt("foo", 60)
+    return render_template("userkit/email/confirm.html", token=token)
 
 @main.route("/")
 def front():

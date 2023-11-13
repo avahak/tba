@@ -1,62 +1,56 @@
 {# Collects testing function and routes in one place for ease of use #}
+{% extends "base/nav_base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Test page</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-    </head>
-    <body class="bg-dark text-light m-3">
-        <div class="container">
-            <div class="row">
-                <div class="col col-sm-4">
-                    <h1>General</h1>
-                    <ul>
-                        <li><a href="{{ url_for('main.config') }}">Config</a></li>
-                        <li><a href="{{ url_for('main.email') }}">Email</a></li>
-                        <li><a href="{{ url_for('main.hello') }}">Hello</a></li>
-                        <li><a href="{{ url_for('main.ultra') }}">Ultra (hello)</a></li>
-                        <li><a href="{{ url_for('main.exception')}}" disabled>Exception</a></li>
-                        <li><a href="{{ url_for('main.test')}}">Test</a></li>
-                    </ul>
-                </div>
-                <div class="col col-sm-4">
-                    <h1>JS</h1>
-                    <ul>
-                        <li><a href="{{ url_for('main.widget') }}">Widget</a></li>
-                        <li><a href="{{ url_for('main.design') }}">Design</a></li>
-                        <li><a href="{{ url_for('main.box') }}">Box</a></li>
-                        <li><a href="{{ url_for('main.julia') }}">Julia set</a></li>
-                        <li><a href="{{ url_for('main.mandelbrot') }}">Mandelbrot set</a></li>
-                    </ul>
-                </div>
-                <div class="col col-sm-4">
-                    <h1>Database</h1>
-                    <ul>
-                        <li><a href="{{ url_for('main.recreate_database') }}">Drop and create database, tables</a></li>
-                        <li><a href="{{ url_for('main.fake') }}">Fake data</a></li>
-                        <li><a href="{{ url_for('main.show') }}">Show data</a></li>
-                    </ul>
-                </div>
-                <div class="col col-sm-4">
-                    <h1>Userkit</h1>
-                    <ul>
-                        <li><a href="{{ url_for('userkit.login') }}">Login</a></li>
-                        <li><a href="{{ url_for('userkit.admin_tool') }}">Admin tool</a></li>
-                    </ul>
-                </div>
-                <div class="col col-sm-4">
-                    <h1>Logs</h1>
-                    <ul>
-                        <li><a href="{{ url_for('main.logs') }}">Logs</a></li>
-                        <li><a href="{{ url_for('main.sqlalchemy_logs') }}">sqlalchemy Logs</a></li>
-                        <li><a href="{{ url_for('main.sqlalchemy_engine_logs') }}">sqlalchemy.engine Logs</a></li>
-                    </ul>
-                </div>
-            </div>
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col col-sm-4">
+            <h1>General</h1>
+            <ul>
+                <li><a href="{{ url_for('main.config') }}">Config</a></li>
+                <li><a href="{{ url_for('main.email') }}">Email</a></li>
+                <li><a href="{{ url_for('main.hello') }}">Hello</a></li>
+                <li><a href="{{ url_for('main.ultra') }}">Ultra (hello)</a></li>
+                <li><a href="{{ url_for('main.exception')}}">Exception</a></li>
+                <li><a href="{{ url_for('main.fernet')}}">Tokens</a></li>
+                <li><a href="{{ url_for('main.test')}}">Test</a></li>
+            </ul>
         </div>
-    </body>
-</html>
+        <div class="col col-sm-4">
+            <h1>JS</h1>
+            <ul>
+                <li><a href="{{ url_for('main.widget') }}">Widget</a></li>
+                <li><a href="{{ url_for('main.design') }}">Design</a></li>
+                <li><a href="{{ url_for('main.box') }}">Box</a></li>
+                <li><a href="{{ url_for('main.julia') }}">Julia set</a></li>
+                <li><a href="{{ url_for('main.mandelbrot') }}">Mandelbrot set</a></li>
+            </ul>
+        </div>
+        <div class="col col-sm-4">
+            <h1>Database</h1>
+            <ul>
+                <li><a href="{{ url_for('main.recreate_database') }}">Drop and create database, tables</a></li>
+                <li><a href="{{ url_for('main.fake') }}">Fake data</a></li>
+                <li><a href="{{ url_for('main.show') }}">Show data</a></li>
+            </ul>
+        </div>
+        <div class="col col-sm-4">
+            <h1>Userkit</h1>
+            <ul>
+                <li><a href="{{ url_for('userkit.login') }}">Login</a></li>
+                <li><a href="{{ url_for('userkit.logout') }}">Logout</a></li>
+                <li><a href="{{ url_for('userkit.register') }}">Register</a></li>
+                <li><a href="{{ url_for('userkit.admin_tool') }}">Admin tool</a></li>
+            </ul>
+        </div>
+        <div class="col col-sm-4">
+            <h1>Logs</h1>
+            <ul>
+                <li><a href="{{ url_for('main.logs') }}">Logs</a></li>
+                <li><a href="{{ url_for('main.sqlalchemy_logs') }}">sqlalchemy Logs</a></li>
+                <li><a href="{{ url_for('main.sqlalchemy_engine_logs') }}">sqlalchemy.engine Logs</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

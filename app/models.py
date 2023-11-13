@@ -1,8 +1,11 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
+from .tokens import *
 
 class Role(db.Model):
+    """Available roles: Member, Moderator, Admin
+    """
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
@@ -33,6 +36,42 @@ class User(UserMixin, db.Model):
     
     def __repr__(self):
         return f"User(email={self.email}, role={self.role}, is_confirmed={self.is_confirmed}, is_active={self.is_active})"
+    
+    def can_act_as(self, role):
+        if role == "Moderator":
+            return (self.role == "Moderator") or (self.role == "Admin")
+        if role == "Admin":
+            return (self.role == "Admin")
+        return True
+
+    def generate_confirmation_token(self, duration_seconds=3600):
+        return encrypt({ "confirm": self.id }, duration_seconds)
+
+    @classmethod
+    def confirm(cls, token):
+        """If token is valid, confirms the user in question and returns the user.
+        Otherwise returns None.
+        """
+        obj = decrypt(token)
+        if (obj is None) or (not hasattr(obj, "confirm")):
+            return None
+        user_id = obj["confirm"]
+        user = load_user(user_id)
+        if user is None:
+            return None
+        user.is_confirmed = True
+        db.session.add(user)
+        db.session.commit()
+        return user
+    
+class AnonymousUser(AnonymousUserMixin):
+    def can_act_as(self, role):
+        return False
+    
+    def __str__(self):
+        return "AnonymousUser"
+    
+login_manager.anonymous_user = AnonymousUser
     
 # Required by LoginManager:
 @login_manager.user_loader

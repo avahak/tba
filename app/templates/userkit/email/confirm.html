@@ -1,0 +1,31 @@
+{% extends "base/base.html" %}
+
+{% block styles %}
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+}
+
+.content {
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+<h1>TBA welcomes you!</h1>
+
+<p>Please click 
+<a href="{{ url_for('userkit.confirm', token=token, _external=True) }}">this link</a> 
+to confirm your registration:</p>
+
+<p>With appreciation, TBA</p>
+</div>
+{% endblock %}

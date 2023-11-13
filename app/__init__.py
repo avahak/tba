@@ -32,7 +32,7 @@ db = SQLAlchemy(
 # )
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
-login_manager.login_view = "userkit.login_route"
+login_manager.login_view = "userkit.login"
 
 def create_app():
     app = Flask(__name__)
