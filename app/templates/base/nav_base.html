@@ -23,7 +23,7 @@
         <ul class="navbar-nav order-3 order-md-5">
             <li class="nav-item">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.front') }}" class="nav-link">Log out {{ current_user }}</a>
+                    <a href="{{ url_for('userkit.logout') }}" class="nav-link">Log out</a>
                 {% else %}
                     <a href="{{ url_for('userkit.login') }}" class="nav-link{{ ' active' if active_page == 'userkit/login' }}">Log in</a>
                 {% endif %}
@@ -66,12 +66,11 @@
     </nav>
     {% endblock %}
 
-    <div id="base-template-content">
+    <div style="display:flex;flex-grow:1;">
     {% block content %}{% endblock %}
     </div>
 
     {% block footer %}
-    <div style="display:flex;flex-grow:1;"></div>
     <footer class="custom-footer" id="custom-footer" style="position:relative;">
         <div class="container">
             <div class="row">

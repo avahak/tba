@@ -7,10 +7,11 @@ from . import mail, logger
 def send_async_email(app, msg):
     with app.app_context():
         try:
+            logger.info("Attempting to send mail.", extra={"to": msg.recipients, "body": msg.body})
             mail.send(msg)
             logger.info("Mail sent successfully.", extra={"to": msg.recipients, "body": msg.body})
         except Exception as e:
-            logger.error(f"Error in send_asyn_email: {e}")
+            logger.error(f"Error in send_asyn_email", exc_info=e)
 
 def send_mail(to, subject, html_body, text_body=None):
     esp = current_app.config.get('EMAIL_SERVICE_PROVIDER', "")
@@ -30,11 +31,10 @@ def send_template_mail(to, subject, template, *args, **kwargs):
     if it exists.
     """
     html_body = render_template(template, *args, **kwargs)
-    text_file_path = os.path.splitext(template)[0] + ".txt"
+    text_template_path = os.path.splitext(template)[0] + ".txt"
     text_body = html_body
     try:
-        with open(text_file_path, "r") as f:
-            text_body = render_template(f.read(), *args, **kwargs)
-    except Exception:
-        logger.warning(f"No text file found for email template {template}.")
+        text_body = render_template(text_template_path, *args, **kwargs)
+    except Exception as e:
+        logger.warning(f"No text file {text_template_path} found for email template {template}: {e}")
     send_mail(to, subject, html_body, text_body)

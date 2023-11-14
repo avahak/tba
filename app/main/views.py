@@ -13,11 +13,9 @@ from ..tokens import *
 
 @main.app_context_processor
 def inject_context():
-    # current_user = ""   # provided by Falsk-Login
     active_page = request.path.strip('/')
 
-    # NOTE! Just for DEBUGGING, remove after!
-    # pool_status = db.engine.pool.status()
+    # pool_status = db.engine.pool.status()     # NOTE! Just for DEBUGGING, remove after!
     app_uptime = str(datetime.datetime.now() - current_app.config.get("APP_START_TIME"))
     app_uptime = app_uptime.split(".")[0]
 
@@ -215,6 +213,13 @@ def fernet():
     s += f"{len(enc_obj) = }<br>"
     s += f"{obj2 = }"
     return s
+
+@main.route("/message")
+def message():
+    return render_template("message.html", 
+        title="Title here", 
+        heading="Confirmation email sent!", 
+        message="Please check your email inbox and click the confirmation link to activate your account.")
 
 @main.route("/test")
 def test():

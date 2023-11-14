@@ -1,12 +1,61 @@
+# TODO: confirmation email resending, password reset
+
 from flask import *
 from flask_login import login_user, logout_user, login_required
 from . import userkit
-from .. import db
-from ..models import User
+from .. import db, logger
+from ..models import User, Role
 from ..email import send_template_mail
 from sqlalchemy.exc import IntegrityError
 from ..decorators import *
 from .forms import LoginForm, RegistrationForm
+
+messages = {
+    "registration_success": {
+        "title": "Registration Success",
+        "heading": "Registration Succeeded!",
+        "message": "Thank you for registering! A confirmation email has been sent to your inbox. Please check your email and click the confirmation link to activate your account."
+    },
+    "confirmation_email_resent": {
+        "title": "Email Resent",
+        "heading": "Email Resent Successfully!",
+        "message": "We've resent the confirmation email to your inbox. Please check your email and click the confirmation link to activate your account."
+    },
+    "confirmation_success": {
+        "title": "Confirmation Success",
+        "heading": "Congratulations!",
+        "message": "Your email has been successfully confirmed. You have completed the registration process and can now log in."
+    },
+    "confirmation_failure": {
+        "title": "Confirmation Failure",
+        "heading": "Confirmation Attempt Failed",
+        "message": "The token was invalid or expired. Please double-check the link or request another token <a href=\"#\">here</a>."
+    },
+    "password_reset_request_email_sent": {
+        "title": "Password Reset Email Sent",
+        "heading": "Password Reset Email Sent",
+        "message": "We've sent an email with instructions on resetting your password. Please check your inbox, and follow the provided link to reset your password."
+    },
+    "password_change_success": {
+        "title": "Password Change Success",
+        "heading": "Password Changed Successfully",
+        "message": "Your password has been updated successfully. You can now log in securely with your new password."
+    },
+    "logout": {
+        "title": "Logout Successful",
+        "heading": "Goodbye for Now!",
+        "message": "You have logged out."
+    },
+    "feedback_received": {
+        "title": "Feedback Received",
+        "heading": "Thank You for Your Feedback",
+        "message": "We've received your feedback. It will be reviewed as we work towards improving our platform. If you have any further comments or questions, feel free to get in touch."
+    }
+}
+
+
+def render_message_template(message):
+    return render_template("message.html", title=message["title"], heading=message["heading"], message=message["message"])
 
 @userkit.route('/login', methods=['GET', 'POST'])
 def login():
@@ -25,26 +74,26 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("main.front"))
+    return render_message_template(messages["logout"])
 
 @userkit.route("/register", methods=["GET", "POST"])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(email=form.email.data, password=form.password.data)
+        user = User(email=form.email.data, role=Role.get_role("User"), password=form.password.data)
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
-        send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm", user=user, token=token)
-        return redirect(url_for("main.front"))
+        send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm.html", user=user, token=token)
+        return render_message_template(messages["registration_success"])
     return render_template("userkit/register.html", form=form)
 
 @userkit.route("/confirm/<token>")
 def confirm(token):
     user = User.confirm(token)
     if user:
-        return f"Confirmation successful, {user}!"
-    return "Confirmation failed somehow."
+        return render_message_template(messages["confirmation_success"])
+    return render_message_template(messages["confirmation_failure"])
 
 @userkit.route('/admin_tool/', methods=["GET", "POST"])
 def admin_tool():

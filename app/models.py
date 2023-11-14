@@ -1,10 +1,10 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
-from . import db, login_manager
+from . import db, login_manager, logger
 from .tokens import *
 
 class Role(db.Model):
-    """Available roles: Member, Moderator, Admin
+    """Available roles: User, Moderator, Admin
     """
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -13,6 +13,10 @@ class Role(db.Model):
 
     def __repr__(self):
         return f"Role({self.name})"
+    
+    @classmethod
+    def get_role(cls, name):
+        return cls.query.filter_by(name=name).first()
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -45,7 +49,9 @@ class User(UserMixin, db.Model):
         return True
 
     def generate_confirmation_token(self, duration_seconds=3600):
-        return encrypt({ "confirm": self.id }, duration_seconds)
+        token = encrypt({ "confirm": self.id }, duration_seconds)
+        logger.info("Created confirmation token", extra={ "user": str(self), "token": token })
+        return token
 
     @classmethod
     def confirm(cls, token):
@@ -53,7 +59,7 @@ class User(UserMixin, db.Model):
         Otherwise returns None.
         """
         obj = decrypt(token)
-        if (obj is None) or (not hasattr(obj, "confirm")):
+        if (obj is None) or ("confirm" not in obj):
             return None
         user_id = obj["confirm"]
         user = load_user(user_id)

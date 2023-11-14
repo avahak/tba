@@ -1,0 +1,17 @@
+{% extends "base/nav_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center">
+    <div class="col-12 col-md-6">
+    <p><h1>{{ heading | safe }}</h1></p>
+    <p>{{ message | safe }}</p>
+    </div>
+</div>
+{% endblock %}
