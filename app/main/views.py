@@ -19,6 +19,7 @@ def inject_context():
     # NOTE! Just for DEBUGGING, remove after!
     # pool_status = db.engine.pool.status()
     app_uptime = str(datetime.datetime.now() - current_app.config.get("APP_START_TIME"))
+    app_uptime = app_uptime.split(".")[0]
 
     return { 
         # "pool_status": pool_status, 
@@ -98,11 +99,29 @@ def config():
         s += "<br>"
     return f"{s}<h4>"
 
+def get_time_diff(time):
+  """Returns a string that tells the time difference between now and the given time.
+  """
+  diff = datetime.datetime.now() - datetime.datetime.fromisoformat(time)
+  if diff.days:
+    return f"{diff.days}d {diff.seconds//3600}h ago"
+  elif diff.seconds >= 3600:
+    return f"{diff.seconds//3600}h {(diff.seconds//60)%60}m ago"
+  elif diff.seconds >= 60:
+    return f"{(diff.seconds//60)%60}m {diff.seconds%60}s ago"
+  elif diff.seconds:
+    return f"{diff.seconds%60}s ago"
+  return "now"
+
 @main.route('/logs')
 def logs():
+    entries = []
     with open(f"{current_app.config.get('LOG_FILE_DIRECTORY')}/tba.log", 'r') as f:
-        s = "<br>".join(f.readlines())
-    return f"{s}"
+        for line in f:
+            entries.append(json.loads(line))
+    # logger.debug("Logger error test", extra={ "user_id": 142, "foo": ["bar", "baz"] })
+    # f_time = lambda s: str(datetime.datetime.now()-datetime.datetime.fromisoformat(s)).split(".")[0]
+    return render_template("logs.html", enum_entries=enumerate(reversed(entries)), f_time=get_time_diff)
 
 @main.route('/sqlalchemy_logs')
 def sqlalchemy_logs():

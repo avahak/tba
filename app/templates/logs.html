@@ -1,0 +1,69 @@
+{% extends "base/nav_base.html" %}
+
+{% block content %}
+<div class="container">
+<table class="table table-dark table-striped m-3">
+    <thead>
+      <tr class="table-light" style="position:sticky;top:0px;z-index:1;">
+        <th>Timestamp</th>
+        <th>Name</th>
+        <th>Level</th>
+        <th>Message</th>
+        <th>Exception Type</th>
+        <th>Exception Message</th>
+        <th>Toggle extra</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for id, entry in enum_entries: %}
+<tr>
+<td>{{ f_time(entry.timestamp) }}<br>{{ entry.timestamp }}</td>
+<td>{{ entry.name }}</td>
+{% if entry.level == "DEBUG" %}
+<td class="table-primary">{{ entry.level }}</td>
+{% elif entry.level == "INFO" %}
+<td class="table-info">{{ entry.level }}</td>
+{% elif entry.level == "WARNING" %}
+<td class="table-warning">{{ entry.level }}</td>
+{% elif entry.level == "ERROR" %}
+<td class="table-danger">{{ entry.level }}</td>
+{% else %}
+<td>{{ entry.level }}</td>
+{% endif %}
+<td>{{ entry.message }}</td>
+{% if entry.exception_type %}
+    <td>{{ entry.exception_type }}</td>
+{% else %}
+    <td>-</td>
+{% endif %}
+{% if entry.exception_message %}
+    <td>{{ entry.exception_message }}</td>
+{% else %}
+    <td>-</td>
+{% endif %}
+<td>
+    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#extra-{{ id }}">Toggle extra</button>
+</td>
+</tr>
+<tr></tr> {# Added so that we preserve table-striped #}
+<td colspan="100" id="extra-{{ id }}" class="collapse">
+<div class="card card-body text-light" style="background:#444;z-index:0;">
+    {% if entry.extra %}
+        <h5>Extra Fields</h5>
+        <ul>
+        {% for key, value in entry.extra.items() %}
+            <li>{{ key }}: {{ value }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% if entry.traceback %}
+    <h5>Traceback</h5>
+    <pre>{% for tr in entry.traceback %}{{ tr | trim }}<br>{% endfor %}</pre>
+    {% endif %}
+</div>
+</td>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}
