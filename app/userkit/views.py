@@ -1,4 +1,8 @@
-# TODO: confirmation email resending, password reset
+# TODO: 
+# confirmation email request, 
+# feedback sending, 
+# password reset (forgotten password) [and request]
+# password change (while logged in)
 
 from flask import *
 from flask_login import login_user, logout_user, login_required
@@ -96,6 +100,7 @@ def confirm(token):
     return render_message_template(messages["confirmation_failure"])
 
 @userkit.route('/admin_tool/', methods=["GET", "POST"])
+@can_act_as_required("Admin")
 def admin_tool():
     page = request.args.get("page", 1, type=int)
     if request.method == "POST":

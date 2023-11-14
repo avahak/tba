@@ -1,5 +1,21 @@
+from flask import redirect, url_for
+from flask_login import current_user
 import threading
 from functools import wraps
+
+def can_act_as_required(role_name):
+    """Decorator to check that current_user can act as the specified role.
+    If not, the user is redirected to frontpage.
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.can_act_as(role_name):
+                return redirect(url_for("main.front"))
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+
 
 def timeout(timeout_seconds, timeout_return_value=None):
     """Returns wrapped function return value if executed before timeout, otherwise

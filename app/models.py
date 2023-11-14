@@ -39,13 +39,13 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
     
     def __repr__(self):
-        return f"User(email={self.email}, role={self.role}, is_confirmed={self.is_confirmed}, is_active={self.is_active})"
+        return f"User(email={self.email}, role={self.role.name}, is_confirmed={self.is_confirmed}, is_active={self.is_active})"
     
     def can_act_as(self, role):
         if role == "Moderator":
-            return (self.role == "Moderator") or (self.role == "Admin")
+            return (self.role.name == "Moderator") or (self.role.name == "Admin")
         if role == "Admin":
-            return (self.role == "Admin")
+            return (self.role.name == "Admin")
         return True
 
     def generate_confirmation_token(self, duration_seconds=3600):
