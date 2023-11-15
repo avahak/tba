@@ -24,3 +24,17 @@
     </li>
 </ul>
 {% endmacro %}
+
+{% macro account_recovery() %}
+<div class="my-3">
+    <a class="btn btn-link m-0 p-0" role="button" data-bs-toggle="collapse" href="#accountRecovery" role="button" aria-expanded="false" aria-controls="accountRecovery">Account Recovery</a>
+    <div class="collapse row mx-3" id="accountRecovery">
+        <div>
+            <a href="{{ url_for('userkit.request_password_reset_email') }}" onclick="alert('preserve email!');">Forgot my Password</a>
+        </div>
+        <div>
+            <a href="{{ url_for('userkit.request_confirmation_email') }}" onclick="alert('preserve email!');">Resend Email Verification</a>
+        </div>
+    </div>
+</div>
+{% endmacro %}

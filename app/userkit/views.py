@@ -1,65 +1,14 @@
-# TODO: 
-# confirmation email request, 
-# feedback sending, 
-# password reset (forgotten password) [and request]
-# password change (while logged in)
-
 from flask import *
+from markupsafe import escape
 from flask_login import login_user, logout_user, login_required
 from . import userkit
-from .. import db, logger
+from .. import db, logger, messenger
 from ..models import User, Role
-from ..email import send_template_mail
+from ..email import send_mail, send_template_mail
 from sqlalchemy.exc import IntegrityError
 from ..decorators import *
-from .forms import LoginForm, RegistrationForm
-
-messages = {
-    "registration_success": {
-        "title": "Registration Success",
-        "heading": "Registration Succeeded!",
-        "message": "Thank you for registering! A confirmation email has been sent to your inbox. Please check your email and click the confirmation link to activate your account."
-    },
-    "confirmation_email_resent": {
-        "title": "Email Resent",
-        "heading": "Email Resent Successfully!",
-        "message": "We've resent the confirmation email to your inbox. Please check your email and click the confirmation link to activate your account."
-    },
-    "confirmation_success": {
-        "title": "Confirmation Success",
-        "heading": "Congratulations!",
-        "message": "Your email has been successfully confirmed. You have completed the registration process and can now log in."
-    },
-    "confirmation_failure": {
-        "title": "Confirmation Failure",
-        "heading": "Confirmation Attempt Failed",
-        "message": "The token was invalid or expired. Please double-check the link or request another token <a href=\"#\">here</a>."
-    },
-    "password_reset_request_email_sent": {
-        "title": "Password Reset Email Sent",
-        "heading": "Password Reset Email Sent",
-        "message": "We've sent an email with instructions on resetting your password. Please check your inbox, and follow the provided link to reset your password."
-    },
-    "password_change_success": {
-        "title": "Password Change Success",
-        "heading": "Password Changed Successfully",
-        "message": "Your password has been updated successfully. You can now log in securely with your new password."
-    },
-    "logout": {
-        "title": "Logout Successful",
-        "heading": "Goodbye for Now!",
-        "message": "You have logged out."
-    },
-    "feedback_received": {
-        "title": "Feedback Received",
-        "heading": "Thank You for Your Feedback",
-        "message": "We've received your feedback. It will be reviewed as we work towards improving our platform. If you have any further comments or questions, feel free to get in touch."
-    }
-}
-
-
-def render_message_template(message):
-    return render_template("message.html", title=message["title"], heading=message["heading"], message=message["message"])
+from .forms import *
+from ..tokens import decrypt
 
 @userkit.route('/login', methods=['GET', 'POST'])
 def login():
@@ -78,26 +27,26 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return render_message_template(messages["logout"])
+    return messenger.render_message_template(messenger.messages["logout"])
 
-@userkit.route("/register", methods=["GET", "POST"])
-def register():
-    form = RegistrationForm()
+@userkit.route("/signup", methods=["GET", "POST"])
+def signup():
+    form = SignupForm()
     if form.validate_on_submit():
         user = User(email=form.email.data, role=Role.get_role("User"), password=form.password.data)
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
         send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm.html", user=user, token=token)
-        return render_message_template(messages["registration_success"])
-    return render_template("userkit/register.html", form=form)
+        return messenger.render_message_template(messenger.messages["registration_success"])
+    return render_template("userkit/signup.html", form=form)
 
 @userkit.route("/confirm/<token>")
 def confirm(token):
     user = User.confirm(token)
     if user:
-        return render_message_template(messages["confirmation_success"])
-    return render_message_template(messages["confirmation_failure"])
+        return messenger.render_message_template(messenger.messages["confirmation_success"])
+    return messenger.render_message_template(messenger.messages["confirmation_failure"])
 
 @userkit.route('/admin_tool/', methods=["GET", "POST"])
 @can_act_as_required("Admin")
@@ -122,3 +71,66 @@ def admin_tool():
     users = pagination.items
     fields = ["id", "email", "role", "is_confirmed", "is_active"]
     return render_template("userkit/admin_tool.html", fields=fields, users=users, pagination=pagination)
+
+@userkit.route('/request_confirmation_email', methods=['GET', 'POST'])
+def request_confirmation_email():
+    form = RequestConfirmationEmailForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if (user is not None) and (not user.is_confirmed):
+            token = user.generate_confirmation_token()
+            send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm.html", user=user, token=token)
+            return messenger.render_message_template(messenger.messages["confirmation_email_resent"])
+        return messenger.render_message_template(messenger.messages["confirmation_email_resend_failure"])
+    return render_template("userkit/request_confirmation_email.html", form=form)
+
+@userkit.route('/request_password_reset_email', methods=['GET', 'POST'])
+def request_password_reset_email():
+    form = RequestPasswordResetEmailForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is not None:
+            token = user.generate_password_reset_token()
+            send_template_mail(user.email, "Password Reset Link", "userkit/email/password_reset.html", user=user, token=token)
+            return messenger.render_message_template(messenger.messages["request_password_reset_email_sent"])
+        return messenger.render_message_template(messenger.messages["request_password_reset_email_failure"])
+    return render_template("userkit/request_password_reset_email.html", form=form)
+
+@userkit.route("/password_reset/<token>", methods=['GET', 'POST'])
+def password_reset(token):
+    token_obj = decrypt(token)
+    if token_obj and ("password_reset" in token_obj):
+        user_id = token_obj["password_reset"]
+        user = User.query.get(user_id)
+        if user:
+            form = PasswordResetForm()
+            if form.validate_on_submit():
+                user.password = form.password.data
+                db.session.commit()
+                return messenger.render_message_template(messenger.messages["password_change_success"])
+            return render_template("userkit/password_reset.html", form=form)
+    return messenger.render_message_template(messenger.messages["password_reset_failure"])
+
+@userkit.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    form = FeedbackForm()
+    if form.validate_on_submit():
+        text = f"Sender: {escape(form.email.data)}\n Feedback: {escape(form.feedback.data)}"
+        send_mail(current_app.config.get("MAIL_SENDER"), "TBA Feedback", None, text)
+        return messenger.render_message_template(messenger.messages["feedback_success"])
+    return render_template("userkit/feedback.html", form=form)
+
+@userkit.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = PasswordChangeForm()
+    if form.validate_on_submit():
+        current_user.password = form.password_new.data
+        db.session.commit()
+        return messenger.render_message_template(messenger.messages["password_change_success"])
+    return render_template("userkit/change_password.html", form=form)
+
+@userkit.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    return render_template("userkit/profile.html")

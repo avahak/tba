@@ -1,0 +1,8 @@
+TBA welcomes you!
+
+Please visit this link to confirm your registration:
+
+{{ url_for('userkit.confirm', token=token, _external=True) }}
+
+Best Regards, 
+TBA

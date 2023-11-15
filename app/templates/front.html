@@ -1,6 +1,8 @@
 {# Collects testing function and routes in one place for ease of use #}
 {% extends "base/nav_base.html" %}
 
+{% block title %}TBA Front{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -40,7 +42,7 @@
             <ul>
                 <li><a href="{{ url_for('userkit.login') }}">Login</a></li>
                 <li><a href="{{ url_for('userkit.logout') }}">Logout</a></li>
-                <li><a href="{{ url_for('userkit.register') }}">Register</a></li>
+                <li><a href="{{ url_for('userkit.signup') }}">Signup</a></li>
                 <li><a href="{{ url_for('userkit.admin_tool') }}">Admin tool</a></li>
             </ul>
         </div>

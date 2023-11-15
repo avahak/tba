@@ -11,12 +11,12 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField("Remember me")
     submit = SubmitField("Log In")
 
-class RegistrationForm(FlaskForm):
+class SignupForm(FlaskForm):
     """Form for registering a new user.
     """
     email = StringField("Email", validators=[DataRequired(), Length(1, 64)])
     password = PasswordField("Password", validators=[DataRequired()])
-    password2 = PasswordField("Password (Confirmation)", validators=[DataRequired()])
+    password2 = PasswordField("Password (Confirmation)", validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
     submit = SubmitField("Sign up")
 
     def validate_email(self, field):
@@ -28,28 +28,33 @@ class FeedbackForm(FlaskForm):
     """
     email = StringField("Email", validators=[DataRequired(), Length(1, 64)])
     feedback = TextAreaField("Feedback", validators=[DataRequired()])
+    submit = SubmitField("Send feedback")
 
 class RequestConfirmationEmailForm(FlaskForm):
     """Form for requesting sending a new confirmation email. This is separate
     from the automatic confirmation email sent during registration.
     """
     email = StringField("Email", validators=[DataRequired(), Length(1, 64)])
+    submit = SubmitField("Request email")
 
-class RequestPasswordResetForm(FlaskForm):
+class RequestPasswordResetEmailForm(FlaskForm):
     """Form for requesting a password reset link be sent to email 
     (in case of forgotten password).
     """
     email = StringField("Email", validators=[DataRequired(), Length(1, 64)])
+    submit = SubmitField("Request email")
 
 class PasswordResetForm(FlaskForm):
     """Form for password reset (in case of forgotten password).
     """
     password = PasswordField("Password", validators=[DataRequired()])
-    password2 = PasswordField("Password (Confirmation)", validators=[DataRequired()])
+    password2 = PasswordField("Password (Confirmation)", validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
+    submit = SubmitField("Set password")
 
 class PasswordChangeForm(FlaskForm):
     """Form for changing the current password for current_user.
     """
     password_current = PasswordField("Password", validators=[DataRequired()])
     password_new = PasswordField("New Password", validators=[DataRequired()])
-    password_new2 = PasswordField("New Password (Confirmation)", validators=[DataRequired()])
+    password_new2 = PasswordField("New Password (Confirmation)", validators=[DataRequired(), EqualTo('password_new', message='Passwords must match.')])
+    submit = SubmitField("Change password")

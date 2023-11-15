@@ -2,16 +2,16 @@
 {% from "bootstrap5/form.html" import render_form %}
 {% import "base/macros.html" as macros %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Signup{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-md-4 p-2 m-3 bg-light text-dark rounded">
-            <div class="page-header">
-                <h1>Login</h1>
+            <div class="row page-header">
+                <h1>Signup</h1>
             </div>
-            <div>
+            <div class="row">
                 {{ render_form(form) }}
             </div>
             {{ macros.account_recovery() }}

@@ -52,6 +52,11 @@ class User(UserMixin, db.Model):
         token = encrypt({ "confirm": self.id }, duration_seconds)
         logger.info("Created confirmation token", extra={ "user": str(self), "token": token })
         return token
+    
+    def generate_password_reset_token(self, duration_seconds=3600):
+        token = encrypt({ "password_reset": self.id }, duration_seconds)
+        logger.info("Created password reset token", extra={ "user": str(self), "token": token })
+        return token
 
     @classmethod
     def confirm(cls, token):

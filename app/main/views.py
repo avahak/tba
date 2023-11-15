@@ -22,12 +22,9 @@ def inject_context():
     return { 
         # "pool_status": pool_status, 
         "active_page": active_page, 
-        "app_uptime": app_uptime 
+        "app_uptime": app_uptime,
+        "render_template_string": render_template_string
     }
-
-@main.route('/400')
-def not_found():
-    abort(400)
 
 @main.route('/exception')
 def exception():

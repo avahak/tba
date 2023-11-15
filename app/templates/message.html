@@ -1,17 +1,53 @@
+{# Displays a message to the user #}
+
 {% extends "base/nav_base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
 <style>
+:root {
+    --red1: hsla(0, 100%, 50%, 0.2);
+    --red2: hsla(30, 100%, 50%, 0.2);
+    --green1: hsla(110, 100%, 50%, 0.2);
+    --green2: hsla(140, 100%, 50%, 0.2);
+}
+.circle {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+}
+.circle1 {
+    {% if type == "error" %}
+    background: var(--red1);
+    {% elif type == "success" %}
+    background: var(--green1);
+    {% elif type == "failure" %}
+    background: var(--red1);
+    {% endif %}
+    transform: Translate(-300px, -50px);
+}
+.circle2 {
+    {% if type == "error" %}
+    background: var(--red2);
+    {% elif type == "success" %}
+    background: var(--green2);
+    {% elif type == "failure" %}
+    background: var(--red2);
+    {% endif %}
+    transform: Translate(87px, 50px);
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container d-flex justify-content-center align-items-center">
-    <div class="col-12 col-md-6">
-    <p><h1>{{ heading | safe }}</h1></p>
-    <p>{{ message | safe }}</p>
+    <div class="circle circle1"></div>
+    <div class="circle circle2"></div>
+    <div class="col-12 col-md-6" style="z-index:1;">
+    <p class="h1">{{ heading | safe }}</p>
+    <p class="h3">{{ render_template_string(message) | safe }}</p>
     </div>
 </div>
 {% endblock %}

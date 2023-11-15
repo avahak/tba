@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
 from sqlalchemy.pool import NullPool, SingletonThreadPool
+from .messenger import Messenger
 import config
 
 mail = Mail()
@@ -33,6 +34,7 @@ db = SQLAlchemy(
 logger = config.get_logger(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "userkit.login"
+messenger = Messenger()
 
 def create_app():
     app = Flask(__name__)
@@ -48,6 +50,7 @@ def create_app():
     logger.init_app(app)
     login_manager.init_app(app)
     current_config.init_app(app)
+    messenger.init_app(app)
 
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)

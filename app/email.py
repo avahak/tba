@@ -31,7 +31,7 @@ def send_template_mail(to, subject, template, *args, **kwargs):
     if it exists.
     """
     html_body = render_template(template, *args, **kwargs)
-    text_template_path = os.path.splitext(template)[0] + ".txt"
+    text_template_path = os.path.splitext(template)[0] + ".text"
     text_body = html_body
     try:
         text_body = render_template(text_template_path, *args, **kwargs)

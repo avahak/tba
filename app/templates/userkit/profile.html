@@ -2,19 +2,18 @@
 {% from "bootstrap5/form.html" import render_form %}
 {% import "base/macros.html" as macros %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Profile page{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-md-4 p-2 m-3 bg-light text-dark rounded">
             <div class="page-header">
-                <h1>Login</h1>
+                <h1>Profile page</h1>
             </div>
             <div>
-                {{ render_form(form) }}
+                info... {{ current_user }}
             </div>
-            {{ macros.account_recovery() }}
         </div>
     </div>
 </div>
