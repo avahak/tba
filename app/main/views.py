@@ -23,7 +23,6 @@ def inject_context():
         # "pool_status": pool_status, 
         "active_page": active_page, 
         "app_uptime": app_uptime,
-        "render_template_string": render_template_string
     }
 
 @main.route('/exception')

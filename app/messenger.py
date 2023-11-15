@@ -1,4 +1,4 @@
-from flask import render_template, url_for
+from flask import render_template, url_for, render_template_string
 
 class Messenger():
 
@@ -71,4 +71,4 @@ class Messenger():
     def render_message_template(message):
         """Returns html for a short message to the user.
         """
-        return render_template("message.html", type=message["type"], title=message["title"], heading=message["heading"], message=message["message"])
+        return render_template("message.html", type=message["type"], title=message["title"], heading=message["heading"], message=str(message["message"]))
