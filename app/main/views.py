@@ -3,7 +3,8 @@ import numpy as np
 import datetime
 from flask import *
 from . import main
-from .. import email, logger
+from .. import logger
+from ..email import send_mail
 from ..models import *
 from ..decorators import *
 from ..fake_data import *
@@ -36,16 +37,6 @@ def exception():
 def get_data():
     return send_from_directory(current_app.root_path + "/../", "package.json")
 
-@main.route('/hello/')
-@main.route('/hello/<name>')
-def hello(name=None):
-    return render_template("hello.html", name=name)
-
-@main.route('/ultra/')
-@main.route('/ultra/<name>')
-def ultra(name=None):
-    return render_template("ultra_hello.html", name=name)
-
 @main.route('/node_modules/<path:filename>')
 def serve_node_modules(filename):
     """Used by javascript imports.
@@ -70,7 +61,7 @@ def email():
     # port = current_app.config.get('MAIL_PORT', "")
     # username = current_app.config.get('MAIL_USERNAME', "")
     # use_tls = current_app.config.get('MAIL_USE_TLS', "")
-    return email.send_mail(to, subject, body)
+    return send_mail(to, subject, body)
 
 @main.route('/config')
 def config():
