@@ -2,6 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager, logger
 from .tokens import *
+from datetime import datetime
 
 class Role(db.Model):
     """Available roles: User, Moderator, Admin
@@ -25,6 +26,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255))
     is_confirmed = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    member_since = db.Column(db.DateTime(), default=datetime.now)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), index=True)
 
     @property

@@ -180,7 +180,7 @@ def recreate_database():
 @main.route("/fake")
 def fake():
     fake_roles()
-    fake_users(73)
+    fake_users(23)
     return "Fake done."
 
 @main.route("/show")

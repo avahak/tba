@@ -12,7 +12,12 @@
                 <h1>Profile page</h1>
             </div>
             <div>
-                info... {{ current_user }}
+                <ul>
+                    <li>Email: {{ current_user.email }}</li>
+                    <li>Join Date: {{ current_user.member_since }}</li>
+                    <li>Role: {{ current_user.role.name }}</li>
+                </ul>
+                <a href="{{ url_for('userkit.change_password') }}" class="btn btn-primary">Change Password</a>
             </div>
         </div>
     </div>

@@ -1,3 +1,4 @@
+from flask_login import current_user
 from flask_wtf import FlaskForm 
 from wtforms import *
 from wtforms.validators import *
@@ -58,3 +59,7 @@ class PasswordChangeForm(FlaskForm):
     password_new = PasswordField("New Password", validators=[DataRequired()])
     password_new2 = PasswordField("New Password (Confirmation)", validators=[DataRequired(), EqualTo('password_new', message='Passwords must match.')])
     submit = SubmitField("Change password")
+
+    def validate_password_current(self, field):
+        if not current_user.verify_password(field.data):
+            raise ValidationError('Incorrect password.')
