@@ -12,6 +12,7 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField("Remember me")
     submit = SubmitField("Log In")
 
+
 class SignupForm(FlaskForm):
     """Form for registering a new user.
     """

@@ -67,7 +67,7 @@ def admin_tool():
         finally:
             db.session.close()
         return redirect(url_for('userkit.admin_tool', page=page))
-    pagination = User.query.order_by(User.role_id.asc()).paginate(page=page, per_page=10, error_out=False)
+    pagination = User.query.order_by(User.role_id.asc(), User.id.asc()).paginate(page=page, per_page=10, error_out=False)
     users = pagination.items
     fields = ["id", "email", "role", "is_confirmed", "is_active"]
     return render_template("userkit/admin_tool.html", fields=fields, users=users, pagination=pagination)
