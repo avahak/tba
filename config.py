@@ -106,6 +106,7 @@ def initialize_sqlalchemy_loggers(load):
     handler = TrimmableFileHandler(log_file)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
+    sqlalchemy_logger.handlers.clear()
     sqlalchemy_logger.addHandler(handler)
 
     # Setting up logging for sqlalchemy.engine:
@@ -115,6 +116,7 @@ def initialize_sqlalchemy_loggers(load):
     handler = TrimmableFileHandler(log_file)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
+    sqlalchemy_engine_logger.handlers.clear()
     sqlalchemy_engine_logger.addHandler(handler)
 
 def load_raw_app_settings():
