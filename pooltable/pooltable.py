@@ -10,6 +10,24 @@
 #   - cushions.obj - cushions
 #   - slate.obj - slate
 #   - liners.obj - pocket liners
+#   - rails.obj - rails
+#   - casing.obj - casing
+
+# 1) Separate diamond patches on rails in some nonarbitrary way
+
+# 2) Todo normals: give each object an angle limit, start with separate normals
+# and combine in some way if two normals closer than angle limit
+
+# 3) Todo UV coords: cushions: [k1,(k1,k2),(k1,k3),(k2,k4),..] order or propagation
+# slate: uv=xy or top,bottom uv=xy, custom taking normal from original slice and 
+#       extending according to distance on curve
+# liners: x=param on path, y=easy after that
+# rails: uv=xy
+# casing: bottom uv=xy, categorize other faces according to their normal 
+#       to x+,x-,y+,y- and for each category just do trivial projection
+
+# 4) (optional?) pack uv-polygons
+#       Kinda needed for diamonds
 
 import numpy as np
 import json
@@ -175,6 +193,8 @@ def create_pooltable_json():
     add_spec(specs, "TABLE_RAIL_HEIGHT", specs["CUSHION_NOSE_HEIGHT"]+specs["CUSHION_RUBBER_SIDE_LENGTH"]*np.sin(specs["CUSHION_SLOPE"]), comment)
     comment = "Depth of sights from cushion nose, WPA requires 3\"11/16(+1/8\")."
     add_spec(specs, "TABLE_SIGHTS_DEPTH", (3+11/16)*INCH, comment)
+    comment = "Offset at B2 and B3 where sights block part begins, measured as distance along x-axis from 0 and cushion C nose respectively."
+    add_spec(specs, "TABLE_RAIL_SIGHTS_BLOCK", (0.3*specs["TABLE_LENGTH"]/8, 0.3*specs["TABLE_LENGTH"]/8), comment)
 
     comment = "Width of the pocket liner part visible from above."
     add_spec(specs, "TABLE_POCKET_LINER_WIDTH", 0.5*INCH, comment)
@@ -569,74 +589,109 @@ def create_casing(data):
     
     return { "vertices": vertices, "faces": faces}
     
-def rail_top_b(data):
-    """Returns points for one complex polygon that defines the rail B top.
+def rail_top_b3(data):
+    """Returns points for one complex polygon that defines the rail top near B3.
     """
     r = data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
-    y0 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
+    y0 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["CUSHION_WIDTH"]
+    y1 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     n = data["specs"]["TABLE_CASING_NUM_POINTS"][0]
     m = data["specs"]["TABLE_POCKET_LINER_NUM_POINTS"]
+    w = data["specs"]["TABLE_LENGTH"]/2
+    offset = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][1]
+
     # First follow 
     circuit = casing_circuit(data, -r, 0, h0)
-    # from n to 2n, then go to (0,y0,h0), then follow
-    arc2 = create_pocket_liner_arc(data, 2, data["specs"]["TABLE_POCKET_LINER_WIDTH"], h0)
-    # from m to 0, then  follow
+    # from n to 2n, then go to (w-offset,y1,h0), then 
+    # go to (w-offset,y0,h0), then follow
     arc3 = create_pocket_liner_arc(data, 3, data["specs"]["TABLE_POCKET_LINER_WIDTH"], h0)
     # from 2*m to m:
     vertices = [circuit[k] for k in range(n, 2*n+1)]
-    vertices.append(np.array((0.0, y0, h0)))
-    vertices.extend([arc2[m-k] for k in range(m+1)])
+    vertices.append(np.array((w-offset, y1, h0)))
+    vertices.append(np.array((w-offset, y0, h0)))
     vertices.extend([arc3[2*m-k] for k in range(m+1)])
+
+    if (w-offset >= circuit[2*n][0]) or (w-offset >= arc3[2*m][0]):
+        raise Exception("Invalid table specs: TABLE_RAIL_SIGHTS_BLOCK[1] is too small.")
+
     return vertices
 
-def rail_top_c(data):
-    """Returns points for one complex polygon that defines the rail C top.
+def rail_top_b2(data):
+    """Returns points for one complex polygon that defines the rail top near B2.
     """
     r = data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
-    x0 = data["specs"]["TABLE_LENGTH"]/2 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
+    y0 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["CUSHION_WIDTH"]
+    y1 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     n = data["specs"]["TABLE_CASING_NUM_POINTS"][0]
     m = data["specs"]["TABLE_POCKET_LINER_NUM_POINTS"]
-    # First follow 
-    circuit = casing_circuit(data, -r, 0, h0)
-    # from 0 to n, then follow
-    arc3 = create_pocket_liner_arc(data, 3, data["specs"]["TABLE_POCKET_LINER_WIDTH"], h0)
-    # from m to 0, then reflect the rest of the points using the plane:
-    plane = geometry.Plane(E2, 0.0)
+    offset = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][0]
 
-    vertices = [circuit[k] for k in range(n+1)]
-    vertices.extend([arc3[m-k] for k in range(m+1)])
-    vertices.extend([plane.reflect(p) for p in reversed(vertices)])
+    # Start at (offset,y1,h0), then go to (0,y1,h0), then follow
+    arc2 = create_pocket_liner_arc(data, 2, data["specs"]["TABLE_POCKET_LINER_WIDTH"], h0)
+    # from m to 0, then go to (offset,y0,h0)
+    vertices = [np.array((offset, y1, h0)), np.array((0.0, y1, h0))]
+    vertices.extend([arc2[m-k] for k in range(m+1)])
+    vertices.append(np.array((offset, y0, h0)))
+
+    if (offset <= arc2[0][0]):
+        raise Exception("Invalid table specs: TABLE_RAIL_SIGHTS_BLOCK[0] is too small.")
 
     return vertices
 
-def rail_top(data, cushion: str):
-    """Generalizing from rail_top_b, rail_top_c using reflections. 
+def rail_top(data, cushion_pocket: str):
+    """Generalizing from rail_top_b2, rail_top_b3 using reflections. 
     """
-    cushion = cushion.upper()
-    base = rail_top_c(data) if cushion in ["C", "F"] else rail_top_b(data)
+    cushion_pocket = cushion_pocket.upper()
+    base = rail_top_b2(data) if cushion_pocket in ["B2", "A2", "D5", "E5"] else rail_top_b3(data)
 
-    vertices = base # works for B, C
-    if cushion == "A":
+    vertices = base     # works fr B2, B3
+    if cushion_pocket in ("A1", "A2"):
         vertices = plane_E1.reflect(list(reversed(base)))
-    elif cushion == "D":
+    elif cushion_pocket == "C3":
+        vertices = data["planes"]["bisector_3"].reflect(list(reversed(base)))
+    elif cushion_pocket == "C4":
+        vertices = data["planes"]["bisector_4"].reflect(plane_E2.reflect(base))
+    elif cushion_pocket in ("D4", "D5"):
         vertices = plane_E2.reflect(list(reversed(base)))
-    elif cushion == "E":
+    elif cushion_pocket in ("E5", "E6"):
         vertices = plane_E2.reflect(plane_E1.reflect(base))
-    elif cushion == "F":
-        vertices = plane_E1.reflect(list(reversed(base)))
+    elif cushion_pocket == "F6":
+        vertices = apply_reflections(list(reversed(base)), [plane_E1, plane_E2, data["planes"]["bisector_6"]])
+    elif cushion_pocket == "F1":
+        vertices = data["planes"]["bisector_1"].reflect(plane_E1.reflect(base))
 
-    faces = [list(range(len(vertices)))]
-    return { "vertices": vertices, "faces": faces }
+    return { "vertices": vertices, "faces": [list(range(len(vertices)))] }
 
 def create_rail_tops(data):
-    """Merges all 6 rail tops.
+    """Merges all rail tops.
     """
-    tops = [rail_top(data, cushion) for cushion in ["A", "B", "C", "D", "E", "F"]]
+    cushion_pockets = ["A1", "A2", "B2", "B3", "C3", "C4", "D4", "D5", "E5", "E6", "F6", "F1"]
+    tops = [rail_top(data, cushion_pocket) for cushion_pocket in cushion_pockets]
     return merge_vertices_and_faces(tops) 
 
-def create_sights(data):
+def create_rail_sights(data):
+    """Returns the six rectangular rail plates for the sights.
+    """
+    h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
+    y0 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["CUSHION_WIDTH"]
+    y1 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
+    x0 = data["specs"]["TABLE_LENGTH"]/2 + data["specs"]["CUSHION_WIDTH"]
+    x1 = data["specs"]["TABLE_LENGTH"]/2 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
+    w = data["specs"]["TABLE_LENGTH"]/2
+    offset0 = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][0]
+    offset1 = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][1]
+    rs_b = [np.array((offset0, y0, h0)), np.array((w-offset1, y0, h0)), np.array((w-offset1, y1, h0)), np.array((offset0, y1, h0))]
+    rs_c = [np.array((x0, -w/2+offset1, h0)), np.array((x1, -w/2+offset1, h0)), np.array((x1, w/2-offset1, h0)), np.array((x0, w/2-offset1, h0))]
+    rs_a = plane_E1.reflect(list(reversed(rs_b)))
+    rs_d = plane_E2.reflect(list(reversed(rs_b)))
+    rs_e = plane_E1.reflect(plane_E2.reflect(rs_b))
+    rs_f = plane_E1.reflect(list(reversed(rs_c)))
+    f = lambda v_list: { "vertices": v_list, "faces": [[0, 1, 2, 3]] }
+    return merge_vertices_and_faces([f(rs_a), f(rs_b), f(rs_c), f(rs_d), f(rs_e), f(rs_f)])
+
+def create_sights_metadata(data):
     """From WPA (https://wpapool.com/equipment-specifications/):
     18 sights (or 17 and a name plate) shall be attached flush on the rail cap with:
     12 ½ inches [31.75 cm] from sight to sight on a 9-foot regulation table
@@ -668,7 +723,7 @@ def create_metadata(data):
     # Box from rail back to rail back:
     meta["railbox"] = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_LENGTH"]/4+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_RAIL_HEIGHT"]))
     
-    meta["sights"] = create_sights(data)
+    meta["sights"] = create_sights_metadata(data)
     return meta
 
 
@@ -684,6 +739,7 @@ def main():
     data["liners"] = create_pocket_liners(data)
     data["casing"] = create_casing(data)
     data["rails"] = create_rail_tops(data)
+    data["rail_sights"] = create_rail_sights(data)
     meta = create_metadata(data)
 
     if WRITE_FILE:
@@ -695,6 +751,7 @@ def main():
         write_obj_file("liners.obj", data["liners"])
         write_obj_file("casing.obj", data["casing"])
         write_obj_file("rails.obj", data["rails"])
+        write_obj_file("rail_sights.obj", data["rail_sights"])
 
     # print(f"{data["specs"] = }")
     # print(f"{data["points"] = }")
@@ -705,6 +762,7 @@ def main():
     # print(f"{data["liners"] = }")
     # print(f"{data["casing"] = }")
     # print(f"{data["rails"] = }")
+    # print(f"{data["rail_sights"] = }")
     # print(f"{meta = }")
 
 if __name__ == "__main__":

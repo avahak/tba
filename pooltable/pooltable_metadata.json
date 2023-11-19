@@ -31,6 +31,7 @@
             "TABLE_SLATE_THICKNESS": "Height of the slate WPA requires >=1",
             "TABLE_RAIL_HEIGHT": "Height of rail from table bed (1.6\" for 23deg CUSHION_K66_PROFILE_ANGLE)",
             "TABLE_SIGHTS_DEPTH": "Depth of sights from cushion nose, WPA requires 3\"11/16(+1/8\").",
+            "TABLE_RAIL_SIGHTS_BLOCK": "Offset at B2 and B3 where sights block part begins, measured as distance along x-axis from 0 and cushion C nose respectively.",
             "TABLE_POCKET_LINER_WIDTH": "Width of the pocket liner part visible from above.",
             "TABLE_POCKET_LINER_NUM_POINTS": "Controls number of points on the pocket liner arc segments.",
             "TABLE_SLATE_NUM_POINTS": "First number controls the number of vertical slices, second number controls number or points on the arc segments.",
@@ -65,6 +66,10 @@
         "TABLE_SLATE_THICKNESS": 0.0254,
         "TABLE_RAIL_HEIGHT": 0.0406891376913803,
         "TABLE_SIGHTS_DEPTH": 0.0936625,
+        "TABLE_RAIL_SIGHTS_BLOCK": [
+            0.09525,
+            0.09525
+        ],
         "TABLE_POCKET_LINER_WIDTH": 0.0127,
         "TABLE_CASING_VERTICAL_ANGLE": 0.2617993877991494,
         "TABLE_CASING_HEIGHT": 0.254,
