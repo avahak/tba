@@ -13,8 +13,6 @@
 #   - rails.obj - rails
 #   - casing.obj - casing
 
-# 1) Separate diamond patches on rails in some nonarbitrary way
-
 # 2) Todo normals: give each object an angle limit, start with separate normals
 # and combine in some way if two normals closer than angle limit
 
@@ -30,7 +28,7 @@
 #       Kinda needed for diamonds
 
 import numpy as np
-import json
+import json, pickle
 
 import geometry
 
@@ -620,7 +618,6 @@ def rail_top_b3(data):
 def rail_top_b2(data):
     """Returns points for one complex polygon that defines the rail top near B2.
     """
-    r = data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
     h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
     y0 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["CUSHION_WIDTH"]
     y1 = data["specs"]["TABLE_LENGTH"]/4 + data["specs"]["TABLE_RAIL_WIDTH"] - data["specs"]["TABLE_CASING_BEVEL_RADIUS"]
@@ -744,8 +741,10 @@ def main():
 
     if WRITE_FILE:
         # Write to file:
-        with open("pooltable_metadata.json", "w") as file:
-            file.write(json.dumps(convert_numpy_to_lists(meta), indent=4))
+        with open("pooltable_metadata.json", "w") as f:
+            f.write(json.dumps(convert_numpy_to_lists(meta), indent=4))
+        with open("pooltable_all_data.pkl", "wb") as f:
+            pickle.dump(data, f)
         write_obj_file("cushions.obj", data["cushions"])
         write_obj_file("slate.obj", data["slate"])
         write_obj_file("liners.obj", data["liners"])
