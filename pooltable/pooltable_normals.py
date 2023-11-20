@@ -21,26 +21,6 @@ ANGLE_LIMIT_SPECIAL = { "casing": 60.0*DEGREE }
 def normalize(p):
     return p / np.linalg.norm(p)
 
-def unique_indexing(points):
-    """Returns list of unique points and indexing from points to the unique points.
-    """
-    u_points = []
-    indexing_p_to_up = []
-    for p in points:
-        u_index = None
-        for uk, up in enumerate(u_points):
-            if np.linalg.norm(up-p) < 1.0e-12:
-                u_index = uk
-                break
-        if u_index is None:
-            # p is not found in u_points:
-            indexing_p_to_up.append(len(u_points))
-            u_points.append(p)
-        else:
-            # p is found in u_points:
-            indexing_p_to_up.append(u_index)
-    return u_points, indexing_p_to_up
-
 def mesh_from(data_mesh):
     # Here just for additional index_vertex_to_faces info.
     mesh = {}
@@ -135,31 +115,12 @@ def select_normals(mesh, name, data):
             mesh["normals"][f_index][v_index] = len(mesh["normal_list"])
             mesh["normal_list"].append(n)
 
-def write_obj(mesh, name):
-    vertices = mesh["vertices"]
-    unique_vertices, indexing_vertices = unique_indexing(vertices)
-    faces = mesh["faces"]
-    unique_normals, indexing_normals = unique_indexing(mesh["normal_list"])
-
-    file_name = f"{name}_n.obj"
-    with open(file_name, "w") as file:
-        for v in unique_vertices:
-            file.write(f"v {v[0]} {v[1]} {v[2]}\n")
-        for v in unique_normals:
-            file.write(f"vn {v[0]} {v[1]} {v[2]}\n")
-        for fk, f in enumerate(faces):
-            s = "f "
-            for vk, v in enumerate(f):
-                j = mesh["normals"][fk][vk]
-                s += f"{indexing_vertices[v]+1}//{indexing_normals[j]+1} "
-            file.write(s + "\n")
-    print(f"File {file_name} written.")
-
-def main():
-    with open("pooltable_all_data.pkl", "rb") as f:
-        data = pickle.load(f)
+def run(data):
+    # with open("pooltable_all_data.pkl", "rb") as f:
+    #     data = pickle.load(f)
     # print(f"{data.keys() = }")
     # mesh = data["cushions"]
+    data["normals"] = dict()
     for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:
     # for name in ["rails"]:
         mesh = mesh_from(data[name])
@@ -167,7 +128,9 @@ def main():
         compute_flat_normals(mesh)
         compute_smooth_normals(mesh, name, data)
         select_normals(mesh, name, data)
-        write_obj(mesh, name)
+        data["normals"][name] = mesh
+        # write_obj(mesh, name)
+    return data
 
 if __name__ == "__main__":
-    main()
+    pass
