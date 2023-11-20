@@ -13,9 +13,6 @@
 #   - rails.obj - rails
 #   - casing.obj - casing
 
-# 2) Todo normals: give each object an angle limit, start with separate normals
-# and combine in some way if two normals closer than angle limit
-
 # 3) Todo UV coords: cushions: [k1,(k1,k2),(k1,k3),(k2,k4),..] order or propagation
 # slate: uv=xy or top,bottom uv=xy, custom taking normal from original slice and 
 #       extending according to distance on curve

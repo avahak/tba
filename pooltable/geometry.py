@@ -127,11 +127,11 @@ class Polygon:
 
     @staticmethod 
     def signed_area(points, basis):
-        """Computes signed area of a polygon lying on a plane in R^3.
+        """Computes signed area of a polygon lying on a plane in R^3 with Shoelace formula.
         The first component of basis, basis[0] should point to the normal direction
         of the polygon plane.
         """
-        e1, e2 = basis[1], basis[2]     # ??????
+        e1, e2 = basis[1], basis[2]
         area = 0.0
         n = len(points)
         for k in range(n):
