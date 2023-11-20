@@ -77,7 +77,7 @@
         "TABLE_CASING_BEVEL_RADIUS": 0.0127,
         "TABLE_POCKET_LINER_NUM_POINTS": 10,
         "TABLE_SLATE_NUM_POINTS": [
-            5,
+            3,
             10
         ],
         "TABLE_CASING_NUM_POINTS": [

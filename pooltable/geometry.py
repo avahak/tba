@@ -110,17 +110,53 @@ class Plane:
         b = np.array([p1.d, p2.d, p3.d])
         return np.linalg.solve(a, b)
     
+class Polygon:
+    @staticmethod 
+    def oriented_basis(points):
+        """Returns an oriented basis of R^3 with PCA.
+        """
+        points = np.array(points)
+        centroid = np.mean(points, axis=0)
+        cov_matrix = np.cov((points - centroid).T)
+        eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+        eigenvectors = eigenvectors.T
+        if np.linalg.det(eigenvectors) < 0.0:
+            eigenvalues[0] = -eigenvalues[0]
+            eigenvectors[0] *= -1.0
+        return eigenvalues, eigenvectors
+
+    @staticmethod 
+    def signed_area(points, basis):
+        """Computes signed area of a polygon lying on a plane in R^3.
+        The first component of basis, basis[0] should point to the normal direction
+        of the polygon plane.
+        """
+        e1, e2 = basis[1], basis[2]     # ??????
+        area = 0.0
+        n = len(points)
+        for k in range(n):
+            p, p1 = points[k], points[(k+1)%n]
+            area += (np.dot(e2, p) + np.dot(e2, p1))*(np.dot(e1, p) - np.dot(e1, p1))
+        return 0.5*area
+
 def main():
-    p = np.random.randn(3)
-    a = np.random.randn(3)
-    b = np.random.randn(3)
-    c = np.random.randn(3)
-
-    print(f"{p = }\n{a = }\n{b = }\n{c = }\n")
-
-    q = closest_point(p, a, b, c)
-    qq = closest_point(q, a, b, c)
-    print(f"{q = }\n{qq =}")
+    if False:
+        p = np.random.randn(3)
+        a = np.random.randn(3)
+        b = np.random.randn(3)
+        c = np.random.randn(3)
+        print(f"{p = }\n{a = }\n{b = }\n{c = }\n")
+        q = closest_point(p, a, b, c)
+        qq = closest_point(q, a, b, c)
+        print(f"{q = }\n{qq =}")
+    if True:
+        points = np.random.randn(3, 3)*np.array((0.1, 1.0, 0.5))
+        _, basis = Polygon.oriented_basis(points)
+        print(basis[0])
+        print(basis[1])
+        print(basis[2])
+        print(np.linalg.det(basis))
+        print("area: ", Polygon.signed_area(points, basis))
 
 
 if __name__ == "__main__":

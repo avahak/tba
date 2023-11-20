@@ -73,7 +73,8 @@ function initGeneral() {
     }
     const resourcePromises = [
         loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
-        loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
+        // loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
+        loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/test.obj`, `${designSettings.RESOURCES_PATH}models/test.mtl`),
         loadObjMtlPromise("ball", `${designSettings.RESOURCES_PATH}models/ball.obj`, null),
         loadJsonPromise(),
     ];

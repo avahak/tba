@@ -205,7 +205,7 @@ def create_pooltable_json():
     comment = "Controls number of points on the pocket liner arc segments."
     add_spec(specs, "TABLE_POCKET_LINER_NUM_POINTS", 10, comment)
     comment = "First number controls the number of vertical slices, second number controls number or points on the arc segments."
-    add_spec(specs, "TABLE_SLATE_NUM_POINTS", (5, 10), comment)
+    add_spec(specs, "TABLE_SLATE_NUM_POINTS", (3, 10), comment)
     comment = "First number controls number of points on the rounded edge of the casing, second number controls number of points for the bevel on the casing."
     add_spec(specs, "TABLE_CASING_NUM_POINTS", (5, 5), comment)
     
@@ -416,17 +416,20 @@ def create_slate(data):
     v_slate[index_top_center] = np.array((0.0, 0.0, 0.0))
     v_slate[index_bottom_center] = np.array((0.0, 0.0, -thickness))
 
-    f_slate = ((2*num_slices-1)*(6*num_arc_points)+2*(6*num_arc_points)) * [(0,0,0)]    # TODO put back None
+    f_slate = (2*(2*num_slices-1)*(6*num_arc_points)+2*(6*num_arc_points)) * [(0,0,0)]    # TODO put back None
     # Add rectangular faces on the sides of the slate:
     for ks in range(2*num_slices-1):
         for ka in range(6*num_arc_points):
-            f_slate[ks*(6*num_arc_points)+ka] = (ks*(6*num_arc_points)+ka, ks*(6*num_arc_points)+(ka+1)%(6*num_arc_points), 
+            quad = (ks*(6*num_arc_points)+ka, ks*(6*num_arc_points)+(ka+1)%(6*num_arc_points), 
                     (ks+1)*(6*num_arc_points)+(ka+1)%(6*num_arc_points), (ks+1)*(6*num_arc_points)+ka)
+            # Since quad is not perfectly planar, add triangles instead of the quad:
+            f_slate[2*ks*(6*num_arc_points)+2*ka+0] = (quad[0], quad[1], quad[2])
+            f_slate[2*ks*(6*num_arc_points)+2*ka+1] = (quad[0], quad[2], quad[3])
     # Add triangles to top and bottom by connecting to top or bottom center:
     for ka in range(6*num_arc_points):
-        f_slate[(2*num_slices-1)*(6*num_arc_points)+ka] = (index_top_center, (ka+1)%(6*num_arc_points), ka)
-        f_slate[(2*num_slices)*(6*num_arc_points)+ka] = (index_bottom_center, (2*num_slices-2)*(6*num_arc_points)+ka, 
-                (2*num_slices-2)*(6*num_arc_points)+(ka+1)%(6*num_arc_points))
+        f_slate[2*(2*num_slices-1)*(6*num_arc_points)+ka] = (index_top_center, (ka+1)%(6*num_arc_points), ka)
+        f_slate[(2*(2*num_slices-1)+1)*(6*num_arc_points)+ka] = (index_bottom_center, (2*num_slices-1)*(6*num_arc_points)+ka, 
+                (2*num_slices-1)*(6*num_arc_points)+(ka+1)%(6*num_arc_points))
         
     # f_slate_flat = [v for f in f_slate for v in f]
     return {"vertices": v_slate, "faces": f_slate}
