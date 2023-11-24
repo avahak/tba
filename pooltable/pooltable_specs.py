@@ -27,7 +27,7 @@
 import numpy as np
 import json, pickle
 
-import geometry
+import geometry3
 
 INCH = 0.0254
 OUNCE = 0.0283495231
@@ -37,8 +37,8 @@ E1 = np.array((1.0, 0.0, 0.0))
 E2 = np.array((0.0, 1.0, 0.0))
 E3 = np.array((0.0, 0.0, 1.0))
 
-plane_E1 = geometry.Plane(E1, 0.0)
-plane_E2 = geometry.Plane(E2, 0.0)
+plane_E1 = geometry3.Plane(E1, 0.0)
+plane_E2 = geometry3.Plane(E2, 0.0)
 
 def normalize(p):
     return p / np.linalg.norm(p)

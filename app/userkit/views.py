@@ -37,7 +37,7 @@ def signup():
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
-        send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm.html", user=user, token=token)
+        send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm", user=user, token=token)
         return messenger.render_message_template(messenger.messages["registration_success"])
     return render_template("userkit/signup.html", form=form)
 
@@ -79,7 +79,7 @@ def request_confirmation_email():
         user = User.query.filter_by(email=form.email.data).first()
         if (user is not None) and (not user.is_confirmed):
             token = user.generate_confirmation_token()
-            send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm.html", user=user, token=token)
+            send_template_mail(user.email, "Confirm Your Account", "userkit/email/confirm", user=user, token=token)
             return messenger.render_message_template(messenger.messages["confirmation_email_resent"])
         return messenger.render_message_template(messenger.messages["confirmation_email_resend_failure"])
     return render_template("userkit/request_confirmation_email.html", form=form)
@@ -91,7 +91,7 @@ def request_password_reset_email():
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None:
             token = user.generate_password_reset_token()
-            send_template_mail(user.email, "Password Reset Link", "userkit/email/password_reset.html", user=user, token=token)
+            send_template_mail(user.email, "Password Reset Link", "userkit/email/password_reset", user=user, token=token)
             return messenger.render_message_template(messenger.messages["request_password_reset_email_sent"])
         return messenger.render_message_template(messenger.messages["request_password_reset_email_failure"])
     return render_template("userkit/request_password_reset_email.html", form=form)

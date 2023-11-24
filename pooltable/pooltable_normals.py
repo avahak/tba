@@ -7,7 +7,7 @@ original face (ANGLE_LIMIT).
 
 import json, pickle
 import numpy as np
-import geometry
+import geometry3, mesh3
 
 E1 = np.array((1.0, 0.0, 0.0))
 E2 = np.array((0.0, 1.0, 0.0))
@@ -21,115 +21,80 @@ ANGLE_LIMIT_SPECIAL = { "casing": 60.0*DEGREE }
 def normalize(p):
     return p / np.linalg.norm(p)
 
-def mesh_from(data_mesh):
-    # Here just for additional index_vertex_to_faces info.
-    mesh = {}
-    mesh["vertices"] = data_mesh["vertices"]
-    mesh["faces"] = data_mesh["faces"]
-    mesh["index_vertex_to_faces"] = [[] for _ in data_mesh["vertices"]]
-    for fk, face in enumerate(data_mesh["faces"]):
-        for v in face:
-            mesh["index_vertex_to_faces"][v].append(fk)
-    return mesh
+# def compute_normal(points):
+#     # Returns normal for the points.
+#     _, basis = geometry.Polygon.oriented_basis(points)
+#     signed_area = geometry.Polygon.signed_area(points, basis)
+#     n = basis[0] if signed_area > 0.0 else -basis[0]
+#     if len(points) <= 4: 
+#         n0 = normalize(np.cross(points[1]-points[0], points[2]-points[0]))
+#         if np.dot(n, n0) < 0.0:
+#             print("PROBLEM! Normal has wrong sign.")
+#     return n
 
-def compute_planarity(points):
-    # Returns measure of planarity for the points.
-    eigenvalues, _ = geometry.Polygon.oriented_basis(points)
-    if eigenvalues[0] < 1.0e-20:
-        return float('inf')
-    return eigenvalues[1]/eigenvalues[0]
-
-def compute_normal(points):
-    # Returns normal for the points.
-    _, basis = geometry.Polygon.oriented_basis(points)
-    signed_area = geometry.Polygon.signed_area(points, basis)
-    n = basis[0] if signed_area > 0.0 else -basis[0]
-    if len(points) <= 4: 
-        n0 = normalize(np.cross(points[1]-points[0], points[2]-points[0]))
-        if np.dot(n, n0) < 0.0:
-            print("PROBLEM! Normal has wrong sign.")
-    return n
-
-def test_planarity(mesh):
+def test_planarity(mesh: mesh3.Mesh3):
     # Tests the planarity of faces in the mesh.
-    for f in mesh["faces"]:
-        face_points = [mesh["vertices"][k] for k in f]
-        if len(face_points) == 3:
-            continue
-        planarity = compute_planarity(face_points)
+    for f in mesh.fs:
+        xs = [np.dot(p-f.basis[3], f.basis[0]) for p in f.pts]
+        ys = [np.dot(p-f.basis[3], f.basis[1]) for p in f.pts]
+        zs = [np.dot(p-f.basis[3], f.basis[2]) for p in f.pts]
+        bbox_dims = [np.max(xs)-np.min(xs), np.max(ys)-np.min(ys), np.max(zs)-np.min(zs)]
+        if bbox_dims[2] == 0.0:
+            return float('inf')
+        planarity = np.min([bbox_dims[0], bbox_dims[1]]) / bbox_dims[2]
         if abs(planarity) < 1.0e12:
-            print(f"{len(face_points) = }, {planarity:.2e}")
+            raise Exception(f"Nonplanar face not planar. {planarity = }")
 
-def compute_flat_normals(mesh):
-    # Computes the normal associated to each face when only that face is considered.
-    mesh["flat_normals"] = [None for f in mesh["faces"]]
-    for f_index, f in enumerate(mesh["faces"]):
-        face_points = [mesh["vertices"][k] for k in f]
-        n = compute_normal(face_points)
-        mesh["flat_normals"][f_index] = n
-        # print(face_points, n, "\n")
-
-def is_slate_cutoff_face(f, mesh, name, data):
+def is_slate_cutoff_face(data, name, face):
     # Returns true if f is one of the slate faces that are at the x or y cutoff.
-    v_avg = np.average([mesh["vertices"][v] for v in f], axis=0)
+    v_avg = np.average(face.pts, axis=0)
     if (name == "slate") and ((np.abs(np.abs(v_avg[0])-data["specs"]["TABLE_LENGTH"]/2.0-data["specs"]["CUSHION_WIDTH"]) < 1.0e-9) 
             or (np.abs(np.abs(v_avg[1])-data["specs"]["TABLE_LENGTH"]/4.0-data["specs"]["CUSHION_WIDTH"]) < 1.0e-9)):
         return True
     return False
 
-def compute_smooth_normals(mesh, name, data):
+def compute_smooth_normals(data, name, mesh, mesh_indexing):
     # Adds smooth_normals to the mesh. These are averaged normals.
-    mesh["smooth_normals"] = [(len(f) * [None]) for f in mesh["faces"]]
-    for f_index, f in enumerate(mesh["faces"]):
-        n0 = mesh["flat_normals"][f_index]
-        for v_index, v in enumerate(f):
+
+    for fk, face in enumerate(mesh_indexing["f"]):
+        n0 = face.basis[2]
+        for pk, p in enumerate(mesh_indexing["fv"][fk]):
             close_normals = []
-            for f_index2 in mesh["index_vertex_to_faces"][v]:
-                n = mesh["flat_normals"][f_index2]
+            for f_other in mesh_indexing["vf"][p]:
+                face_other = mesh.fs[f_other]
+                n = mesh.fs[f_other].basis[2]
                 if np.dot(n, n0) > np.cos(ANGLE_LIMIT_SPECIAL.get(name, ANGLE_LIMIT_DEFAULT)):
-                    if not is_slate_cutoff_face(mesh["faces"][f_index2], mesh, name, data):
+                    if not is_slate_cutoff_face(data, name, face_other):
                         close_normals.append(n)
             n = normalize(np.sum(close_normals, axis=0)) if len(close_normals) > 0 else n0
-            mesh["smooth_normals"][f_index][v_index] = n
+            face.ns[pk] = n
 
-def select_normals(mesh, name, data):
+def select_normals(data, name, mesh, mesh_indexing):
     """Select between normals from smooth_normals and flat_normals
     based on custom rules.
     """
-    mesh["normals"] = [(len(f) * [None]) for f in mesh["faces"]]
-    mesh["normal_list"] = []
-    for f_index, f in enumerate(mesh["faces"]):
-        n0 = mesh["flat_normals"][f_index]
-        v_avg = np.average([mesh["vertices"][v] for v in f], axis=0)
-        for v_index, v in enumerate(f):
-            n1 = mesh["smooth_normals"][f_index][v_index]
-
+    for fk, face in enumerate(mesh.fs):
+        n0 = face.basis[2]
+        for n_index, n1 in enumerate(face.ns):
             n = n1
             if (np.linalg.norm(n0-E3) < 1.0e-9) or (np.linalg.norm(n0+E3) < 1.0e-9):
                 n = n0
-            if is_slate_cutoff_face(f, mesh, name, data):
+            if is_slate_cutoff_face(data, name, face):
                 n = n0
             if (name == "cushions") or (name == "rails") or (name == "rail_sights"):
                 n = n0
 
-            mesh["normals"][f_index][v_index] = len(mesh["normal_list"])
-            mesh["normal_list"].append(n)
+            face.ns[n_index] = n
 
 def run(data):
-    # with open("pooltable_all_data.pkl", "rb") as f:
-    #     data = pickle.load(f)
-    # print(f"{data.keys() = }")
-    # mesh = data["cushions"]
     data["normals"] = dict()
     for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:
     # for name in ["rails"]:
-        mesh = mesh_from(data[name])
+        mesh = data[name]
+        mesh_indexing = mesh.mesh_indexing()
         test_planarity(mesh)
-        compute_flat_normals(mesh)
-        compute_smooth_normals(mesh, name, data)
-        select_normals(mesh, name, data)
-        data["normals"][name] = mesh
-        # write_obj(mesh, name)
+        compute_smooth_normals(data, name, mesh, mesh_indexing)
+        select_normals(data, name, mesh, mesh_indexing)
     return data
 
 if __name__ == "__main__":

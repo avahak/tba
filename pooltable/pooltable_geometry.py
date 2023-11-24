@@ -1,7 +1,7 @@
 import numpy as np
 import json, pickle
 
-import geometry
+import geometry3, mesh3
 
 INCH = 0.0254
 OUNCE = 0.0283495231
@@ -11,8 +11,8 @@ E1 = np.array((1.0, 0.0, 0.0))
 E2 = np.array((0.0, 1.0, 0.0))
 E3 = np.array((0.0, 0.0, 1.0))
 
-plane_E1 = geometry.Plane(E1, 0.0)
-plane_E2 = geometry.Plane(E2, 0.0)
+plane_E1 = geometry3.Plane(E1, 0.0)
+plane_E2 = geometry3.Plane(E2, 0.0)
 
 def normalize(p):
     return p / np.linalg.norm(p)
@@ -43,7 +43,7 @@ def merge_vertices_and_faces(dict_list):
 def apply_reflections(points, reflect_plane_list):
     """Applies one or multiple reflections to a point or list of points.
     """
-    if isinstance(reflect_plane_list, geometry.Plane):
+    if isinstance(reflect_plane_list, geometry3.Plane):
         reflect_plane_list = [reflect_plane_list]
     if isinstance(points, np.ndarray) and points.ndim == 1:
         p = points
@@ -59,28 +59,28 @@ def pool_cushion(data, p1, p2, pn, h_angle1, v_angle1, h_angle2, v_angle2, cushi
     pn = normalize(pn)
     p12u = normalize(p2-p1)
 
-    plane_slate = geometry.Plane(E3, 0.0)
-    plane_rail_top = geometry.Plane(E3, specs["TABLE_RAIL_HEIGHT"])
+    plane_slate = geometry3.Plane(E3, 0.0)
+    plane_rail_top = geometry3.Plane(E3, specs["TABLE_RAIL_HEIGHT"])
     p = p1 + np.sin(specs["CUSHION_SLOPE"])*E3 + np.cos(specs["CUSHION_SLOPE"])*pn
-    plane_rubber_top = geometry.Plane.from_points(p1, p2, p)
+    plane_rubber_top = geometry3.Plane.from_points(p1, p2, p)
 
     p = p1 + np.sin(specs["CUSHION_BED_ANGLE"])*E3 + np.cos(specs["CUSHION_BED_ANGLE"])*(-pn)
-    plane_rubber_bottom = geometry.Plane.from_points(p1, p2, p)
+    plane_rubber_bottom = geometry3.Plane.from_points(p1, p2, p)
 
     p = p1 + specs["CUSHION_WIDTH"]*pn
-    plane_rail_back = geometry.Plane.from_points(p, p+p12u, p+E3)
+    plane_rail_back = geometry3.Plane.from_points(p, p+p12u, p+E3)
 
     q = np.sin(h_angle1)*pn + np.cos(h_angle1)*p12u
     v = np.cross(q, E3)
     v = normalize(v)
     q2 = np.cos(-v_angle1)*E3 + np.sin(-v_angle1)*v
-    plane_end1 = geometry.Plane.from_points(p1, p1+q, p1+q2)
+    plane_end1 = geometry3.Plane.from_points(p1, p1+q, p1+q2)
 
     q = np.sin(h_angle2)*pn + np.cos(h_angle2)*(-p12u)
     v = np.cross(q, E3)
     v = normalize(v)
     q2 = np.cos(v_angle2)*E3 + np.sin(v_angle2)*v
-    plane_end2 = geometry.Plane.from_points(p2, p2+q, p2+q2)
+    plane_end2 = geometry3.Plane.from_points(p2, p2+q, p2+q2)
 
     if ("planes" not in data):
         data["planes"] = {}
@@ -96,9 +96,9 @@ def pool_cushion(data, p1, p2, pn, h_angle1, v_angle1, h_angle2, v_angle2, cushi
     planes = [plane_rail_back, plane_rail_top, plane_rubber_top, plane_rubber_bottom, plane_slate]
     v_list = []
     for k in range(len(planes)):
-        v_list.append(geometry.Plane.intersection(plane_end1, planes[k], planes[(k+1)%len(planes)]))
+        v_list.append(geometry3.Plane.intersection(plane_end1, planes[k], planes[(k+1)%len(planes)]))
     for k in range(len(planes)):
-        v_list.append(geometry.Plane.intersection(plane_end2, planes[k], planes[(k+1)%len(planes)]))
+        v_list.append(geometry3.Plane.intersection(plane_end2, planes[k], planes[(k+1)%len(planes)]))
 
     f_list = []
     # endcaps:
@@ -142,7 +142,7 @@ def create_cushions(data):
     data["points"]["normal_6"] = normalize(-E1 - E2)
     for k in range(1, 7):
         base = data["points"][f"mouth_center_{k}"]
-        data["planes"][f"bisector_{k}"] = geometry.Plane.from_points(base, base+data["points"][f"normal_{k}"], base+E3)
+        data["planes"][f"bisector_{k}"] = geometry3.Plane.from_points(base, base+data["points"][f"normal_{k}"], base+E3)
 
     return merge_vertices_and_faces(ret)
 
@@ -243,13 +243,13 @@ def create_pocket_liner_arc(data, pocket, bulge, height):
     # We just have to reflect afterwards accordingly.
     final_reflects = []
     if (pocket == 1):
-        final_reflects = [geometry.Plane(E1, 0.0), data["planes"]["bisector_1"]]
+        final_reflects = [geometry3.Plane(E1, 0.0), data["planes"]["bisector_1"]]
     elif (pocket == 4):
-        final_reflects = [geometry.Plane(E2, 0.0), data["planes"]["bisector_4"]]
+        final_reflects = [geometry3.Plane(E2, 0.0), data["planes"]["bisector_4"]]
     elif (pocket == 5):
-        final_reflects = [geometry.Plane(E2, 0.0), data["planes"]["bisector_5"]]
+        final_reflects = [geometry3.Plane(E2, 0.0), data["planes"]["bisector_5"]]
     elif (pocket == 6):
-        final_reflects = [geometry.Plane(E1, 0.0), geometry.Plane(E2, 0.0)]
+        final_reflects = [geometry3.Plane(E1, 0.0), geometry3.Plane(E2, 0.0)]
     pocket = 2 if (pocket in (2, 5)) else 3
 
     POCKET_TYPE = ("CORNER" if (pocket == 3) else "SIDE")
@@ -269,13 +269,13 @@ def create_pocket_liner_arc(data, pocket, bulge, height):
 
     # Relevant planes to help calculate points:
     # NOTE: in plane_end we need cos(vertical_angle) to correct for the tilt of the plane:
-    plane_end = geometry.Plane.translate(data["planes"][CUSHION_NAME]["end1"], -bulge*np.cos(data["specs"][f"{POCKET_TYPE}_POCKET_VERTICAL_ANGLE"]))
-    plane_z_is_height = geometry.Plane(E3, height)
+    plane_end = geometry3.Plane.translate(data["planes"][CUSHION_NAME]["end1"], -bulge*np.cos(data["specs"][f"{POCKET_TYPE}_POCKET_VERTICAL_ANGLE"]))
+    plane_z_is_height = geometry3.Plane(E3, height)
     plane_rail_back = data["planes"][CUSHION_NAME]["rail_back"]
 
     # First we need the starting point and direction:
-    start = geometry.Plane.intersection(plane_end, plane_z_is_height, plane_rail_back)
-    sp = geometry.Plane.intersection(plane_end, plane_z_is_height, geometry.Plane.translate(plane_rail_back, 1.0))
+    start = geometry3.Plane.intersection(plane_end, plane_z_is_height, plane_rail_back)
+    sp = geometry3.Plane.intersection(plane_end, plane_z_is_height, geometry3.Plane.translate(plane_rail_back, 1.0))
     start_dir = normalize(sp-start)
 
     # Next we need to find the closest point on the line (start+t*start_dir) to center_3:
@@ -346,9 +346,9 @@ def casing_circuit(data, bulge_radius, bulge_length, height):
     for k in range(n):
         t = np.pi/2*k/(n-1)
         arc3.append(np.array((center[0]+r*np.cos(t), center[1]+r*np.sin(t), center[2])))
-    arc1 = apply_reflections(arc3, [geometry.Plane(E1, 0.0), data["planes"]["bisector_1"]])
-    arc6 = apply_reflections(arc3, [geometry.Plane(E1, 0.0), geometry.Plane(E2, 0.0)])
-    arc4 = apply_reflections(arc3, [geometry.Plane(E2, 0.0), data["planes"]["bisector_4"]])
+    arc1 = apply_reflections(arc3, [geometry3.Plane(E1, 0.0), data["planes"]["bisector_1"]])
+    arc6 = apply_reflections(arc3, [geometry3.Plane(E1, 0.0), geometry3.Plane(E2, 0.0)])
+    arc4 = apply_reflections(arc3, [geometry3.Plane(E2, 0.0), data["planes"]["bisector_4"]])
     circuit = []
     circuit.extend(arc3)
     circuit.extend(arc1)
@@ -488,13 +488,22 @@ def create_rail_sights(data):
     f = lambda v_list: { "vertices": v_list, "faces": [[0, 1, 2, 3]] }
     return merge_vertices_and_faces([f(rs_a), f(rs_b), f(rs_c), f(rs_d), f(rs_e), f(rs_f)])
 
+def to_mesh(obj):
+    # Converts { "vertices": ..., "faces": ... } to Mesh3
+    mesh = mesh3.Mesh3()
+    for face in obj["faces"]:
+        points = [obj["vertices"][k] for k in face]
+        face = mesh3.Face3(points)
+        mesh.add_face(face)
+    return mesh
+
 def run(data):
-    data["cushions"] = create_cushions(data)
-    data["slate"] = create_slate(data)
-    data["liners"] = create_pocket_liners(data)
-    data["casing"] = create_casing(data)
-    data["rails"] = create_rail_tops(data)
-    data["rail_sights"] = create_rail_sights(data)
+    data["cushions"] = to_mesh(create_cushions(data))
+    data["slate"] = to_mesh(create_slate(data))
+    data["liners"] = to_mesh(create_pocket_liners(data))
+    data["casing"] = to_mesh(create_casing(data))
+    data["rails"] = to_mesh(create_rail_tops(data))
+    data["rail_sights"] = to_mesh(create_rail_sights(data))
     return data
 
 if __name__ == "__main__":

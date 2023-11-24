@@ -30,11 +30,10 @@ def send_template_mail(to, subject, template, *args, **kwargs):
     """Sends email based on a template. Text version is also attached 
     if it exists.
     """
-    html_body = render_template(template, *args, **kwargs)
-    text_template_path = os.path.splitext(template)[0] + ".text"
+    html_body = render_template(template + ".html", *args, **kwargs)
     text_body = html_body
     try:
-        text_body = render_template(text_template_path, *args, **kwargs)
+        text_body = render_template(template + ".text", *args, **kwargs)
     except Exception as e:
-        logger.warning(f"No text file {text_template_path} found for email template {template}: {e}")
+        logger.warning(f"No text file found for email template {template}: {e}")
     send_mail(to, subject, html_body, text_body)
