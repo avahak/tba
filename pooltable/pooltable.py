@@ -48,6 +48,8 @@ def write_obj_file(data, name):
     unique_vertices, indexing_vertices = unique_indexing(vertices)
     normals = {(fk, nk): n for fk, face in enumerate(mesh.fs) for nk, n in enumerate(face.ns)}
     unique_normals, indexing_normals = unique_indexing(normals)
+    uvs = {(fk, k): uv for fk, face in enumerate(mesh.fs) for k, uv in enumerate(face.uvs)}
+    unique_uvs, indexing_uvs = unique_indexing(uvs)
 
     file_name = f"obj/{name}_n.obj"
     with open(file_name, "w") as file:
@@ -55,12 +57,12 @@ def write_obj_file(data, name):
             file.write(f"v {v[0]} {v[1]} {v[2]}\n")
         for v in unique_normals:
             file.write(f"vn {v[0]} {v[1]} {v[2]}\n")
-        # for v in unique_uvs:
-        #     file.write(f"vt {v[0]} {v[1]}\n")
+        for v in unique_uvs:
+            file.write(f"vt {v[0]} {v[1]}\n")
         for fk, face in enumerate(mesh.fs):
             s = "f "
             for vk, v in enumerate(face.pts):
-                s += f"{indexing_vertices[(fk,vk)]+1}//{indexing_normals[(fk,vk)]+1} "
+                s += f"{indexing_vertices[(fk,vk)]+1}/{indexing_uvs[(fk,vk)]+1}/{indexing_normals[(fk,vk)]+1} "
             file.write(s + "\n")
     print(f"File {file_name} written.")
 

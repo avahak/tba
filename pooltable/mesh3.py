@@ -84,6 +84,12 @@ class Face3:
             faces.append(face)
         return faces
     
+    def __repr__(self):
+        s = f"Face3(n={self.n}"
+        for p in self.pts:
+            s += f", {p}"
+        return s + ")"
+    
 class Mesh3:
     fs: Sequence[Face3]
 

@@ -102,13 +102,17 @@ def pool_cushion(data, p1, p2, pn, h_angle1, v_angle1, h_angle2, v_angle2, cushi
 
     f_list = []
     # endcaps:
-    for k in range(3):
-        f_list.append([0, k+2, k+1])
-        f_list.append([5, k+6, k+7])
-    # long triangles:
+    f_list.append([4, 3, 2, 1, 0])
+    f_list.append([5, 6, 7, 8, 9])
     for k in range(5):
-        f_list.append([k, (k+1)%5+5, k+5])
-        f_list.append([k, (k+1)%5, (k+1)%5+5])
+        f_list.append([k, (k+1)%5, (k+1)%5+5, k+5])
+    # for k in range(3):
+    #     f_list.append([0, k+2, k+1])
+    #     f_list.append([5, k+6, k+7])
+    # long triangles:
+    # for k in range(5):
+    #     f_list.append([k, (k+1)%5+5, k+5])
+    #     f_list.append([k, (k+1)%5, (k+1)%5+5])
     
     return { "vertices": v_list, "faces": f_list }
 
