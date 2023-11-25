@@ -17,28 +17,14 @@ plane_E2 = geometry3.Plane(E2, 0.0)
 def normalize(p):
     return p / np.linalg.norm(p)
 
-def merge_vertices_and_faces(dict_list):
-    """
-    Given multiple OBJ style vertices and faces in a list with each element like {"vertices":[...], "faces":[...]},
-    merges them together with new indexing for vertices.
-    """
-    index_offsets = []
-    offset = 0
-    for d in dict_list:
-        index_offsets.append(offset)
-        offset += len(d["vertices"])
-
-    merge_vertices = [v for d in dict_list for v in d["vertices"]]
-    merge_faces = []
-    for k in range(len(dict_list)):
-        offset = index_offsets[k]
-        for f in dict_list[k]["faces"]:
-            f_new = []
-            for j in f:
-                f_new.append(j + offset)
-            merge_faces.append(f_new)
-
-    return { "vertices": merge_vertices, "faces": merge_faces }
+def to_mesh(obj):
+    # Converts { "vertices": ..., "faces": ... } to Mesh3
+    mesh = mesh3.Mesh3()
+    for face in obj["faces"]:
+        points = [obj["vertices"][k] for k in face]
+        face = mesh3.Face3(points)
+        mesh.add_face(face)
+    return mesh
 
 def apply_reflections(points, reflect_plane_list):
     """Applies one or multiple reflections to a point or list of points.
@@ -106,15 +92,8 @@ def pool_cushion(data, p1, p2, pn, h_angle1, v_angle1, h_angle2, v_angle2, cushi
     f_list.append([5, 6, 7, 8, 9])
     for k in range(5):
         f_list.append([k, (k+1)%5, (k+1)%5+5, k+5])
-    # for k in range(3):
-    #     f_list.append([0, k+2, k+1])
-    #     f_list.append([5, k+6, k+7])
-    # long triangles:
-    # for k in range(5):
-    #     f_list.append([k, (k+1)%5+5, k+5])
-    #     f_list.append([k, (k+1)%5, (k+1)%5+5])
     
-    return { "vertices": v_list, "faces": f_list }
+    return to_mesh({ "vertices": v_list, "faces": f_list })
 
 def create_cushions(data):
     """Joins vertices and faces of all six cushions on the table.
@@ -124,19 +103,19 @@ def create_cushions(data):
     sh = data["specs"]["SIDE_POCKET_HORIZONTAL_ANGLE"]
     sv = data["specs"]["SIDE_POCKET_VERTICAL_ANGLE"]
 
-    ret = []
+    ret = {}
     # top-right (B)
-    ret.append(pool_cushion(data, data["points"]["B2"], data["points"]["B3"], E2, sh, sv, ch, cv, "B"))
+    ret["B"] = pool_cushion(data, data["points"]["B2"], data["points"]["B3"], E2, sh, sv, ch, cv, "B")
     # top-left (A)
-    ret.append(pool_cushion(data, data["points"]["A1"], data["points"]["A2"], E2, ch, cv, sh, sv, "A"))
+    ret["A"] = pool_cushion(data, data["points"]["A1"], data["points"]["A2"], E2, ch, cv, sh, sv, "A")
     # bottom-right (D)
-    ret.append(pool_cushion(data, data["points"]["D4"], data["points"]["D5"], -E2, ch, cv, sh, sv, "D"))
+    ret["D"] = pool_cushion(data, data["points"]["D4"], data["points"]["D5"], -E2, ch, cv, sh, sv, "D")
     # bottom-left (E)
-    ret.append(pool_cushion(data, data["points"]["E5"], data["points"]["E6"], -E2, sh, sv, ch, cv, "E"))
+    ret["E"] = pool_cushion(data, data["points"]["E5"], data["points"]["E6"], -E2, sh, sv, ch, cv, "E")
     # left (F)
-    ret.append(pool_cushion(data, data["points"]["F6"], data["points"]["F1"], -E1, ch, cv, ch, cv, "F"))
+    ret["F"] = pool_cushion(data, data["points"]["F6"], data["points"]["F1"], -E1, ch, cv, ch, cv, "F")
     # right (C)
-    ret.append(pool_cushion(data, data["points"]["C3"], data["points"]["C4"], E1, ch, cv, ch, cv, "C"))
+    ret["C"] = pool_cushion(data, data["points"]["C3"], data["points"]["C4"], E1, ch, cv, ch, cv, "C")
 
     data["points"]["normal_1"] = normalize(-E1 + E2)
     data["points"]["normal_2"] = E2
@@ -148,7 +127,7 @@ def create_cushions(data):
         base = data["points"][f"mouth_center_{k}"]
         data["planes"][f"bisector_{k}"] = geometry3.Plane.from_points(base, base+data["points"][f"normal_{k}"], base+E3)
 
-    return merge_vertices_and_faces(ret)
+    return ret
 
 def slate_xy_slice(data, num_arc_points, bulge):
     """
@@ -233,7 +212,7 @@ def create_slate(data):
                 (2*num_slices-1)*(6*num_arc_points)+(ka+1)%(6*num_arc_points))
         
     # f_slate_flat = [v for f in f_slate for v in f]
-    return {"vertices": v_slate, "faces": f_slate}
+    return { "slate": to_mesh({"vertices": v_slate, "faces": f_slate}) }
 
 def pocket_liner_circle_center(data, pocket):
     """Returns center of the pocket liner circular arc. 
@@ -341,13 +320,13 @@ def create_one_pocket_liner(data, pocket):
     faces.append([3*n, 2*n, 3*n+1])
     faces.append([3*n+2, 3*n+3, 2*n+(n-1)])
 
-    return { "vertices": vertices, "faces": faces }
+    return to_mesh({ "vertices": vertices, "faces": faces })
 
 def create_pocket_liners(data):
     for pocket in range(1, 7):
         data["points"][f"pocket_liner_circle_center_{pocket}"] = pocket_liner_circle_center(data, pocket)
-    liners = [create_one_pocket_liner(data, k) for k in range(1, 7)]
-    return merge_vertices_and_faces(liners)
+    liners = { pocket: create_one_pocket_liner(data, pocket) for pocket in range(1, 7) }
+    return liners
 
 def casing_circuit(data, bulge_radius, bulge_length, height):
     """
@@ -402,7 +381,7 @@ def create_casing(data):
         jp = (j+1)%(4*n1)
         faces.append([n2*(4*n1)+j, (n2+1)*(4*n1), n2*(4*n1)+jp])
     
-    return { "vertices": vertices, "faces": faces}
+    return { "casing": to_mesh({ "vertices": vertices, "faces": faces}) }
     
 def rail_top_b3(data):
     """Returns points for one complex polygon that defines the rail top near B3.
@@ -476,14 +455,20 @@ def rail_top(data, cushion_pocket: str):
     elif cushion_pocket == "F1":
         vertices = data["planes"]["bisector_1"].reflect(plane_E1.reflect(base))
 
-    return { "vertices": vertices, "faces": [list(range(len(vertices)))] }
+    return to_mesh({ "vertices": vertices, "faces": [list(range(len(vertices)))] })
 
 def create_rail_tops(data):
     """Merges all rail tops.
     """
-    cushion_pockets = ["A1", "A2", "B2", "B3", "C3", "C4", "D4", "D5", "E5", "E6", "F6", "F1"]
-    tops = [rail_top(data, cushion_pocket) for cushion_pocket in cushion_pockets]
-    return merge_vertices_and_faces(tops) 
+    # cushion_pockets = ("A1", "A2", "B2", "B3", "C3", "C4", "D4", "D5", "E5", "E6", "F6", "F1")
+    tops = {}
+    tops[1] = mesh3.Mesh3.merge([rail_top(data, "F1"), rail_top(data, "A1")])
+    tops[2] = mesh3.Mesh3.merge([rail_top(data, "A2"), rail_top(data, "B2")])
+    tops[3] = mesh3.Mesh3.merge([rail_top(data, "B3"), rail_top(data, "C3")])
+    tops[4] = mesh3.Mesh3.merge([rail_top(data, "C4"), rail_top(data, "D4")])
+    tops[5] = mesh3.Mesh3.merge([rail_top(data, "D5"), rail_top(data, "E5")])
+    tops[6] = mesh3.Mesh3.merge([rail_top(data, "E6"), rail_top(data, "F6")])
+    return { cushion: tops[cushion] for cushion in range(1, 7) }
 
 def create_rail_sights(data):
     """Returns the six rectangular rail plates for the sights.
@@ -496,31 +481,23 @@ def create_rail_sights(data):
     w = data["specs"]["TABLE_LENGTH"]/2
     offset0 = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][0]
     offset1 = data["specs"]["TABLE_RAIL_SIGHTS_BLOCK"][1]
-    rs_b = [np.array((offset0, y0, h0)), np.array((w-offset1, y0, h0)), np.array((w-offset1, y1, h0)), np.array((offset0, y1, h0))]
-    rs_c = [np.array((x0, -w/2+offset1, h0)), np.array((x1, -w/2+offset1, h0)), np.array((x1, w/2-offset1, h0)), np.array((x0, w/2-offset1, h0))]
-    rs_a = plane_E1.reflect(list(reversed(rs_b)))
-    rs_d = plane_E2.reflect(list(reversed(rs_b)))
-    rs_e = plane_E1.reflect(plane_E2.reflect(rs_b))
-    rs_f = plane_E1.reflect(list(reversed(rs_c)))
-    f = lambda v_list: { "vertices": v_list, "faces": [[0, 1, 2, 3]] }
-    return merge_vertices_and_faces([f(rs_a), f(rs_b), f(rs_c), f(rs_d), f(rs_e), f(rs_f)])
-
-def to_mesh(obj):
-    # Converts { "vertices": ..., "faces": ... } to Mesh3
-    mesh = mesh3.Mesh3()
-    for face in obj["faces"]:
-        points = [obj["vertices"][k] for k in face]
-        face = mesh3.Face3(points)
-        mesh.add_face(face)
-    return mesh
+    rs = {}
+    rs["B"] = [np.array((offset0, y0, h0)), np.array((w-offset1, y0, h0)), np.array((w-offset1, y1, h0)), np.array((offset0, y1, h0))]
+    rs["C"] = [np.array((x0, -w/2+offset1, h0)), np.array((x1, -w/2+offset1, h0)), np.array((x1, w/2-offset1, h0)), np.array((x0, w/2-offset1, h0))]
+    rs["A"] = plane_E1.reflect(list(reversed(rs["B"])))
+    rs["D"] = plane_E2.reflect(list(reversed(rs["B"])))
+    rs["E"] = plane_E1.reflect(plane_E2.reflect(rs["B"]))
+    rs["F"] = plane_E1.reflect(list(reversed(rs["C"])))
+    f = lambda v_list: to_mesh({ "vertices": v_list, "faces": [[0, 1, 2, 3]] })
+    return { cushion: f(rs[cushion]) for cushion in ("A", "B", "C", "D", "E", "F") }
 
 def run(data):
-    data["cushions"] = to_mesh(create_cushions(data))
-    data["slate"] = to_mesh(create_slate(data))
-    data["liners"] = to_mesh(create_pocket_liners(data))
-    data["casing"] = to_mesh(create_casing(data))
-    data["rails"] = to_mesh(create_rail_tops(data))
-    data["rail_sights"] = to_mesh(create_rail_sights(data))
+    data["cushions"] = create_cushions(data)
+    data["slate"] = create_slate(data)
+    data["liners"] = create_pocket_liners(data)
+    data["casing"] = create_casing(data)      # not cut into pieces yet, split during uv unwrap
+    data["rails"] = create_rail_tops(data)
+    data["rail_sights"] = create_rail_sights(data)
     return data
 
 if __name__ == "__main__":

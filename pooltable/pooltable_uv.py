@@ -1,13 +1,10 @@
 """Quick messy handmade methods to uv unpack the meshes.
 """
 
-# 4) (optional?) pack uv-polygons
-#       Kinda needed for diamonds
-
 import numpy as np
-from scipy.spatial.transform import Rotation
+# from scipy.spatial.transform import Rotation
 from typing import Any
-import geometry3
+import geometry3, mesh3
 
 E1 = np.array((1.0, 0.0, 0.0))
 E2 = np.array((0.0, 1.0, 0.0))
@@ -15,7 +12,10 @@ E3 = np.array((0.0, 0.0, 1.0))
 
 INCH = 0.0254
 DEGREE = np.pi/180.0
-    
+
+def normalize(p):
+    return p / np.linalg.norm(p)
+
 def propagate(face_from, face):
     """Propagates uv-coords across a common edge from self to other face.
     """
@@ -41,33 +41,10 @@ def propagate(face_from, face):
     for kp, p in enumerate(face.pts):
         z = complex(np.dot(face.basis[0], p), np.dot(face.basis[1], p))
         w = A*z + B
-        # if (kp == common_pts[0][1]):
-        #     print(face.uvs[common_pts[0][1]], " vs ", w)
-        # if (kp == common_pts[1][1]):
-        #     print(face.uvs[common_pts[1][1]], " vs ", w)
         face.uvs[kp] = np.array((w.real, w.imag))
-
     return True
 
-    # # Idea: after rotating normals, the uv maps have to agree
-    # plane1 = self.plane()
-    # plane2 = face.plane()
-    # n1 = self.basis[0]
-    # n2 = face.basis[0]
-    # n = normalize(np.cross(n1, n2))
-    # plane3 = geometry3.Plane(n, 0.0)
-    # p0 = geometry3.Plane.intersection(plane1, plane2, plane3)
-    # rot = Rotation.from_rotvec(np.arccos(np.dot(n1, n2))*n).as_matrix()
-    # rot4 = np.eye(4, 4)
-    # rot4[0:3,0:3] = rot
-    # tr = lambda offset: np.ndarray(((1.0,0,0,offset[0]), (0,1.0,0,offset[1]), (0,0,1.0,offset[2]), (0,0,0,1.0)))
-    # return uv_map @ tr(p0) @ rot4.T @ tr(-p0)
-
-def normalize(p):
-    return p / np.linalg.norm(p)
-
-def setup_faces(data, name):
-    mesh = data[name]
+def init_uvs(mesh):
     for face in mesh.fs:
         for k, p in enumerate(face.pts):
             face.uvs[k] = np.array((np.dot(p, E1), np.dot(p, E2)))
@@ -78,21 +55,20 @@ def face_in_plane(face, plane):
             return False
     return True
 
-def unwrap_cushions(data):
+def unwrap_cushion(data, cushion):
     """Idea: propagate the uv-coordinates from face to face in order given by 
     propagation_order.
     """
-    mesh = data["cushions"]
+    mesh = data["cushions"][cushion]
     propagation_order = (("rail_top", "end1"), ("rail_top", "end2"), ("rail_top", "rail_back"), ("rail_top", "rubber_top"), ("rubber_top", "rubber_bottom"), ("rubber_bottom", "slate"))
     plane_names = ("end1", "end2", "rail_back", "rail_top", "rubber_top", "rubber_bottom", "slate")
     plane_faces = { name: set() for name in plane_names }
     face_to_plane = {}
     for plane_name in plane_names:
-        for cushion_name in ("A", "B", "C", "D", "E", "F"):
-            for face in mesh.fs:
-                if face_in_plane(face, data["planes"][cushion_name][plane_name]):
-                    plane_faces[plane_name].add(face)
-                    face_to_plane[face] = plane_name
+        for face in mesh.fs:
+            if face_in_plane(face, data["planes"][cushion][plane_name]):
+                plane_faces[plane_name].add(face)
+                face_to_plane[face] = plane_name
     propagating = plane_faces["rail_top"]
     propagated_already = set()
     while propagating:
@@ -108,22 +84,23 @@ def unwrap_cushions(data):
         propagated_already.update(propagating)
         propagating = propagating_next
 
-def unwrap_liners(data):
-    centers = [data["points"][f"pocket_liner_circle_center_{pocket}"] for pocket in range(1, 7)]
-    mesh = data["liners"]
+def unwrap_liner(data, pocket):
+    """UV-unwrap the pocket liner with uv_x=angle as seen from the center of the liner.
+    """
+    pocket_type = "SIDE" if pocket in (2, 5) else "CORNER"
+    center = data["points"][f"pocket_liner_circle_center_{pocket}"]
+    mesh = data["liners"][pocket]
     h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
     for face in mesh.fs:
         p0 = face.basis[3]      # Center of the face
-        pocket = 1 + np.argmin([np.linalg.norm(center-p0) for center in centers])
-        pocket_type = "SIDE" if pocket in (2, 5) else "CORNER"
         vertical_angle = data["specs"][f"{pocket_type}_POCKET_VERTICAL_ANGLE"]
-        center = centers[pocket-1]
         n = data["points"][f"normal_{pocket}"]
         v = -np.cross(n, E3)
-        # Now (n, v, E3) forms an orthonormal basis that we operate with
+        # Now (n, v, E3) forms an orthonormal basis that we operate with.
 
         for k, p in enumerate(face.pts):
             angle = np.arctan2(np.dot(p-center, v), np.dot(p-center, n))
+            # The following is just an approximation, a heuristic:
             uv_x = (0.5*data["specs"][f"{pocket_type}_POCKET_MOUTH"] + (h0-p[2])*np.tan(vertical_angle)) * angle
             uv_y = None
             if np.linalg.norm(face.basis[2]-E3) < 1.0e-9:
@@ -139,16 +116,17 @@ def unwrap_liners(data):
                 uv_y = p[2]
             face.uvs[k] = np.array((uv_x, uv_y))
 
-def unwrap_casing(data):
+def unwrap_and_split_casing(data):
     """Idea: crudely project faces to one of preselected directions that
-    is closest face normal.
+    is closest face normal. Also split the mesh into 5 pieces (bottom,+x,+y,-x,-y).
     """
-    alpha = data["specs"]["TABLE_CASING_VERTICAL_ANGLE"]
-    n1 = np.array((np.cos(alpha), 0.0, -np.sin(alpha)))
-    n2 = np.array((0.0, np.cos(alpha), -np.sin(alpha)))
-    normals = [-E3, n1, n2, -n1, -n2]
-    main_directions = [E1, E2, -E1, -E2, E1]
-    mesh = data["casing"]
+    vertical_angle = data["specs"]["TABLE_CASING_VERTICAL_ANGLE"]
+    n1 = np.array((np.cos(vertical_angle), 0.0, -np.sin(vertical_angle)))
+    n2 = np.array((0.0, np.cos(vertical_angle), -np.sin(vertical_angle)))
+    normals = (-E3, n1, n2, -n1, -n2)
+    main_directions = (E1, E2, -E1, -E2, E1)
+    mesh = data["casing"]["casing"]
+    sub_meshes = { num: mesh3.Mesh3() for num in range(len(normals)) }
     for face in mesh.fs:
         closest = np.argmin([-np.dot(n*(E1+E2), face.basis[2]) for n in normals])
         n = normals[closest]
@@ -157,21 +135,18 @@ def unwrap_casing(data):
         # Now (uv_x, uv_y, n) is used as a basis for uv projection:
         for k, p in enumerate(face.pts):
             face.uvs[k] = np.array((np.dot(uv_x, p), np.dot(uv_y, p)))
+        sub_meshes[closest].add_face(face)
+    data["casing"] = sub_meshes
 
 def run(data):
-    for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:
-        setup_faces(data, name)
-    unwrap_cushions(data)
-    unwrap_liners(data)
-    unwrap_casing(data)
-    for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:
-        pass
-        # print(f"{name}:")
-        # print(data[name])
-        data[name] = data[name].triangulate()
-        # print(data[name])
-        # print()
-        
+    for name in ("cushions", "slate", "rails", "rail_sights", "liners", "casing"):
+        for mesh in data[name].values():
+            init_uvs(mesh)
+    for cushion in ("A", "B", "C", "D", "E", "F"):
+        unwrap_cushion(data, cushion)
+    for pocket in range(1, 7):
+        unwrap_liner(data, pocket)
+    unwrap_and_split_casing(data)
     return data
 
 if __name__ == "__main__":

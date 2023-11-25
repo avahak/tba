@@ -191,6 +191,14 @@ class Mesh3:
                 name = 'quad'
             s = s+f', #{name}={face_count[count]}'
         return f'Mesh3(#faces={len(self.fs)}{s})'
+    
+    @classmethod
+    def merge(cls, meshes):
+        merged = Mesh3()
+        for mesh in meshes:
+            for face in mesh.fs:
+                merged.add_face(face)
+        return merged
 
 def main():
     print("Testing Mesh3")

@@ -21,17 +21,6 @@ ANGLE_LIMIT_SPECIAL = { "casing": 60.0*DEGREE }
 def normalize(p):
     return p / np.linalg.norm(p)
 
-# def compute_normal(points):
-#     # Returns normal for the points.
-#     _, basis = geometry.Polygon.oriented_basis(points)
-#     signed_area = geometry.Polygon.signed_area(points, basis)
-#     n = basis[0] if signed_area > 0.0 else -basis[0]
-#     if len(points) <= 4: 
-#         n0 = normalize(np.cross(points[1]-points[0], points[2]-points[0]))
-#         if np.dot(n, n0) < 0.0:
-#             print("PROBLEM! Normal has wrong sign.")
-#     return n
-
 def test_planarity(mesh: mesh3.Mesh3):
     # Tests the planarity of faces in the mesh.
     for f in mesh.fs:
@@ -43,19 +32,18 @@ def test_planarity(mesh: mesh3.Mesh3):
             return float('inf')
         planarity = np.min([bbox_dims[0], bbox_dims[1]]) / bbox_dims[2]
         if abs(planarity) < 1.0e12:
-            raise Exception(f"Nonplanar face not planar. {planarity = }")
+            raise Exception(f"Nonplanar face: {planarity = }")
 
 def is_slate_cutoff_face(data, name, face):
     # Returns true if f is one of the slate faces that are at the x or y cutoff.
-    v_avg = np.average(face.pts, axis=0)
+    v_avg = face.basis[3]
     if (name == "slate") and ((np.abs(np.abs(v_avg[0])-data["specs"]["TABLE_LENGTH"]/2.0-data["specs"]["CUSHION_WIDTH"]) < 1.0e-9) 
             or (np.abs(np.abs(v_avg[1])-data["specs"]["TABLE_LENGTH"]/4.0-data["specs"]["CUSHION_WIDTH"]) < 1.0e-9)):
         return True
     return False
 
 def compute_smooth_normals(data, name, mesh, mesh_indexing):
-    # Adds smooth_normals to the mesh. These are averaged normals.
-
+    # Adds smooth normals to the mesh. These are averaged normals.
     for fk, face in enumerate(mesh_indexing["f"]):
         n0 = face.basis[2]
         for pk, p in enumerate(mesh_indexing["fv"][fk]):
@@ -69,7 +57,7 @@ def compute_smooth_normals(data, name, mesh, mesh_indexing):
             n = normalize(np.sum(close_normals, axis=0)) if len(close_normals) > 0 else n0
             face.ns[pk] = n
 
-def select_normals(data, name, mesh, mesh_indexing):
+def select_normals(data, name, mesh):
     """Select between normals from smooth_normals and flat_normals
     based on custom rules.
     """
@@ -89,12 +77,11 @@ def select_normals(data, name, mesh, mesh_indexing):
 def run(data):
     data["normals"] = dict()
     for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:
-    # for name in ["rails"]:
-        mesh = data[name]
-        mesh_indexing = mesh.mesh_indexing()
-        test_planarity(mesh)
-        compute_smooth_normals(data, name, mesh, mesh_indexing)
-        select_normals(data, name, mesh, mesh_indexing)
+        for mesh in data[name].values():
+            mesh_indexing = mesh.mesh_indexing()
+            test_planarity(mesh)
+            compute_smooth_normals(data, name, mesh, mesh_indexing)
+            select_normals(data, name, mesh)
     return data
 
 if __name__ == "__main__":
