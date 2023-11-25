@@ -1,10 +1,5 @@
-# 3) Todo UV coords: cushions: [k1,(k1,k2),(k1,k3),(k2,k4),..] order or propagation
-# slate: uv=xy or top,bottom uv=xy, custom taking normal from original slice and 
-#       extending according to distance on curve
-# liners: x=param on path, y=easy after that
-# rails: uv=xy
-# casing: bottom uv=xy, categorize other faces according to their normal 
-#       to x+,x-,y+,y- and for each category just do trivial projection
+"""Quick messy handmade methods to uv unpack the meshes.
+"""
 
 # 4) (optional?) pack uv-polygons
 #       Kinda needed for diamonds
@@ -114,10 +109,54 @@ def unwrap_cushions(data):
         propagating = propagating_next
 
 def unwrap_liners(data):
-    pass
+    centers = [data["points"][f"pocket_liner_circle_center_{pocket}"] for pocket in range(1, 7)]
+    mesh = data["liners"]
+    h0 = data["specs"]["TABLE_RAIL_HEIGHT"]
+    for face in mesh.fs:
+        p0 = face.basis[3]      # Center of the face
+        pocket = 1 + np.argmin([np.linalg.norm(center-p0) for center in centers])
+        pocket_type = "SIDE" if pocket in (2, 5) else "CORNER"
+        vertical_angle = data["specs"][f"{pocket_type}_POCKET_VERTICAL_ANGLE"]
+        center = centers[pocket-1]
+        n = data["points"][f"normal_{pocket}"]
+        v = -np.cross(n, E3)
+        # Now (n, v, E3) forms an orthonormal basis that we operate with
+
+        for k, p in enumerate(face.pts):
+            angle = np.arctan2(np.dot(p-center, v), np.dot(p-center, n))
+            uv_x = (0.5*data["specs"][f"{pocket_type}_POCKET_MOUTH"] + (h0-p[2])*np.tan(vertical_angle)) * angle
+            uv_y = None
+            if np.linalg.norm(face.basis[2]-E3) < 1.0e-9:
+                # face is horizontal
+                if np.linalg.norm(p-center) > np.linalg.norm(p0-center):
+                    # vertex is on outside
+                    uv_y = h0 + data["specs"]["TABLE_POCKET_LINER_WIDTH"]
+                else:
+                    # vertex is on inside
+                    uv_y = h0
+            else:
+                # face is vertical
+                uv_y = p[2]
+            face.uvs[k] = np.array((uv_x, uv_y))
 
 def unwrap_casing(data):
-    pass
+    """Idea: crudely project faces to one of preselected directions that
+    is closest face normal.
+    """
+    alpha = data["specs"]["TABLE_CASING_VERTICAL_ANGLE"]
+    n1 = np.array((np.cos(alpha), 0.0, -np.sin(alpha)))
+    n2 = np.array((0.0, np.cos(alpha), -np.sin(alpha)))
+    normals = [-E3, n1, n2, -n1, -n2]
+    main_directions = [E1, E2, -E1, -E2, E1]
+    mesh = data["casing"]
+    for face in mesh.fs:
+        closest = np.argmin([-np.dot(n*(E1+E2), face.basis[2]) for n in normals])
+        n = normals[closest]
+        uv_x = main_directions[closest]
+        uv_y = normalize(np.cross(n, uv_x))
+        # Now (uv_x, uv_y, n) is used as a basis for uv projection:
+        for k, p in enumerate(face.pts):
+            face.uvs[k] = np.array((np.dot(uv_x, p), np.dot(uv_y, p)))
 
 def run(data):
     for name in ["cushions", "slate", "rails", "rail_sights", "liners", "casing"]:

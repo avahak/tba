@@ -235,6 +235,21 @@ def create_slate(data):
     # f_slate_flat = [v for f in f_slate for v in f]
     return {"vertices": v_slate, "faces": f_slate}
 
+def pocket_liner_circle_center(data, pocket):
+    """Returns center of the pocket liner circular arc. 
+    NOTE this is not the same as fall_center_{pocket}.
+    """
+    POCKET_TYPE = ("SIDE" if (pocket in (2, 5)) else "CORNER")
+    # Pocket center offset to make pocket deeper or shallower:
+    OFFSET = data["specs"][f"{POCKET_TYPE}_POCKET_LINER_DEPTH_OFFSET"]
+
+    # LINER_CORNER_D is distance from pocket mouth to center (ignoring z-axis):
+    LINER_CORNER_D = OFFSET + data["specs"][f"{POCKET_TYPE}_POCKET_SHELF"] + data["specs"][f"{POCKET_TYPE}_POCKET_RADIUS"]
+    # center is the center of the circle that we follow as part of the arc:
+    center = data["points"][f"mouth_center_{pocket}"]*(E1 + E2) + LINER_CORNER_D*data["points"][f"normal_{pocket}"]
+    center[2] = 0.0
+    return center
+
 def create_pocket_liner_arc(data, pocket, bulge, height): 
     """Idea: On rail top level the pocket liner inner edge follows the cushion endcap plane 
     until its closest point to pocket center, then follows the circle C(pocket center,d_min), and then 
@@ -259,16 +274,12 @@ def create_pocket_liner_arc(data, pocket, bulge, height):
     POCKET_TYPE = ("CORNER" if (pocket == 3) else "SIDE")
     CUSHION_NAME = ("C" if (pocket == 3) else "B")
     MID_ANGLE = (np.pi/4 if (pocket == 3) else np.pi/2)     # angle corresponding to bisector
-    # Pocket center offset to pocket deeper or shallower:
-    OFFSET = data["specs"][f"{POCKET_TYPE}_POCKET_LINER_DEPTH_OFFSET"]
     # Following results in arc with total 2*NUM_POINTS+1 points:
     NUM_POINTS = data["specs"]["TABLE_POCKET_LINER_NUM_POINTS"]
     bisector = data["planes"][f"bisector_{pocket}"]
 
-    # LINER_CORNER_D is distance from pocket mouth to center (ignoring z-axis):
-    LINER_CORNER_D = OFFSET + data["specs"][f"{POCKET_TYPE}_POCKET_SHELF"] + data["specs"][f"{POCKET_TYPE}_POCKET_RADIUS"]
     # center is the center of the circle that we follow as part of the arc:
-    center = data["points"][f"mouth_center_{pocket}"]*(E1 + E2) + LINER_CORNER_D*data["points"][f"normal_{pocket}"]
+    center = pocket_liner_circle_center(data, pocket)
     center[2] = height
 
     # Relevant planes to help calculate points:
@@ -333,6 +344,8 @@ def create_one_pocket_liner(data, pocket):
     return { "vertices": vertices, "faces": faces }
 
 def create_pocket_liners(data):
+    for pocket in range(1, 7):
+        data["points"][f"pocket_liner_circle_center_{pocket}"] = pocket_liner_circle_center(data, pocket)
     liners = [create_one_pocket_liner(data, k) for k in range(1, 7)]
     return merge_vertices_and_faces(liners)
 

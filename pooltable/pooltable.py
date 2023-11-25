@@ -51,7 +51,7 @@ def write_obj_file(data, name):
     uvs = {(fk, k): uv for fk, face in enumerate(mesh.fs) for k, uv in enumerate(face.uvs)}
     unique_uvs, indexing_uvs = unique_indexing(uvs)
 
-    file_name = f"obj/{name}_n.obj"
+    file_name = f"obj/{name}.obj"
     with open(file_name, "w") as file:
         for v in unique_vertices:
             file.write(f"v {v[0]} {v[1]} {v[2]}\n")
