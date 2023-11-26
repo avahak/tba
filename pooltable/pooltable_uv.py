@@ -2,9 +2,10 @@
 """
 
 import numpy as np
+from PIL import Image
 # from scipy.spatial.transform import Rotation
 from typing import Any
-import geometry3, mesh3
+import geometry3, mesh3, packer
 
 E1 = np.array((1.0, 0.0, 0.0))
 E2 = np.array((0.0, 1.0, 0.0))
@@ -138,15 +139,144 @@ def unwrap_and_split_casing(data):
         sub_meshes[closest].add_face(face)
     data["casing"] = sub_meshes
 
+def transform_uvs(mesh, A: complex, B: complex):
+    """Transforms all uv-coordinates with z -> A*x+B.
+    """
+    for face in mesh.fs:
+        for k, uv in enumerate(face.uvs):
+            w = A*complex(uv[0], uv[1]) + B
+            face.uvs[k] =  np.array((w.real, w.imag))
+
+def uv_bounding_box(mesh):
+    bbox = np.array(((np.inf, -np.inf), (np.inf, -np.inf)))     # ((x_min,x_max),(y_min,y_max))
+    for face in mesh.fs:
+        for uv in face.uvs:
+            bbox[0][0] = min(uv[0], bbox[0][0])
+            bbox[0][1] = max(uv[0], bbox[0][1])
+            bbox[1][0] = min(uv[1], bbox[1][0])
+            bbox[1][1] = max(uv[1], bbox[1][1])
+    return bbox
+
+def tile_image(source_image, target_wh):
+    """Creates a tiled version of the source image
+    """
+    tiled_image = Image.new('RGB', (target_wh[0], target_wh[1]))
+    source_width, source_height = source_image.size
+    for y in range(0, target_wh[1], source_height):
+        for x in range(0, target_wh[0], source_width):
+            tiled_image.paste(source_image, (x, y))
+    return tiled_image
+
+def image_paste(target_img, source_img, data, bbox, mesh_name):
+    for key, mesh in data[mesh_name].items():
+        xy = (data["PIXELS_PER_METER"]*bbox[(mesh_name,key)][0][0], data["PIXELS_PER_METER"]*bbox[(mesh_name,key)][1][0])
+        wh = (data["PIXELS_PER_METER"]*(bbox[(mesh_name,key)][0][1]-bbox[(mesh_name,key)][0][0]), data["PIXELS_PER_METER"]*(bbox[(mesh_name,key)][1][1]-bbox[(mesh_name,key)][1][0]))
+        xy = np.array(xy).astype(int)
+        wh = np.array(wh).astype(int)
+        region = (xy[0], xy[1], xy[0]+wh[0], xy[1]+wh[1])
+        crop = source_img.crop(region)
+        target_img.paste(crop, (xy[0], xy[1]))
+
+def create_atlas(data, bbox):
+    bbox_all = np.array(((np.inf, -np.inf), (np.inf, -np.inf)))
+    for bb in bbox.values():
+        bbox_all[0][0] = min(bb[0][0], bbox_all[0][0])
+        bbox_all[0][1] = max(bb[0][1], bbox_all[0][1])
+        bbox_all[1][0] = min(bb[1][0], bbox_all[1][0])
+        bbox_all[1][1] = max(bb[1][1], bbox_all[1][1])
+    WH = (data["PIXELS_PER_METER"]*(bbox_all[0][1]-bbox_all[0][0]), data["PIXELS_PER_METER"]*(bbox_all[1][1]-bbox_all[1][0]))
+    WH = np.ceil(WH).astype(int)
+    print(f"{WH = }")
+    image1 = tile_image(Image.open("d:/resources/img/wood_dark.jpg"), WH)
+    image2 = tile_image(Image.open("d:/resources/img/cloth1.png"), WH)
+    image3 = tile_image(Image.open("d:/resources/img/contour.jpg"), WH)
+    image4 = tile_image(Image.open("d:/resources/img/wood1.jpg"), WH)
+    image5 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 50))
+    image6 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 10))
+    atlas = Image.new('RGB', (WH[0], WH[1]), (50, 50, 100))
+    image_paste(atlas, image1, data, bbox, "cushions")
+    image_paste(atlas, image2, data, bbox, "slate")
+    image_paste(atlas, image3, data, bbox, "rail_sights")
+    image_paste(atlas, image4, data, bbox, "rails")
+    image_paste(atlas, image5, data, bbox, "casing")
+    image_paste(atlas, image6, data, bbox, "liners")
+    atlas = atlas.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+    atlas.save("obj/atlas.jpg")
+    return bbox_all
+
 def run(data):
-    for name in ("cushions", "slate", "rails", "rail_sights", "liners", "casing"):
+    mesh_names = ("cushions", "slate", "rails", "rail_sights", "liners", "casing")
+    cushion_names = ("A", "B", "C", "D", "E", "F")
+    for name in mesh_names:
         for mesh in data[name].values():
             init_uvs(mesh)
-    for cushion in ("A", "B", "C", "D", "E", "F"):
+    for cushion in cushion_names:
         unwrap_cushion(data, cushion)
     for pocket in range(1, 7):
         unwrap_liner(data, pocket)
     unwrap_and_split_casing(data)
+
+    # Rotate vertically aligned long pieces 90 degrees:
+    transform_uvs(data["cushions"]["C"], complex(0.0, -1.0), 0.0)
+    transform_uvs(data["cushions"]["F"], complex(0.0, -1.0), 0.0)
+    transform_uvs(data["rail_sights"]["C"], complex(0.0, -1.0), 0.0)
+    transform_uvs(data["rail_sights"]["F"], complex(0.0, -1.0), 0.0)
+
+    # Enhance selected prominent parts of the model:
+    ENHANCE_FACTOR = 4.0
+    transform_uvs(data["slate"]["slate"], ENHANCE_FACTOR, 0.0)
+    for cushion_name in cushion_names:
+        transform_uvs(data["cushions"][cushion_name], ENHANCE_FACTOR, 0.0)
+        transform_uvs(data["rail_sights"][cushion_name], ENHANCE_FACTOR, 0.0)
+    for k in range(1, 5):
+        transform_uvs(data["casing"][k], ENHANCE_FACTOR, 0.0)
+
+    """
+    Containers (=materials):
+    1) Cushions ("cushions", "A"-"F")
+    2) Slate ("slate", "slate")
+    3) Rails ("rails", 1-6)
+    4) Rail sights ("rail_sights", "A"-"F")
+    5) Liners ("liners", 1-6)
+    6) Casing ("casing", 0-4)
+    """
+    bbox = {}
+    wh_all = []
+    packing_indexing = {}
+    for name in mesh_names:
+        wh_list = []
+        for key, mesh in data[name].items():
+            bbox[(name, key)] = uv_bounding_box(mesh)
+            packing_indexing[(name, key)] = len(wh_all)
+            wh_list.append(bbox[(name, key)][:,1]-bbox[(name, key)][:,0])
+            wh_all.append(bbox[(name, key)][:,1]-bbox[(name, key)][:,0])
+        wh_list = np.array(wh_list)
+        wh_list = np.array((wh_list[:,0], wh_list[:,1]))
+        # packing = packer.pack(wh_list)
+
+    wh_all = np.array(wh_all)
+    wh_all = np.array((wh_all[:,0], wh_all[:,1]))
+    packing = packer.pack(wh_all)
+
+    for name in mesh_names:
+        for key, mesh in data[name].items():
+            xy = packing[0][0:2,packing_indexing[(name, key)]] - bbox[(name, key)][:,0]
+            transform_uvs(mesh, 1.0, complex(xy[0], xy[1]))
+
+    # We still need to create the atlas image by patching multiple source images together:
+    data["PIXELS_PER_METER"] = 128
+    for name in mesh_names:
+        for key, mesh in data[name].items():
+            bbox[(name, key)] = uv_bounding_box(mesh)
+    bbox_all = create_atlas(data, bbox)
+    # Scale uv coords to 0..1 range:
+    for name in mesh_names:
+        for key, mesh in data[name].items():
+            for face in mesh.fs:
+                for k, uv in enumerate(face.uvs):
+                    uv_x = (uv[0]-bbox_all[0][0]) / (bbox_all[0][1]-bbox_all[0][0])
+                    uv_y = (uv[1]-bbox_all[1][0]) / (bbox_all[1][1]-bbox_all[1][0])
+                    face.uvs[k] = np.array((uv_x, uv_y))
     return data
 
 if __name__ == "__main__":
