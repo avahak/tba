@@ -106,9 +106,10 @@ function initGeneral() {
 	}
 	
 	const resourcePromises = [
-		loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
-		loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
+		// loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
+		// loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
 		// loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/test.obj`, `${designSettings.RESOURCES_PATH}models/test.mtl`),
+		loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/pooltable.obj`, `${designSettings.RESOURCES_PATH}models/pooltable.mtl`),
 		loadObjMtlPromise("ball", `${designSettings.RESOURCES_PATH}models/ball.obj`, null),
 		loadJsonPromise(),
 	];
@@ -135,9 +136,9 @@ function initGeneral() {
 			}
 
 			scene.add(designSettings.objects.table);
-			scene.add(designSettings.objects.cushions);
+			// scene.add(designSettings.objects.cushions);
 			setShadow(designSettings.objects.table, true, true);
-			setShadow(designSettings.objects.cushions, true, true);
+			// setShadow(designSettings.objects.cushions, true, true);
 			for (let k = 0; k < 16; k++) {
 				scene.add(designSettings.objects[`ball${k}`]);
 				setShadow(designSettings.objects[`ball${k}`], true, true);
