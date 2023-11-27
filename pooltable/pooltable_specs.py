@@ -133,6 +133,8 @@ def create_pooltable_specs():
     add_spec(specs, "TABLE_SIGHTS_DEPTH", (3+11/16)*INCH, comment)
     comment = "Offset at B2 and B3 where sights block part begins, measured as distance along x-axis from 0 and cushion C nose respectively."
     add_spec(specs, "TABLE_RAIL_SIGHTS_BLOCK", (0.3*specs["TABLE_LENGTH"]/8, 0.3*specs["TABLE_LENGTH"]/8), comment)
+    comment = "Radius of the circular sights. WPA requires between 7/16 [11.11 mm] and ½ inch [12.7 mm] in diameter."
+    add_spec(specs, "TABLE_RAIL_SIGHTS_RADIUS", (7.5/16)/2*INCH, comment)
 
     comment = "Width of the pocket liner part visible from above."
     add_spec(specs, "TABLE_POCKET_LINER_WIDTH", 0.5*INCH, comment)
@@ -148,6 +150,13 @@ def create_pooltable_specs():
     add_spec(specs, "TABLE_SLATE_NUM_POINTS", (3, 10), comment)
     comment = "First number controls number of points on the rounded edge of the casing, second number controls number of points for the bevel on the casing."
     add_spec(specs, "TABLE_CASING_NUM_POINTS", (5, 5), comment)
+
+    comment = "Gap in pixels left on the border of the uv-patch to prevent color smearing with JPEG artifacts."
+    add_spec(specs, "UV_TEXTURE_GAP", 8, comment)
+    comment = "Base resolution of the uv-map."
+    add_spec(specs, "UV_PIXELS_PER_METER", 128, comment)
+    comment = "Multipliers for base resolution of the uv-map used for prominent parts of the mesh."
+    add_spec(specs, "UV_ENHANCE_FACTOR", (4, 8), comment)
     
     return specs
 

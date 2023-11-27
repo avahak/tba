@@ -1,8 +1,17 @@
 """Quick messy handmade methods to uv unpack the meshes.
+Containers (=materials):
+    1) Cushions ("cushions", "A"-"F")
+    2) Slate ("slate", "slate")
+    3) Rails ("rails", 1-6)
+    4) Rail sights ("rail_sights", "A"-"F")
+    5) Liners ("liners", 1-6)
+    6) Casing ("casing", 0-4)
 """
+# The sights may be round (between 7/16 [11.11 mm] and ½ inch [12.7 mm] in diameter) 
+# or diamond-shaped (between 1 x 7/16 [25.4 x 11.11 mm] and 1 ¼ x 5/8 inch [31.75 x 15.875 mm]).
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 # from scipy.spatial.transform import Rotation
 from typing import Any
 import geometry3, mesh3, packer
@@ -147,15 +156,60 @@ def transform_uvs(mesh, A: complex, B: complex):
             w = A*complex(uv[0], uv[1]) + B
             face.uvs[k] =  np.array((w.real, w.imag))
 
-def uv_bounding_box(mesh):
-    bbox = np.array(((np.inf, -np.inf), (np.inf, -np.inf)))     # ((x_min,x_max),(y_min,y_max))
+def uv_bounding_box(mesh, gap=0.0):
+    bbox = np.array(((np.inf, np.inf), (-np.inf, -np.inf)))     # ((x_min,y_min),(w,h))
     for face in mesh.fs:
         for uv in face.uvs:
-            bbox[0][0] = min(uv[0], bbox[0][0])
-            bbox[0][1] = max(uv[0], bbox[0][1])
-            bbox[1][0] = min(uv[1], bbox[1][0])
-            bbox[1][1] = max(uv[1], bbox[1][1])
+            bbox[0][0] = min(uv[0]-gap, bbox[0][0])
+            bbox[0][1] = min(uv[1]-gap, bbox[0][1])
+            bbox[1][0] = max(uv[0]+gap, bbox[1][0])
+            bbox[1][1] = max(uv[1]+gap, bbox[1][1])
+    bbox[1] = (bbox[1][0]-bbox[0][0], bbox[1][1]-bbox[0][1])
     return bbox
+
+def sights_pos(data, cushion_name, index):
+    """Returns position of the sights in the xy-plane.
+    """
+    data["specs"]["TABLE_SIGHTS_DEPTH"] # from nose
+    sights_top = lambda k: np.array((k*data["specs"]["TABLE_LENGTH"]/8, data["specs"]["TABLE_LENGTH"]/4+data["specs"]["TABLE_SIGHTS_DEPTH"]))
+    sights_right = lambda k: np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["TABLE_SIGHTS_DEPTH"], (k-2)*data["specs"]["TABLE_LENGTH"]/8))
+    if cushion_name == "A":
+        return sights_top(-index)
+    if cushion_name == "B":
+        return sights_top(index)
+    if cushion_name == "C":
+        return sights_right(index)
+    if cushion_name == "D":
+        return -sights_top(-index)
+    if cushion_name == "E":
+        return -sights_top(index)
+    if cushion_name == "F":
+        return -sights_right(index)
+
+def draw_sights(data, atlas):
+    """Draws the sights (diamonds) on rail_sights.
+    """
+    draw = ImageDraw.Draw(atlas)
+    WH = np.array(atlas.size)
+    for cushion_name in ("A", "B", "C", "D", "E", "F"):
+        face = data["rail_sights"][cushion_name].fs[0]
+        v0 = face.pts[0]
+        v1, v2 = face.pts[1]-v0, face.pts[2]-v0
+        for k in range(1, 4):
+            p = np.array((*sights_pos(data, cushion_name, k), data["specs"]["TABLE_RAIL_HEIGHT"]))
+
+            A = np.vstack([v1, v2, E3]).T
+            c = np.linalg.solve(A, p-v0)
+            uv = face.uvs[0] + c[0]*(face.uvs[1]-face.uvs[0]) + c[1]*(face.uvs[2]-face.uvs[0])
+
+            # Convert radius of sight from meters to pixels:
+            r = data["specs"]["TABLE_RAIL_SIGHTS_RADIUS"]
+            c = np.linalg.solve(A, r*E1)
+            duv = c[0]*(face.uvs[1]-face.uvs[0]) + c[1]*(face.uvs[2]-face.uvs[0])
+            r_pixels = np.linalg.norm(WH*duv)
+
+            img_pos = (WH[0]*uv[0]-r_pixels, WH[1]*uv[1]-r_pixels, WH[0]*uv[0]+r_pixels, WH[1]*uv[1]+r_pixels)
+            draw.ellipse(img_pos, fill=(230,230,235), outline=(0,0,0))
 
 def tile_image(source_image, target_wh):
     """Creates a tiled version of the source image
@@ -169,8 +223,8 @@ def tile_image(source_image, target_wh):
 
 def image_paste(target_img, source_img, data, bbox, mesh_name):
     for key, mesh in data[mesh_name].items():
-        xy = (data["PIXELS_PER_METER"]*bbox[(mesh_name,key)][0][0], data["PIXELS_PER_METER"]*bbox[(mesh_name,key)][1][0])
-        wh = (data["PIXELS_PER_METER"]*(bbox[(mesh_name,key)][0][1]-bbox[(mesh_name,key)][0][0]), data["PIXELS_PER_METER"]*(bbox[(mesh_name,key)][1][1]-bbox[(mesh_name,key)][1][0]))
+        xy = (data["specs"]["UV_PIXELS_PER_METER"]*bbox[(mesh_name,key)][0][0], data["specs"]["UV_PIXELS_PER_METER"]*bbox[(mesh_name,key)][0][1])
+        wh = (data["specs"]["UV_PIXELS_PER_METER"]*bbox[(mesh_name,key)][1][0], data["specs"]["UV_PIXELS_PER_METER"]*bbox[(mesh_name,key)][1][1])
         xy = np.array(xy).astype(int)
         wh = np.array(wh).astype(int)
         region = (xy[0], xy[1], xy[0]+wh[0], xy[1]+wh[1])
@@ -178,15 +232,15 @@ def image_paste(target_img, source_img, data, bbox, mesh_name):
         target_img.paste(crop, (xy[0], xy[1]))
 
 def create_atlas(data, bbox):
-    bbox_all = np.array(((np.inf, -np.inf), (np.inf, -np.inf)))
+    bbox_all = np.array(((np.inf, np.inf), (-np.inf, -np.inf)))
     for bb in bbox.values():
         bbox_all[0][0] = min(bb[0][0], bbox_all[0][0])
-        bbox_all[0][1] = max(bb[0][1], bbox_all[0][1])
-        bbox_all[1][0] = min(bb[1][0], bbox_all[1][0])
-        bbox_all[1][1] = max(bb[1][1], bbox_all[1][1])
-    WH = (data["PIXELS_PER_METER"]*(bbox_all[0][1]-bbox_all[0][0]), data["PIXELS_PER_METER"]*(bbox_all[1][1]-bbox_all[1][0]))
+        bbox_all[0][1] = min(bb[0][1], bbox_all[0][1])
+        bbox_all[1][0] = max(bb[0][0]+bb[1][0], bbox_all[1][0])
+        bbox_all[1][1] = max(bb[0][1]+bb[1][1], bbox_all[1][1])
+    bbox_all[1] = (bbox_all[1][0]-bbox_all[0][0], bbox_all[1][1]-bbox_all[0][1])
+    WH = (data["specs"]["UV_PIXELS_PER_METER"]*bbox_all[1][0], data["specs"]["UV_PIXELS_PER_METER"]*bbox_all[1][1])
     WH = np.ceil(WH).astype(int)
-    print(f"{WH = }")
     image1 = tile_image(Image.open("d:/resources/img/wood_dark.jpg"), WH)
     image2 = tile_image(Image.open("d:/resources/img/cloth1.png"), WH)
     image3 = tile_image(Image.open("d:/resources/img/contour.jpg"), WH)
@@ -194,15 +248,13 @@ def create_atlas(data, bbox):
     image5 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 50))
     image6 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 10))
     atlas = Image.new('RGB', (WH[0], WH[1]), (50, 50, 100))
-    image_paste(atlas, image1, data, bbox, "cushions")
+    image_paste(atlas, image2, data, bbox, "cushions")
     image_paste(atlas, image2, data, bbox, "slate")
-    image_paste(atlas, image3, data, bbox, "rail_sights")
-    image_paste(atlas, image4, data, bbox, "rails")
-    image_paste(atlas, image5, data, bbox, "casing")
+    image_paste(atlas, image1, data, bbox, "rail_sights")
+    image_paste(atlas, image5, data, bbox, "rails")
+    image_paste(atlas, image3, data, bbox, "casing")
     image_paste(atlas, image6, data, bbox, "liners")
-    atlas = atlas.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-    atlas.save("obj/atlas.jpg")
-    return bbox_all
+    return atlas, bbox_all
 
 def run(data):
     mesh_names = ("cushions", "slate", "rails", "rail_sights", "liners", "casing")
@@ -223,33 +275,24 @@ def run(data):
     transform_uvs(data["rail_sights"]["F"], complex(0.0, -1.0), 0.0)
 
     # Enhance selected prominent parts of the model:
-    ENHANCE_FACTOR = 4.0
-    transform_uvs(data["slate"]["slate"], ENHANCE_FACTOR, 0.0)
+    transform_uvs(data["slate"]["slate"], data["specs"]["UV_ENHANCE_FACTOR"][1], 0.0)
     for cushion_name in cushion_names:
-        transform_uvs(data["cushions"][cushion_name], ENHANCE_FACTOR, 0.0)
-        transform_uvs(data["rail_sights"][cushion_name], ENHANCE_FACTOR, 0.0)
+        transform_uvs(data["cushions"][cushion_name], data["specs"]["UV_ENHANCE_FACTOR"][1], 0.0)
+        transform_uvs(data["rail_sights"][cushion_name], data["specs"]["UV_ENHANCE_FACTOR"][1], 0.0)
     for k in range(1, 5):
-        transform_uvs(data["casing"][k], ENHANCE_FACTOR, 0.0)
+        transform_uvs(data["casing"][k], data["specs"]["UV_ENHANCE_FACTOR"][0], 0.0)
 
-    """
-    Containers (=materials):
-    1) Cushions ("cushions", "A"-"F")
-    2) Slate ("slate", "slate")
-    3) Rails ("rails", 1-6)
-    4) Rail sights ("rail_sights", "A"-"F")
-    5) Liners ("liners", 1-6)
-    6) Casing ("casing", 0-4)
-    """
+    # Pack the parts:
     bbox = {}
     wh_all = []
     packing_indexing = {}
     for name in mesh_names:
         wh_list = []
         for key, mesh in data[name].items():
-            bbox[(name, key)] = uv_bounding_box(mesh)
+            bbox[(name, key)] = uv_bounding_box(mesh, data["specs"]["UV_TEXTURE_GAP"]/data["specs"]["UV_PIXELS_PER_METER"])
             packing_indexing[(name, key)] = len(wh_all)
-            wh_list.append(bbox[(name, key)][:,1]-bbox[(name, key)][:,0])
-            wh_all.append(bbox[(name, key)][:,1]-bbox[(name, key)][:,0])
+            wh_list.append(bbox[(name, key)][1,:])
+            wh_all.append(bbox[(name, key)][1,:])
         wh_list = np.array(wh_list)
         wh_list = np.array((wh_list[:,0], wh_list[:,1]))
         # packing = packer.pack(wh_list)
@@ -258,25 +301,34 @@ def run(data):
     wh_all = np.array((wh_all[:,0], wh_all[:,1]))
     packing = packer.pack(wh_all)
 
+    # Apply the packing to the uv-coords:
     for name in mesh_names:
         for key, mesh in data[name].items():
-            xy = packing[0][0:2,packing_indexing[(name, key)]] - bbox[(name, key)][:,0]
+            xy = packing[0][0:2,packing_indexing[(name, key)]] - bbox[(name, key)][0,:]
             transform_uvs(mesh, 1.0, complex(xy[0], xy[1]))
 
     # We still need to create the atlas image by patching multiple source images together:
-    data["PIXELS_PER_METER"] = 128
     for name in mesh_names:
         for key, mesh in data[name].items():
-            bbox[(name, key)] = uv_bounding_box(mesh)
-    bbox_all = create_atlas(data, bbox)
+            bbox[(name, key)] = uv_bounding_box(mesh, data["specs"]["UV_TEXTURE_GAP"]/data["specs"]["UV_PIXELS_PER_METER"])
+    atlas, bbox_all = create_atlas(data, bbox)
+    
     # Scale uv coords to 0..1 range:
     for name in mesh_names:
         for key, mesh in data[name].items():
             for face in mesh.fs:
                 for k, uv in enumerate(face.uvs):
-                    uv_x = (uv[0]-bbox_all[0][0]) / (bbox_all[0][1]-bbox_all[0][0])
-                    uv_y = (uv[1]-bbox_all[1][0]) / (bbox_all[1][1]-bbox_all[1][0])
+                    uv_x = (uv[0]-bbox_all[0][0]) / bbox_all[1][0]
+                    uv_y = (uv[1]-bbox_all[0][1]) / bbox_all[1][1]
                     face.uvs[k] = np.array((uv_x, uv_y))
+
+    draw_sights(data, atlas)
+
+    file_name = "obj/atlas.jpg"
+    atlas = atlas.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+    atlas.save(file_name, quality=80)
+    print(f"File {file_name} written.")
+
     return data
 
 if __name__ == "__main__":

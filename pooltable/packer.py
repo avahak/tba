@@ -1,3 +1,5 @@
+# NOTE old code, not cleaned up
+
 # Input: 1) enclosing rectangle (W,H) 2) list of rectangle sizes (w,h)
 # Output: list of positions (x,y) for rectangles or None
 
@@ -361,7 +363,7 @@ def generate_samples(n, A, WH0):
     return samples
 
 # testing multiple (W,H) to find a small atlas
-def pack(wh_list):
+def pack(wh_list, verbose=False):
     start_time = time.time()
 
     C1 = 1.0001  # error tolerance for A
@@ -373,15 +375,16 @@ def pack(wh_list):
     pack_count = 0
 
     WH0 = np.array((np.max(wh_list[0]), np.max(wh_list[1])))
-    print(WH0, WH0.dtype)
+    # print(WH0, WH0.dtype)
     A0 = np.sum(wh_list[0]*wh_list[1])
-    print(f'{WH0=}, {A0=}')
+    # print(f'{WH0=}, {A0=}')
 
     maxA = 1.0e10    # ~infinity
     minA = max(A0, WH0[0]*WH0[1])
     while maxA > C1*minA:
         A = min(2.0*minA, 0.5*(minA+maxA))
-        print(f'testing {A=:.3f} ({minA=:.3f}, {maxA=:.3f}):')
+        if verbose:
+            print(f'testing {A=:.3f} ({minA=:.3f}, {maxA=:.3f}):')
         samples = generate_samples(SN, A, WH0)
         #print(f'{   samples=}')
         for WH in samples.T:
@@ -390,23 +393,26 @@ def pack(wh_list):
             pack_count += 1
             if packing[0] is not None:
                 # packing found:
-                print(f'   success! efficiency={A0/A:.6f}')
+                if verbose:
+                    print(f'   success! efficiency={A0/A:.6f}')
                 best_packing = packing
                 best_A = WH[0]*WH[1]
-                print(f"   {WH = }, {best_A = }")
+                # print(f"   {WH = }, {best_A = }")
                 # caller.log_success(WH, packing)
                 maxA = A
                 break
             # caller.log_fail(WH)
         else:
             # no packing found in samples:
-            print('   fail!')
+            if verbose:
+                print('   fail!')
             minA = A
             # more conservative, takes twice as long:
             #minA = 0.5*(minA+A)
-    print(f'Pack done, smallest A found: {best_A}, packing efficiency: {A0/best_A:.6f}.')
-    print(f'Packing took {time.time()-start_time:.1f} seconds and {pack_count} wh-configurations were tested.')
-    draw_packing(best_packing)
+    if verbose:
+        print(f'Pack done, smallest A found: {best_A}, packing efficiency: {A0/best_A:.6f}.')
+        print(f'Packing took {time.time()-start_time:.1f} seconds and {pack_count} wh-configurations were tested.')
+        draw_packing(best_packing)
     return best_packing
 
 # First create n random rectangles with areas summing to 1,
@@ -452,7 +458,7 @@ def test_pack():
     A0 = np.sum(wh_list[0]*wh_list[1])
     WH0 = (np.max(wh_list[0]), np.max(wh_list[1]))
     print(wh_list.shape)
-    pack(wh_list)
+    pack(wh_list, True)
 
 def test_cdf():
     print('Testing generate_normalized_samples:')
