@@ -128,10 +128,12 @@ def run():
         merged_all = []
         for name in ("cushions", "slate", "liners", "casing", "rails", "rail_sights"):
             merged_mesh = mesh3.Mesh3.merge(data[name].values())
-            # write_obj_file(merged_mesh, f"obj/{name}.obj", name)
             for face in merged_mesh.fs:
                 face_to_name[face] = name
-            merged_all.append(merged_mesh)
+            if name == "cushions":
+                write_obj_file(merged_mesh, f"obj/{name}.obj", name)
+            else:
+                merged_all.append(merged_mesh)
         merged_all = mesh3.Mesh3.merge(merged_all)
         write_merged_obj_file(f"obj/pooltable.obj", merged_all, face_to_name)
 

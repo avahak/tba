@@ -1,10 +1,17 @@
-// TODO: change global variables to module-wide
+/* TODO:
+1) Separate cushions from table
+2) add edges to cushions only
+3) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
+(black edges+no shadows from table makes overhead view very crisp)
+4) add html elements
+*/
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 let camera;
 let scene;
 let renderer;
+// let composer: EffectComposer;
 let time;
 let mouse;
 let designSettings;
@@ -12,9 +19,10 @@ initGeneral();
 // Initialization for everything, done after imports
 function initGeneral() {
     designSettings = {
-        SHADOW_MAP_SIZE: 1024,
+        SHADOW_MAP_SIZE: 1024 * 2,
         RESOURCES_PATH: "./static/",
         objects: [],
+        scene_group: new THREE.Group(),
         materials: [],
         animateCamera: false,
         draggingBall: null,
@@ -32,35 +40,41 @@ function initGeneral() {
     // const camera = new THREE.OrthographicCamera(-ar, ar, 1.0, -1.0, 0.1, 1000.0);
     camera.position.set(0, 0, 3.5);
     camera.lookAt(0.0, 0.0, 0.0);
-    for (let k = -1; k <= 1; k++) {
-        let light = new THREE.PointLight(0xffffff, 5, 10);
-        light.position.set(k, 0, 2);
-        light.castShadow = true;
-        light.shadow.mapSize.copy(new THREE.Vector2(designSettings.SHADOW_MAP_SIZE, designSettings.SHADOW_MAP_SIZE));
-        scene.add(light);
+    for (let k1 = -1; k1 <= 1; k1 += 2) {
+        for (let k2 = -1; k2 <= 1; k2 += 2) {
+            let light = new THREE.PointLight(0xffffff, 20, 10);
+            light.position.set(k1, k2, 4.0);
+            light.castShadow = true;
+            light.shadow.mapSize.copy(new THREE.Vector2(designSettings.SHADOW_MAP_SIZE, designSettings.SHADOW_MAP_SIZE));
+            scene.add(light);
+        }
     }
     let light = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(light);
     designSettings.element = document.getElementById("three-box");
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio * 2);
     renderer.setClearColor(0x000000, 0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setSize(designSettings.element.offsetWidth, designSettings.element.offsetHeight);
+    // const pixelRatio = renderer.getPixelRatio();
+    // console.log("pixelRatio", pixelRatio);
+    // composer = new EffectComposer(renderer);
+    // const renderPass = new RenderPass(scene, camera);
+    // renderPass.clearAlpha = 0;
+    // composer.addPass(renderPass);
+    // const outputPass = new OutputPass();
+    // composer.addPass(outputPass);
+    // const fxaaPass = new ShaderPass(FXAAShader);
+    // fxaaPass.material.uniforms["resolution"].value.set(1/(designSettings.element.offsetWidth*pixelRatio), 1/(designSettings.element.offsetHeight*pixelRatio));
+    // fxaaPass.renderToScreen = false;
+    // composer.addPass(fxaaPass);
+    // composer.setSize(designSettings.element.offsetWidth, designSettings.element.offsetHeight);
     designSettings.element.appendChild(renderer.domElement);
-    const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-            if (entry.target == designSettings.element) {
-                const newWidth = entry.contentRect.width;
-                const newHeight = entry.contentRect.height;
-                renderer.setSize(newWidth, newHeight);
-                camera.aspect = newWidth / newHeight;
-                // camera.fov = 30.0;
-                camera.updateProjectionMatrix();
-            }
-        }
-    }).observe(designSettings.element);
+    window.addEventListener('resize', onWindowResize);
+    onWindowResize();
     time = 0.0;
     const textureLoader = new THREE.TextureLoader();
     for (let k = 0; k < 16; k++) {
@@ -72,7 +86,7 @@ function initGeneral() {
         });
     }
     const resourcePromises = [
-        // loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, new THREE.MeshStandardMaterial({ color: 0x35557c })),
+        loadObjMtlPromise("cushions", `${designSettings.RESOURCES_PATH}models/cushions.obj`, `${designSettings.RESOURCES_PATH}models/pooltable.mtl`),
         // loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/table.obj`, `${designSettings.RESOURCES_PATH}models/table.mtl`),
         // loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/test.obj`, `${designSettings.RESOURCES_PATH}models/test.mtl`),
         loadObjMtlPromise("table", `${designSettings.RESOURCES_PATH}models/pooltable.obj`, `${designSettings.RESOURCES_PATH}models/pooltable.mtl`),
@@ -99,12 +113,14 @@ function initGeneral() {
             // }
             designSettings.objects[`ball${k}`] = cball;
         }
-        scene.add(designSettings.objects.table);
-        // scene.add(designSettings.objects.cushions);
+        scene.add(designSettings.scene_group);
+        designSettings.scene_group.add(designSettings.objects.table);
+        designSettings.scene_group.add(designSettings.objects.cushions);
+        scene.add(edges_from(designSettings.objects.cushions));
         setShadow(designSettings.objects.table, true, true);
-        // setShadow(designSettings.objects.cushions, true, true);
+        setShadow(designSettings.objects.cushions, true, true);
         for (let k = 0; k < 16; k++) {
-            scene.add(designSettings.objects[`ball${k}`]);
+            designSettings.scene_group.add(designSettings.objects[`ball${k}`]);
             setShadow(designSettings.objects[`ball${k}`], true, true);
         }
         console.log(designSettings);
@@ -126,6 +142,50 @@ function initGeneral() {
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+}
+function onWindowResize() {
+    const container = designSettings.element;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
+    camera.updateProjectionMatrix();
+    // console.log(container.offsetWidth, container.offsetHeight);
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    // const pixelRatio = renderer.getPixelRatio();
+    // composer.setSize(container.offsetWidth, container.offsetHeight);
+    // fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( container.offsetWidth * pixelRatio );
+    // fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( container.offsetHeight * pixelRatio );
+}
+/**
+ * Returns a group of edges from an object. Only edges with both vertices having z>=0
+ * are included.
+ *
+ * @param object Object that the edges are formed from.
+ * @returns Group of edges.
+ */
+function edges_from(object) {
+    let group = new THREE.Group();
+    object.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            const edgesGeometry = new THREE.EdgesGeometry(child.geometry, 10);
+            // Filter edges to remove any edge with vertex.z < 0:
+            // const edgesPositions = edgesGeometry.attributes.position.array;
+            // const filteredEdges = [];
+            // for (let i = 0; i < edgesPositions.length; i += 6) {
+            // 	const vertex1 = new THREE.Vector3(edgesPositions[i], edgesPositions[i + 1], edgesPositions[i + 2]);
+            // 	const vertex2 = new THREE.Vector3(edgesPositions[i + 3], edgesPositions[i + 4], edgesPositions[i + 5]);
+            // 	if (vertex1.z >= 0 && vertex2.z >= 0) {
+            // 		const edge = new THREE.Line(new THREE.BufferGeometry().setFromPoints([vertex1, vertex2]), new THREE.LineBasicMaterial({ color: 0x000000 }));
+            // 		filteredEdges.push(edge);
+            // 	}
+            // }
+            // const edgesMesh = new THREE.Group();
+            // for (const edge of filteredEdges) 
+            // 	edgesMesh.add(edge);
+            // group.add(edgesMesh);
+            const outline = new THREE.LineSegments(edgesGeometry, new THREE.LineBasicMaterial({ color: 0x000000 }));
+            group.add(outline);
+        }
+    });
+    return group;
 }
 // Returns a promise that is resolved after loading the .json file
 function loadJsonPromise() {
@@ -216,6 +276,7 @@ function animate() {
         camera.lookAt(0.0, 0.0, -0.25);
     }
     renderer.render(scene, camera);
+    // composer.render();
     requestAnimationFrame(animate);
 }
 function handleMouseDown(event) {
@@ -277,11 +338,13 @@ function findObjectNameOnMouse(mouseAction) {
     nMouse.y = -2 * ((mouseAction.y - rect.top) / rect.height) + 1;
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(nMouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
+    const intersects = raycaster.intersectObjects(designSettings.scene_group.children, true);
+    // const intersects = raycaster.intersectObjects(filterOutLineSegments(scene), true);
     if (intersects.length > 0) {
-        // console.log("intersects[0]:", intersects[0].object);
         let x = findGroupForObject(intersects[0].object);
-        return findNameForObject(x);
+        const name = findNameForObject(x);
+        console.log("intersects[0]:", name);
+        return name;
     }
     return null;
 }
