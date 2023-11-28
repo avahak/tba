@@ -20,7 +20,7 @@ function initGeneral() {
         draggingBall: null,
         defaultPositions: {},
     };
-    console.log(designSettings);
+    console.log("designSettings", designSettings);
     mouse = {
         lastX: null,
         lastY: null,
@@ -137,7 +137,8 @@ function loadJsonPromise() {
             return response.json();
         })
             .then(data => {
-            designSettings.specs = data;
+            designSettings.json_all = data;
+            designSettings.specs = data.specs;
             resolve(data);
         })
             .catch(error => {
@@ -200,7 +201,7 @@ function getRandomColor(r, g, b) {
     return material;
 }
 function defaultPosition(ballNumber) {
-    return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.84, designSettings.specs.BALL_RADIUS);
+    return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, designSettings.specs.BALL_RADIUS);
 }
 function animate() {
     time += 0.002;

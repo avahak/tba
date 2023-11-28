@@ -11,6 +11,7 @@ interface DesignSettings {
 	RESOURCES_PATH: string;
 	objects: any; 
 	materials: any;
+	json_all: any;
 	specs: any;
 	element: HTMLElement;
 	animateCamera: boolean;
@@ -46,7 +47,7 @@ function initGeneral() {
 		draggingBall: null,
 		defaultPositions: {},
 	} as DesignSettings;
-	console.log(designSettings);
+	console.log("designSettings", designSettings);
 
 	mouse = {
 		lastX: null,
@@ -180,7 +181,8 @@ function loadJsonPromise() {
 				return response.json();
 			})
 			.then(data => {
-				designSettings.specs = data;
+				designSettings.json_all = data;
+				designSettings.specs = data.specs;
 				resolve(data);
 			})
 			.catch(error => {
@@ -252,7 +254,7 @@ function getRandomColor(r: number, g: number, b: number) {
 }
 
 function defaultPosition(ballNumber: number): THREE.Vector3 {
-	return new THREE.Vector3(-1.0+0.1*ballNumber, 0.84, designSettings.specs.BALL_RADIUS);
+	return new THREE.Vector3(-1.0+0.1*ballNumber, 0.86, designSettings.specs.BALL_RADIUS);
 }
 
 function animate() {
