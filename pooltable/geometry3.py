@@ -12,7 +12,7 @@ def closest_point(p, a, b, c):
     # Below lambda_a, lambda_b, lambda_c are barycentric coordinates for p*=proj_{abc plane}(p).
     # Lambda_c, lambda_b can be obtained requiring that a+lambda_b*(b-a)+lambda_c*(c-a) = p* 
     # and then testing this by taking inner product of both sides with b-a and c-a. 
-    # After that \lambda_a=1-\lambda_b-\lambda_c. The formulas below are optimized forms
+    # After that \lambda_a=1-\lambda_b-\lambda_c. The formulas used are optimized forms
     # that avoid the need for intermediate calculations. I am not aware of the derivation 
     # of these formulas, only the proof that they work.
     # See https://github.com/embree/embree/blob/master/tutorials/common/math/closest_point.h
@@ -59,7 +59,8 @@ def closest_point(p, a, b, c):
         return b + v*(c-b)
     
     # Closest point inside the triangle:
-    return (lambda_a*a + lambda_b*b + lambda_c*c) / (lambda_a + lambda_b + lambda_c)
+    lambda_sum = lambda_a + lambda_b + lambda_c
+    return (lambda_a*a + lambda_b*b + lambda_c*c) / lambda_sum
 
 
 # Represents plane defined by (x,y,z): abc.(x,y,z)=d (point-normal form)

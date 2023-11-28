@@ -116,7 +116,13 @@ def run():
 
     WRITE_FILE = True
     if WRITE_FILE:
-        # Write to file:
+        # Write JSON to file:
+        file_name = "obj/pooltable.json"
+        with open(file_name, "w") as file:
+            file.write(json.dumps(convert_numpy_to_lists(data["meta"]), indent=4))
+        print(f"File {file_name} written.")
+
+        # Write pooltable model to file:
         write_mtl_file(data, "obj/pooltable.mtl")
         face_to_name = {}
         merged_all = []

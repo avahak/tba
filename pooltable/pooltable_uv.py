@@ -7,8 +7,6 @@ Containers (=materials):
     5) Liners ("liners", 1-6)
     6) Casing ("casing", 0-4)
 """
-# The sights may be round (between 7/16 [11.11 mm] and ½ inch [12.7 mm] in diameter) 
-# or diamond-shaped (between 1 x 7/16 [25.4 x 11.11 mm] and 1 ¼ x 5/8 inch [31.75 x 15.875 mm]).
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -21,6 +19,7 @@ E2 = np.array((0.0, 1.0, 0.0))
 E3 = np.array((0.0, 0.0, 1.0))
 
 INCH = 0.0254
+CM = 0.01
 DEGREE = np.pi/180.0
 
 def normalize(p):
@@ -186,30 +185,67 @@ def sights_pos(data, cushion_name, index):
     if cushion_name == "F":
         return -sights_right(index)
 
-def draw_sights(data, atlas):
-    """Draws the sights (diamonds) on rail_sights.
-    """
-    draw = ImageDraw.Draw(atlas)
-    WH = np.array(atlas.size)
-    for cushion_name in ("A", "B", "C", "D", "E", "F"):
-        face = data["rail_sights"][cushion_name].fs[0]
+def world_to_atlas_coords(faces, p):
+    uvs = []
+    for face in faces:
         v0 = face.pts[0]
-        v1, v2 = face.pts[1]-v0, face.pts[2]-v0
+        v1, v2, v3 = face.pts[1]-v0, face.pts[2]-v0, face.basis[2]
+
+        A = np.vstack([v1, v2, v3]).T
+        c = np.linalg.solve(A, p-v0)
+        uv = face.uvs[0] + c[0]*(face.uvs[1]-face.uvs[0]) + c[1]*(face.uvs[2]-face.uvs[0])
+        if np.abs(c[2]) < 1.0e-9:
+            # Only consider faces whose plane contains the point p
+            uvs.append(uv)
+    return np.average(uvs, axis=0)
+
+def draw_markings(data, atlas):
+    """Draws the sights (diamonds) on rail_sights.
+    Also draw head string, head spot, and foot spot.
+    """
+    WH = np.array(atlas.size)
+    # Drawing with transparency does not work directly in pillow - have to use an overlay:
+    overlay = Image.new("RGBA", atlas.size, (0,0,0,0))
+    draw = ImageDraw.Draw(overlay)
+
+    # Cloth markings on top of slate:
+    faces_slate_top = tuple(filter(lambda face: (np.abs(face.basis[3][2]) < 1.0e-9), data["slate"]["slate"].fs))
+    p_head_spot = np.array((-data["specs"]["TABLE_LENGTH"]/4, 0.0, 0.0))
+    p_foot_spot = np.array((data["specs"]["TABLE_LENGTH"]/4, 0.0, 0.0))
+    p_head_string_1 = np.array((-data["specs"]["TABLE_LENGTH"]/4, -data["specs"]["TABLE_LENGTH"]/4-data["specs"]["CUSHION_WIDTH"], 0.0))
+    p_head_string_2 = np.array((-data["specs"]["TABLE_LENGTH"]/4, data["specs"]["TABLE_LENGTH"]/4+data["specs"]["CUSHION_WIDTH"], 0.0))
+    points = (p_head_spot, p_foot_spot, p_head_string_1, p_head_string_2)
+    uvs = [world_to_atlas_coords(faces_slate_top, p) for p in points]
+    scale = np.linalg.norm(WH*(world_to_atlas_coords(faces_slate_top, points[0]+E1)-uvs[0]))
+    # Draw head string:
+    line_start = (WH[0]*uvs[2][0], WH[1]*uvs[2][1])
+    line_end = (WH[0]*uvs[3][0], WH[1]*uvs[3][1])
+    width = scale*(0.3*CM)
+    draw.line([line_start, line_end], fill=(50,50,45,96), width=max(1,round(width)))
+    # Draw head spot and foot spot:
+    r_pixels = scale*(0.4*INCH)     # radius of spot in pixels
+    for uv in uvs[:2]:
+        img_pos = (WH[0]*uv[0]-r_pixels, WH[1]*uv[1]-r_pixels, WH[0]*uv[0]+r_pixels, WH[1]*uv[1]+r_pixels)
+        draw.ellipse(img_pos, fill=(50,50,45), outline=(0,0,0))
+
+    # Diamonds on rail_sights:
+    for cushion_name in ("A", "B", "C", "D", "E", "F"):
+        faces = data["rail_sights"][cushion_name].fs
+
         for k in range(1, 4):
             p = np.array((*sights_pos(data, cushion_name, k), data["specs"]["TABLE_RAIL_HEIGHT"]))
 
-            A = np.vstack([v1, v2, E3]).T
-            c = np.linalg.solve(A, p-v0)
-            uv = face.uvs[0] + c[0]*(face.uvs[1]-face.uvs[0]) + c[1]*(face.uvs[2]-face.uvs[0])
+            uv = world_to_atlas_coords(faces, p)
 
             # Convert radius of sight from meters to pixels:
             r = data["specs"]["TABLE_RAIL_SIGHTS_RADIUS"]
-            c = np.linalg.solve(A, r*E1)
-            duv = c[0]*(face.uvs[1]-face.uvs[0]) + c[1]*(face.uvs[2]-face.uvs[0])
-            r_pixels = np.linalg.norm(WH*duv)
+            r_pixels = np.linalg.norm(WH*(world_to_atlas_coords(faces, p+r*E1)-uv))
 
             img_pos = (WH[0]*uv[0]-r_pixels, WH[1]*uv[1]-r_pixels, WH[0]*uv[0]+r_pixels, WH[1]*uv[1]+r_pixels)
             draw.ellipse(img_pos, fill=(230,230,235), outline=(0,0,0))
+
+    atlas.alpha_composite(overlay)
+    
 
 def tile_image(source_image, target_wh):
     """Creates a tiled version of the source image
@@ -247,7 +283,7 @@ def create_atlas(data, bbox):
     image4 = tile_image(Image.open("d:/resources/img/wood1.jpg"), WH)
     image5 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 50))
     image6 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 10))
-    atlas = Image.new('RGB', (WH[0], WH[1]), (50, 50, 100))
+    atlas = Image.new('RGBA', (WH[0], WH[1]), (50, 50, 100, 255))
     image_paste(atlas, image2, data, bbox, "cushions")
     image_paste(atlas, image2, data, bbox, "slate")
     image_paste(atlas, image1, data, bbox, "rail_sights")
@@ -322,10 +358,10 @@ def run(data):
                     uv_y = (uv[1]-bbox_all[0][1]) / bbox_all[1][1]
                     face.uvs[k] = np.array((uv_x, uv_y))
 
-    draw_sights(data, atlas)
+    draw_markings(data, atlas)
 
     file_name = "obj/atlas.jpg"
-    atlas = atlas.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+    atlas = atlas.transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert("RGB")
     atlas.save(file_name, quality=80)
     print(f"File {file_name} written.")
 

@@ -1,3 +1,6 @@
+"""Code related to 3D-meshes. 
+"""
+
 import numpy as np
 import numpy.typing as npt
 from collections.abc import Iterable, Sequence

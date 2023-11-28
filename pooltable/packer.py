@@ -364,7 +364,7 @@ def generate_samples(n, A, WH0):
 
 # testing multiple (W,H) to find a small atlas
 def pack(wh_list, verbose=False):
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     C1 = 1.0001  # error tolerance for A
     SN = 8     # number of samples to test until we give up on A
@@ -411,7 +411,7 @@ def pack(wh_list, verbose=False):
             #minA = 0.5*(minA+A)
     if verbose:
         print(f'Pack done, smallest A found: {best_A}, packing efficiency: {A0/best_A:.6f}.')
-        print(f'Packing took {time.time()-start_time:.1f} seconds and {pack_count} wh-configurations were tested.')
+        print(f'Packing took {time.perf_counter()-start_time:.1f} seconds and {pack_count} wh-configurations were tested.')
         draw_packing(best_packing)
     return best_packing
 
