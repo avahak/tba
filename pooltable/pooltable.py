@@ -33,10 +33,10 @@ def convert_numpy_to_lists(obj):
         return obj
 
 def write_mtl_file(data, file_name):
-    DS = { "cloth": (0.7, 0.2, 0), "wood": (0.8, 0.4, 0) }
+    DS = { "cloth": (0.9, 0.1, 0), "wood": (0.8, 0.2, 0) }
     # cloth: (0.7, 0.2), wood: ()
-    dsn = { "cushions": DS["cloth"], "slate": DS["cloth"], "rails": (0.3, 0.8, 100), 
-            "liners": (0.5, 0.01, 0), "rail_sights": DS["wood"], "casing": (0.7, 0.3, 0) }
+    dsn = { "cushions": DS["cloth"], "slate": DS["cloth"], "rails": (0.4, 0.5, 100), 
+            "liners": (0.5, 0.01, 0), "rail_sights": DS["wood"], "casing": (0.7, 0.1, 0) }
     with open(file_name, "w") as file:
         for name in ("cushions", "slate", "rails", "rail_sights", "liners", "casing"):
             file.write(f"newmtl material_{name}\n")

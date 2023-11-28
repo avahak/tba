@@ -282,7 +282,7 @@ def create_atlas(data, bbox):
     image3 = tile_image(Image.open("d:/resources/img/contour.jpg"), WH)
     image4 = tile_image(Image.open("d:/resources/img/wood1.jpg"), WH)
     image5 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 50))
-    image6 = Image.new('RGB', (WH[0], WH[1]), (20, 20, 10))
+    image6 = Image.new('RGB', (WH[0], WH[1]), (100, 105, 95))
     atlas = Image.new('RGBA', (WH[0], WH[1]), (50, 50, 100, 255))
     image_paste(atlas, image2, data, bbox, "cushions")
     image_paste(atlas, image2, data, bbox, "slate")
