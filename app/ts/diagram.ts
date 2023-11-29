@@ -1,8 +1,16 @@
+/** 
+ * Represents the state of one pool diagram.
+*/
+
 export { initDiagram };
-import { initTable } from "./tableView.js";
+import { TableScene, TableView } from "./tableView.js";
 
 console.log("diagram.ts");
 
 function initDiagram() {
-    initTable();
+    const tableScene = new TableScene();
+    // tableScene.setLights("square");
+    tableScene.setLights("ambient only");
+    const tableView = new TableView(document.getElementById("three-box") as HTMLElement, tableScene);
+    tableView.animate();
 }
