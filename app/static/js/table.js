@@ -1,13 +1,18 @@
 /* TODO:
-1) Separate cushions from table
-2) add edges to cushions only
-3) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
+1) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
 (black edges+no shadows from table makes overhead view very crisp)
-4) add html elements
+2) add html elements
 */
+export { initTable };
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+// import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
+// import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+// import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+console.log("table.ts");
 let camera;
 let scene;
 let renderer;
@@ -15,9 +20,9 @@ let renderer;
 let time;
 let mouse;
 let designSettings;
-initGeneral();
+// initTable();
 // Initialization for everything, done after imports
-function initGeneral() {
+function initTable() {
     designSettings = {
         SHADOW_MAP_SIZE: 1024 * 2,
         RESOURCES_PATH: "./static/",

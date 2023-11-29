@@ -1,0 +1,32 @@
+.menu-bar {
+    position: fixed; 
+    top: 20px; 
+    left: 20px;
+}
+
+.top-bar {
+    background-color: #808080; 
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.tool-bar {
+    background-color: #808080; 
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.options-bar {
+    background-color: #808080; 
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.menu-button {
+    background: #aa5;
+}

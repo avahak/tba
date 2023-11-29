@@ -120,9 +120,9 @@ def sqlalchemy_engine_logs():
         s = "<br>".join(f.readlines())
     return f"{s}"
 
-@main.route('/design')
-def design():
-    return render_template("design.html")
+@main.route('/diagram')
+def diagram():
+    return render_template("diagram.html")
 
 @main.route('/julia')
 def julia():

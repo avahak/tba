@@ -1,13 +1,10 @@
 /* TODO:
-1) Separate cushions from table
-2) add edges to cushions only
-3) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
+1) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
 (black edges+no shadows from table makes overhead view very crisp)
-4) add html elements
+2) add html elements
 */
 
-export {};
-
+export { initTable };
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
@@ -16,6 +13,8 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 // import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 // import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 // import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+
+console.log("table.ts");
 
 interface DesignSettings {
 	SHADOW_MAP_SIZE: number;
@@ -47,10 +46,10 @@ type MouseAction = {
 	dy: number | null;
 };
 
-initGeneral();
+// initTable();
 
 // Initialization for everything, done after imports
-function initGeneral() {
+function initTable() {
 	designSettings = { 
 		SHADOW_MAP_SIZE: 1024*2,
 		RESOURCES_PATH: "./static/", 
@@ -348,7 +347,6 @@ function animate() {
 
 	renderer.render(scene, camera);
 	// composer.render();
-
 	requestAnimationFrame(animate);
 }
 
