@@ -106,13 +106,11 @@ class TableScene {
 	public objects: any;
 	public json_all: any;
 	public specs: any;
-	public defaultPositions: { [key: string]: THREE.Vector3 };
 	public cushionEdgeCylinders: THREE.Object3D | undefined;
 
 	constructor() {
 		this.objects = {};
 		this.objectGroup = new THREE.Group();
-		this.defaultPositions = {};
 		this.scene = new THREE.Scene();
 		this.lightGroup = new THREE.Group();
 
@@ -200,7 +198,11 @@ class TableScene {
 		return new THREE.Vector3(-1.0+0.1*ballNumber, 0.86, this.specs.BALL_RADIUS);
 	}
 
-	findObjectNameOnMouse(nMouse: THREE.Vector2, camera: THREE.Camera): string | null {
+	/**
+	 * @param nMouse Normalized mouse position (-1..1, -1..1).
+	 * @returns Returns name for object on mouse position.
+	 */
+	public findObjectNameOnMouse(nMouse: THREE.Vector2, camera: THREE.Camera): string | null {
 		function findNameForObject(object: any, objects: any): string | null {
 			// First find group for object:
 			do {
@@ -309,7 +311,7 @@ class TableView {
 			cam.position.set(0, 0, 3.5);
 			cam.lookAt(0.0, 0.0, 0.0);
 		}
-		this.camera = this.cameraPerspective;
+		this.camera = this.cameraOrthographic;
 
 		this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 		this.renderer.setPixelRatio(window.devicePixelRatio * 2);
@@ -325,7 +327,6 @@ class TableView {
 	}
 
 	public setCamera(name: string) {
-		console.log("setCamera", name)
 		if (name == "orthographic") {
 			this.camera = this.cameraOrthographic;
 			this.tableScene.setLights("ambient");
@@ -368,5 +369,16 @@ class TableView {
 		this.cameraPerspective.updateProjectionMatrix();
 
 		this.renderer.setSize(container.offsetWidth, container.offsetHeight);
+	}
+
+	/**
+	 * Converts x, y given in pixels to OpenGL normalized device coordinates.
+	 */
+	public normalizedMousePosition(x: number, y: number) {
+		const rect = this.element.getBoundingClientRect();
+		const nMouse = new THREE.Vector2();
+		nMouse.x = 2*((x-rect.left) / rect.width) - 1;
+		nMouse.y = -2*((y-rect.top) / rect.height) + 1;
+		return nMouse;
 	}
 }

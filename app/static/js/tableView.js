@@ -96,7 +96,6 @@ class TableScene {
     constructor() {
         this.objects = {};
         this.objectGroup = new THREE.Group();
-        this.defaultPositions = {};
         this.scene = new THREE.Scene();
         this.lightGroup = new THREE.Group();
         this.scene.add(this.objectGroup);
@@ -176,6 +175,10 @@ class TableScene {
     defaultBallPosition(ballNumber) {
         return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, this.specs.BALL_RADIUS);
     }
+    /**
+     * @param nMouse Normalized mouse position (-1..1, -1..1).
+     * @returns Returns name for object on mouse position.
+     */
     findObjectNameOnMouse(nMouse, camera) {
         function findNameForObject(object, objects) {
             // First find group for object:
@@ -270,7 +273,7 @@ class TableView {
             cam.position.set(0, 0, 3.5);
             cam.lookAt(0.0, 0.0, 0.0);
         }
-        this.camera = this.cameraPerspective;
+        this.camera = this.cameraOrthographic;
         this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio * 2);
         this.renderer.setClearColor(0x000000, 0);
@@ -282,7 +285,6 @@ class TableView {
         this.onWindowResize();
     }
     setCamera(name) {
-        console.log("setCamera", name);
         if (name == "orthographic") {
             this.camera = this.cameraOrthographic;
             this.tableScene.setLights("ambient");
@@ -320,5 +322,15 @@ class TableView {
         this.cameraPerspective.aspect = aspect;
         this.cameraPerspective.updateProjectionMatrix();
         this.renderer.setSize(container.offsetWidth, container.offsetHeight);
+    }
+    /**
+     * Converts x, y given in pixels to OpenGL normalized device coordinates.
+     */
+    normalizedMousePosition(x, y) {
+        const rect = this.element.getBoundingClientRect();
+        const nMouse = new THREE.Vector2();
+        nMouse.x = 2 * ((x - rect.left) / rect.width) - 1;
+        nMouse.y = -2 * ((y - rect.top) / rect.height) + 1;
+        return nMouse;
     }
 }

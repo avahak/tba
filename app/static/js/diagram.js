@@ -3,18 +3,20 @@
 */
 export { initDiagram };
 import { TableScene, TableView } from "./tableView.js";
+import * as THREE from 'three';
 console.log("diagram.ts");
 let mouse = {
     lastX: null,
     lastY: null,
-    isDragging: false
+    isDragging: false,
+    mouseDragObject: null,
 };
 let tableScene;
 let tableView;
 function initDiagram() {
     tableScene = new TableScene();
     tableView = new TableView(document.getElementById("three-box"), tableScene);
-    tableView.setCamera("perspective");
+    tableView.setCamera("orthographic");
     tableView.animate();
     document.addEventListener('contextmenu', (event) => {
         event.preventDefault(); // Disable the default context menu
@@ -61,37 +63,51 @@ function handleScroll(event) {
 }
 // Custom mouse left click/drag handler:
 function mouseAction(mouseAction) {
-    // if (mouseAction.action == "down") {
-    // 	let y = findObjectNameOnMouse(mouseAction);
-    // 	if (y && y.startsWith("ball")) {
-    // 		const result = y.match(/\d+/);
-    // 		designSettings.draggingBall = result ? parseInt(result[0]) : null;
-    // 	} 
-    // } else if (mouseAction.action == "up") {
-    // 	designSettings.draggingBall = null;
-    // } else if (mouseAction.action == "drag") {
-    // 	const rect = designSettings.element.getBoundingClientRect();
-    // 	const mouse = new THREE.Vector2();
-    // 	mouse.x = 2*((mouseAction.x-rect.left) / rect.width) - 1;
-    // 	mouse.y = -2*((mouseAction.y-rect.top) / rect.height) + 1;
-    // 	const mouse3D = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-    // 	let a = mouse3D.unproject(camera);
-    // 	const ray = new THREE.Ray(camera.position, a.clone().sub(camera.position).normalize());
-    // 	const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -designSettings.specs.BALL_RADIUS);
-    // 	let intersect = new THREE.Vector3();
-    // 	ray.intersectPlane(plane, intersect);
-    // 	if (intersect) {
-    // 		if (designSettings.draggingBall != null) {
-    // 			const ball = designSettings.objects[`ball${designSettings.draggingBall}`];
-    // 			ball.position.x = intersect.x;
-    // 			ball.position.y = intersect.y;
-    // 		}
-    // 	}
-    // } else if (mouseAction.action == "contextmenu") {
-    // 	let y = findObjectNameOnMouse(mouseAction);
-    // 	if (y && y.startsWith("ball")) {
-    // 		designSettings.draggingBall = null;
-    // 		designSettings.objects[y].position.copy(designSettings.defaultPositions[y]);
-    // 	}
-    // }
+    const nMouse = tableView.normalizedMousePosition(mouseAction.x, mouseAction.y);
+    if (mouseAction.action == "down") {
+        let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
+        if (y && y.startsWith("ball")) {
+            const result = y.match(/\d+/);
+            // mouse.mouseDragObject = result ? parseInt(result[0]) : null;
+            mouse.mouseDragObject = result ? y : null;
+        }
+    }
+    else if (mouseAction.action == "up") {
+        mouse.mouseDragObject = null;
+    }
+    else if (mouseAction.action == "drag") {
+        const rect = tableView.element.getBoundingClientRect();
+        const mouse3D = new THREE.Vector3(nMouse.x, nMouse.y, 0.0);
+        let cameraDir = tableView.camera.getWorldDirection(new THREE.Vector3());
+        let a = mouse3D.unproject(tableView.camera);
+        if (tableView.camera instanceof THREE.OrthographicCamera)
+            a = new THREE.Vector3(a.x, a.y, 2.0);
+        else
+            a = a.clone().sub(tableView.camera.position).normalize();
+        let ray = new THREE.Ray(tableView.camera.position, a);
+        if (tableView.camera instanceof THREE.OrthographicCamera)
+            ray = new THREE.Ray(a, cameraDir);
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -tableScene.specs.BALL_RADIUS);
+        let intersect = new THREE.Vector3();
+        ray.intersectPlane(plane, intersect);
+        if (!!intersect) {
+            if (!!mouse.mouseDragObject) {
+                const ball = tableScene.objects[mouse.mouseDragObject];
+                ball.position.x = intersect.x;
+                ball.position.y = intersect.y;
+            }
+        }
+    }
+    else if (mouseAction.action == "contextmenu") {
+        let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
+        if (y && y.startsWith("ball")) {
+            mouse.mouseDragObject = null;
+            const result = y.match(/\d+/);
+            const ballNumber = result ? parseInt(result[0]) : null;
+            if (ballNumber) {
+                const defaultPos = tableScene.defaultBallPosition(ballNumber);
+                tableScene.objects[y].position.copy(defaultPos);
+            }
+        }
+    }
 }
