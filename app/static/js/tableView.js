@@ -1,9 +1,7 @@
-/* TODO:
-1) make shadows toggleable `setShadow(designSettings.objects.table, false/true, true);`
-(black edges+no shadows from table makes overhead view very crisp)
-2) add html elements
-*/
-// camera, renderer, canvas, mouse stuff, 
+/**
+ * Contains TableScene and TableView classes. TableScene holds three.js
+ * objects of the table and TableView handles drawing the scene.
+ */
 export { TableScene, TableView };
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -133,7 +131,9 @@ class TableScene {
             }
             this.objectGroup.add(this.objects.table);
             this.objectGroup.add(this.objects.cushions);
-            this.scene.add(edgesFrom(this.objects.cushions, 10));
+            // this.scene.add(edgesFrom(this.objects.cushions, 10));
+            this.cushionEdgeCylinders = edgeCylindersFromMesh(this.objects.cushions, 15, 0.0015);
+            this.scene.add(this.cushionEdgeCylinders);
             setShadow(this.objects.table, true, true);
             setShadow(this.objects.cushions, true, true);
             for (let k = 0; k < 16; k++) {
@@ -150,6 +150,10 @@ class TableScene {
      * @param name
      */
     setLights(name) {
+        this.lightGroup.traverse((light) => {
+            if (light instanceof THREE.Light)
+                light.dispose(); // Needed to avoid memory leak.
+        });
         this.lightGroup.clear();
         if (name == "square") {
             for (let k1 = -1; k1 <= 1; k1 += 2) {
@@ -164,7 +168,7 @@ class TableScene {
             let light = new THREE.AmbientLight(0xffffff, 0.2);
             this.lightGroup.add(light);
         }
-        else if (name == "ambient only") {
+        else if (name == "ambient") {
             let light = new THREE.AmbientLight(0xffffff, 4.0);
             this.lightGroup.add(light);
         }
@@ -198,10 +202,9 @@ class TableScene {
     }
 }
 /**
- * Returns a group of edges from an object. Only edges with both vertices having z>=0
- * are included.
- *
+ * Returns a group of edges from an object.
  * @param object Object that the edges are formed from.
+ * @param angleLimit Edges with angles less than this are ignored.
  * @returns Group of edges.
  */
 function edgesFrom(object, angleLimit) {
@@ -211,6 +214,35 @@ function edgesFrom(object, angleLimit) {
             const edgesGeometry = new THREE.EdgesGeometry(child.geometry, angleLimit);
             const outline = new THREE.LineSegments(edgesGeometry, new THREE.LineBasicMaterial({ color: 0x000000 }));
             group.add(outline);
+        }
+    });
+    return group;
+}
+/**
+ * Returns a group of cylinders on the edges of the object.
+ * @param object Source object.
+ * @param angleLimit Edges with angles less than this are ignored.
+ * @param radius Radius of the cylinders.
+ * @returns Group of edge cylinders.
+ */
+function edgeCylindersFromMesh(object, angleLimit, radius) {
+    let group = new THREE.Group();
+    object.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            const edgesGeometry = new THREE.EdgesGeometry(child.geometry, angleLimit);
+            const edgesMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            for (let i = 0; i < edgesGeometry.attributes.position.count / 2; i++) {
+                const start = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, i * 2);
+                const end = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, i * 2 + 1);
+                const mid = start.clone().add(end).multiplyScalar(0.5);
+                const length = end.clone().sub(start).length();
+                const cylinderGeometry = new THREE.CylinderGeometry(radius, radius, length, 6);
+                cylinderGeometry.rotateX(Math.PI / 2); // Needed because cylinder originally points at +y-axis
+                const cylinder = new THREE.Mesh(cylinderGeometry, edgesMaterial);
+                cylinder.position.set(mid.x, mid.y, mid.z);
+                cylinder.lookAt(end);
+                group.add(cylinder);
+            }
         }
     });
     return group;
@@ -234,10 +266,11 @@ class TableView {
         this.tableScene = tableScene;
         this.cameraPerspective = new THREE.PerspectiveCamera(30, 1.0, 0.1, 1000);
         this.cameraOrthographic = new THREE.OrthographicCamera(-1.0, 1.0, 1.0, -1.0, 0.1, 1000.0);
-        for (const camera of [this.cameraPerspective, this.cameraOrthographic]) {
-            camera.position.set(0, 0, 3.5);
-            camera.lookAt(0.0, 0.0, 0.0);
+        for (const cam of [this.cameraPerspective, this.cameraOrthographic]) {
+            cam.position.set(0, 0, 3.5);
+            cam.lookAt(0.0, 0.0, 0.0);
         }
+        this.camera = this.cameraPerspective;
         this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio * 2);
         this.renderer.setClearColor(0x000000, 0);
@@ -248,22 +281,34 @@ class TableView {
         window.addEventListener('resize', this.onWindowResize);
         this.onWindowResize();
     }
+    setCamera(name) {
+        console.log("setCamera", name);
+        if (name == "orthographic") {
+            this.camera = this.cameraOrthographic;
+            this.tableScene.setLights("ambient");
+            if (!!this.tableScene.cushionEdgeCylinders)
+                this.tableScene.cushionEdgeCylinders.visible = true;
+        }
+        else if (name == "perspective") {
+            this.camera = this.cameraPerspective;
+            this.tableScene.setLights("square");
+            if (!!this.tableScene.cushionEdgeCylinders)
+                this.tableScene.cushionEdgeCylinders.visible = false;
+        }
+    }
     animate() {
         const time = performance.now() / 1000.0;
-        // const camera = this.cameraPerspective;
-        const camera = this.cameraOrthographic;
-        if (camera instanceof THREE.PerspectiveCamera) {
-            camera.position.set(3 * Math.cos(time / 10), 3 * Math.sin(time / 10), 1.5);
-            camera.up.set(0, 0, 1);
-            camera.lookAt(0.0, 0.0, -0.25);
+        if (this.camera instanceof THREE.PerspectiveCamera) {
+            this.camera.position.set(3 * Math.cos(time / 10), 3 * Math.sin(time / 10), 1.5);
+            this.camera.up.set(0, 0, 1);
+            this.camera.lookAt(0.0, 0.0, -0.25);
         }
-        else {
-            camera.position.set(0, 0, 3.5);
-            camera.up.set(0, 1, 0);
-            camera.lookAt(0.0, 0.0, -0.25);
+        else if (this.camera instanceof THREE.OrthographicCamera) {
+            this.camera.position.set(0, 0, 3.5);
+            this.camera.up.set(0, 1, 0);
+            this.camera.lookAt(0.0, 0.0, -0.25);
         }
-        this.renderer.render(this.tableScene.scene, camera);
-        // composer.render();
+        this.renderer.render(this.tableScene.scene, this.camera);
         requestAnimationFrame(this.animate);
     }
     onWindowResize() {
