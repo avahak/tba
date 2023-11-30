@@ -134,7 +134,7 @@ def create_pooltable_specs():
     comment = "Offset at B2 and B3 where sights block part begins, measured as distance along x-axis from 0 and cushion C nose respectively."
     add_spec(specs, "TABLE_RAIL_SIGHTS_BLOCK", (0.3*specs["TABLE_LENGTH"]/8, 0.3*specs["TABLE_LENGTH"]/8), comment)
     comment = "Radius of the circular sights. WPA requires between 7/16 [11.11 mm] and ½ inch [12.7 mm] in diameter."
-    add_spec(specs, "TABLE_RAIL_SIGHTS_RADIUS", (7.5/16)/2*INCH, comment)
+    add_spec(specs, "TABLE_RAIL_SIGHTS_RADIUS", (8/16)/2*INCH, comment)
 
     comment = "Width of the pocket liner part visible from above."
     add_spec(specs, "TABLE_POCKET_LINER_WIDTH", 0.5*INCH, comment)

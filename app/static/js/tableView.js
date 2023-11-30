@@ -3,6 +3,7 @@
  * objects of the table and TableView handles drawing the scene.
  */
 export { TableScene, TableView };
+import { closestPoint } from "./util.js";
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
@@ -101,7 +102,7 @@ class TableScene {
         this.scene.add(this.objectGroup);
         this.scene.add(this.lightGroup);
         for (let k = 0; k < 16; k++)
-            ResourceLoader.loadTexture(`ball${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
+            ResourceLoader.loadTexture(`ball_${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
         const resourcePromises = [
             ResourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
             ResourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
@@ -120,13 +121,13 @@ class TableScene {
                 const cball = ball.clone();
                 cball.traverse((child) => {
                     if (child instanceof THREE.Mesh)
-                        child.material = ResourceLoader.textures[`ball${k}`];
+                        child.material = ResourceLoader.textures[`ball_${k}`];
                 });
                 let r = this.specs.BALL_RADIUS;
                 cball.scale.set(r, r, r);
                 cball.position.copy(this.defaultBallPosition(k));
                 cball.rotation.set(0.0, 3 * Math.PI / 2, 0.0);
-                this.objects[`ball${k}`] = cball;
+                this.objects[`ball_${k}`] = cball;
             }
             this.objectGroup.add(this.objects.table);
             this.objectGroup.add(this.objects.cushions);
@@ -136,8 +137,8 @@ class TableScene {
             setShadow(this.objects.table, true, true);
             setShadow(this.objects.cushions, true, true);
             for (let k = 0; k < 16; k++) {
-                this.objectGroup.add(this.objects[`ball${k}`]);
-                setShadow(this.objects[`ball${k}`], true, true);
+                this.objectGroup.add(this.objects[`ball_${k}`]);
+                setShadow(this.objects[`ball_${k}`], true, true);
             }
         })
             .catch(error => {
@@ -149,9 +150,10 @@ class TableScene {
      * @param name
      */
     setLights(name) {
+        // Dispose old lights to avoid avoid memory leak:
         this.lightGroup.traverse((light) => {
             if (light instanceof THREE.Light)
-                light.dispose(); // Needed to avoid memory leak.
+                light.dispose();
         });
         this.lightGroup.clear();
         if (name == "square") {
@@ -203,6 +205,109 @@ class TableScene {
         }
         return null;
     }
+    /**
+     * Returns true if ball with center p is clearly out of bounds.
+     */
+    outOfBounds(p) {
+        const railbox = this.json_all.railbox;
+        if (p.z < this.specs.BALL_RADIUS)
+            return true;
+        if ((Math.abs(p.x) > railbox.x) || (Math.abs(p.y) > railbox.y))
+            return true;
+        for (let k = 1; k <= 6; k++) {
+            const pc = this.json_all[`pocket_fall_center${k}`];
+            const pr = this.json_all[`pocket_fall_radius${k}`];
+            if (p.distanceTo(new THREE.Vector3(pc.x, pc.y, pc.z)) < pr)
+                return true;
+        }
+        return false;
+    }
+    /**
+     * Returns list of intersections with the ball centered at p.
+     * Considers other balls and the cushions.
+     */
+    intersections(ballName, p) {
+        const BR = this.specs.BALL_RADIUS;
+        const cushionsPos = this.objects.cushions.children[0].geometry.attributes.position;
+        const closestCushion = ["cushion", null, Infinity];
+        for (let k = 0; k < cushionsPos.count / 3; k++) {
+            const cp = closestPoint(p, new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
+            const dist = p.distanceTo(cp) - BR;
+            if (dist < closestCushion[1]) {
+                closestCushion[1] = cp;
+                closestCushion[2] = dist;
+            }
+        }
+        let returns = [];
+        if (closestCushion[2] < 0.0)
+            returns.push(closestCushion);
+        for (let name in this.objects) {
+            if (name.startsWith("ball_") && (name != ballName)) {
+                let cp = this.objects[name].position.clone().sub(p);
+                const dist = cp.length();
+                if (dist < 2 * BR) {
+                    const d = Math.max(0.2 * BR, dist - BR);
+                    let q = p.clone().add(cp.normalize().multiplyScalar(d));
+                    returns.push([name, q, d - BR]);
+                }
+            }
+        }
+        return returns;
+    }
+    /**
+     * Tries to resolve intersections by returning a closeby point instead.
+     * NOTE might fail and return the original point.
+     */
+    resolveIntersections(ballName, originalPosition) {
+        const EP = 1.0e-8;
+        const BR = this.specs.BALL_RADIUS + EP;
+        function resolve1(p, q) {
+            // console.log("resolve1");
+            let qp = p.clone().sub(q);
+            let qp_xy = new THREE.Vector3(qp.x, qp.y, 0.0);
+            let pushDistance = Math.sqrt(BR ** 2 - qp.z ** 2) - qp_xy.length();
+            return qp_xy.normalize().multiplyScalar(pushDistance).add(p);
+        }
+        function resolve2(p, q1, q2) {
+            // Solves new position for p such that it is at least r away from both q1 and q2.
+            // Idea: look at the situation from above in the plane z=p.z. There the situation
+            // is simple plane geometry reducing to finding intersections of two circles.
+            // console.log("resolve2");
+            const r1 = Math.sqrt(BR ** 2 - (q1.z - p.z) ** 2);
+            const r2 = Math.sqrt(BR ** 2 - (q2.z - p.z) ** 2);
+            const d = Math.sqrt((q1.x - q2.x) ** 2 + (q1.y - q2.y) ** 2);
+            const x1 = d / 2 - (r2 ** 2 - r1 ** 2) / (2 * d);
+            // const x2 = d/2 + (r2**2-r1**2)/(2*d);
+            const h = Math.sqrt(r1 ** 2 - x1 ** 2); // plus or minus
+            const e1 = new THREE.Vector2(q2.x - q1.x, q2.y - q1.y).normalize();
+            const e2 = new THREE.Vector2(-e1.y, e1.x);
+            const solutionPlus = new THREE.Vector2(q1.x + e1.x * x1 + e2.x * h, q1.y + e1.y * x1 + e2.y * h);
+            const solutionMinus = new THREE.Vector2(q1.x + e1.x * x1 - e2.x * h, q1.y + e1.y * x1 - e2.y * h);
+            if (solutionPlus.distanceTo(new THREE.Vector2(p.x, p.y)) <
+                solutionMinus.distanceTo(new THREE.Vector2(p.x, p.y)))
+                return new THREE.Vector3(solutionPlus.x, solutionPlus.y, p.z);
+            return new THREE.Vector3(solutionMinus.x, solutionMinus.y, p.z);
+        }
+        let p = originalPosition.clone();
+        const MAX_ITERATIONS = 100;
+        let iterations = 0;
+        while (iterations < MAX_ITERATIONS) {
+            let is = this.intersections(ballName, p);
+            if (is.length == 0)
+                break;
+            else if (is.length == 1)
+                p = resolve1(p, is[0][1]);
+            else
+                p = resolve2(p, is[0][1], is[1][1]);
+            iterations += 1;
+        }
+        // If we do not resolve the intersections, return original:
+        if (iterations == MAX_ITERATIONS) {
+            console.log("resolveIntersections reached MAX_ITERATIONS", iterations);
+            p.copy(originalPosition);
+        }
+        return p;
+    }
 }
 /**
  * Returns a group of edges from an object.
@@ -234,9 +339,9 @@ function edgeCylindersFromMesh(object, angleLimit, radius) {
         if (child instanceof THREE.Mesh) {
             const edgesGeometry = new THREE.EdgesGeometry(child.geometry, angleLimit);
             const edgesMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            for (let i = 0; i < edgesGeometry.attributes.position.count / 2; i++) {
-                const start = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, i * 2);
-                const end = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, i * 2 + 1);
+            for (let k = 0; k < edgesGeometry.attributes.position.count / 2; k++) {
+                const start = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, k * 2);
+                const end = new THREE.Vector3().fromBufferAttribute(edgesGeometry.attributes.position, k * 2 + 1);
                 const mid = start.clone().add(end).multiplyScalar(0.5);
                 const length = end.clone().sub(start).length();
                 const cylinderGeometry = new THREE.CylinderGeometry(radius, radius, length, 6);
@@ -301,7 +406,7 @@ class TableView {
     animate() {
         const time = performance.now() / 1000.0;
         if (this.camera instanceof THREE.PerspectiveCamera) {
-            this.camera.position.set(3 * Math.cos(time / 10), 3 * Math.sin(time / 10), 1.5);
+            this.camera.position.set(3.0 * Math.cos(time / 10), 3.0 * Math.sin(time / 10), 2.0);
             this.camera.up.set(0, 0, 1);
             this.camera.lookAt(0.0, 0.0, -0.25);
         }

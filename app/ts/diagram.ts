@@ -87,7 +87,7 @@ function mouseAction(mouseAction: MouseAction) {
     const nMouse = tableView.normalizedMousePosition(mouseAction.x, mouseAction.y);
 	if (mouseAction.action == "down") {
 		let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-		if (y && y.startsWith("ball")) {
+		if (y && y.startsWith("ball_")) {
 			const result = y.match(/\d+/);
 			// mouse.mouseDragObject = result ? parseInt(result[0]) : null;
             mouse.mouseDragObject = result ? y : null;
@@ -114,11 +114,15 @@ function mouseAction(mouseAction: MouseAction) {
 				const ball = tableScene.objects[mouse.mouseDragObject];
 				ball.position.x = intersect.x;
 				ball.position.y = intersect.y;
+
+                let is = tableScene.intersections(mouse.mouseDragObject, ball.position);
+                const resolved = tableScene.resolveIntersections(mouse.mouseDragObject, ball.position);
+                ball.position.copy(resolved);
 			}
 		}
 	} else if (mouseAction.action == "contextmenu") {
 		let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-		if (y && y.startsWith("ball")) {
+		if (y && y.startsWith("ball_")) {
 			mouse.mouseDragObject = null;
             const result = y.match(/\d+/);
 			const ballNumber =  result ? parseInt(result[0]) : null;
