@@ -1,19 +1,19 @@
 /**
  * Represents the state of one pool diagram.
 */
-export { initDiagram };
-import { ObjectCollection, Ball } from "./diagram-objects.js";
+export { initDiagram, addArrow, addText };
+import { ObjectCollection, Arrow, Text } from "./diagram-objects.js";
 import { TableScene, TableView } from "./tableView.js";
+import * as THREE from 'three';
 console.log("diagram.ts");
 let mouse = {
-    lastX: null,
-    lastY: null,
-    isDragging: false, // if true, dragging happens to activeObject
+    last: null,
 };
 let tableScene;
 let tableView;
 // Current 
-let activeObject = "";
+let activeObject;
+let state = ""; // "", move, add_arrow_start, add_arrow_end
 let collection;
 function initDiagram() {
     tableScene = new TableScene();
@@ -21,9 +21,10 @@ function initDiagram() {
     tableView.setCamera("orthographic");
     tableView.animate();
     collection = new ObjectCollection(tableView);
+    changeActiveObject("");
     document.addEventListener('contextmenu', (event) => {
         event.preventDefault(); // Disable the default context menu
-        mouseAction({ action: "contextmenu", x: event.clientX, y: event.clientY });
+        mouseAction({ action: "contextmenu", p: new THREE.Vector2(event.clientX, event.clientY) });
     });
     document.addEventListener('wheel', handleScroll, { passive: false }); // {passive: true} is an indicator to browser that "Go ahead with scrolling without waiting for my code to execute, and you don't need to worry about me using event.preventDefault() to disable the default scrolling behavior. I guarantee that I won't block the scrolling, so you can optimize the scrolling performance."
     // document.addEventListener('touchmove', handleScroll, {passive: false}); // For mobile, needs to compute deltaX, deltaY by hand from event.touches[0].clintX, .clientY
@@ -33,28 +34,23 @@ function initDiagram() {
     document.addEventListener('mouseup', handleMouseUp);
 }
 function handleMouseDown(event) {
-    collection.draw();
     if (event.button === 0) { // Left mouse button
-        mouse.lastX = event.clientX;
-        mouse.lastY = event.clientY;
-        mouseAction({ action: "down", x: mouse.lastX, y: mouse.lastY });
+        mouse.last = new THREE.Vector2(event.clientX, event.clientY);
+        mouseAction({ action: "down", p: mouse.last });
     }
 }
 function handleMouseMove(event) {
-    if (mouse.isDragging) {
+    if (event.button === 0) {
         const newX = event.clientX;
         const newY = event.clientY;
-        let dx = newX - mouse.lastX;
-        let dy = newY - mouse.lastY;
-        mouse.lastX = newX;
-        mouse.lastY = newY;
-        mouseAction({ action: "drag", x: mouse.lastX, y: mouse.lastY, dx: dx, dy: dy });
+        let dp = new THREE.Vector2(newX - mouse.lastX, newY - mouse.lastY);
+        mouse.last = new THREE.Vector2(newX, newY);
+        mouseAction({ action: "move", p: mouse.last, dp: dp });
     }
 }
 function handleMouseUp(event) {
     if (event.button === 0) {
-        mouse.isDragging = false;
-        mouseAction({ action: "up", x: event.clientX, y: event.clientY });
+        mouseAction({ action: "up", p: new THREE.Vector2(event.clientX, event.clientY) });
     }
 }
 function handleScroll(event) {
@@ -66,47 +62,74 @@ function handleScroll(event) {
 }
 // Custom mouse left click/drag handler:
 function mouseAction(mouseAction) {
-    const nMouse = tableView.normalizedMousePosition(mouseAction.x, mouseAction.y);
+    collection.draw(); // TODO REMOVE!
+    collection.drawDebug(activeObject, state);
+    const ndc = tableView.pixelsToNDC(mouseAction.p);
+    // console.log("mouseAction", mouseAction);
     if (mouseAction.action == "down") {
-        let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-        if ((!!y) && y.startsWith("ball_")) {
-            activeObject = y;
-            mouse.isDragging = true;
+        if (state == "") {
+            state = "move";
+            changeActiveObject(collection.getObject(ndc));
+        }
+        else if (state == "move") {
+            state = "";
+            changeActiveObject("");
+        }
+        else if (state == "add_text") {
+            let text = collection.objects[activeObject];
+            text.p = collection.NDCToWorld2(ndc, 0.0);
+            state = "";
+        }
+        else if (state == "add_arrow_start") {
+            let arrow = collection.objects[activeObject];
+            arrow.p1 = collection.NDCToWorld2(ndc, 0.0);
+            state = "add_arrow_end";
+        }
+        else if (state == "add_arrow_end") {
+            let arrow = collection.objects[activeObject];
+            arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
+            state = "";
         }
     }
     else if (mouseAction.action == "up") {
-        mouse.isDragging = false;
+        if (state == "move")
+            state = "";
     }
-    else if (mouseAction.action == "drag") {
-        // dragging active object:
-        let intersect = collection.mouseToWorld(nMouse, tableScene.specs.BALL_RADIUS);
-        if (!!intersect) {
-            if (!!activeObject) {
-                const ball = tableScene.objects[activeObject];
-                const oldBallPosition = ball.position.clone();
-                ball.position.x = intersect.x;
-                ball.position.y = intersect.y;
-                const resolved = tableScene.resolveIntersections(activeObject, ball.position);
-                let oob = tableScene.outOfBoundsString(resolved);
-                if ((tableScene.intersections(activeObject, resolved).length == 0) && (!oob))
-                    ball.position.copy(resolved);
-                else
-                    ball.position.copy(oldBallPosition);
-                if (oob == "pocket") {
-                    let ballNumber = Ball.getBallNumber(activeObject);
-                    const defaultPos = tableScene.defaultBallPosition(ballNumber);
-                    ball.position.copy(defaultPos);
-                }
-            }
+    else if (mouseAction.action == "move") {
+        if (state == "move") {
+            collection.move(activeObject, ndc);
         }
     }
     else if (mouseAction.action == "contextmenu") {
-        mouse.isDragging = false;
-        let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-        if ((!!y) && y.startsWith("ball_")) {
-            const ballNumber = Ball.getBallNumber(y);
-            const defaultPos = tableScene.defaultBallPosition(ballNumber);
-            tableScene.objects[y].position.copy(defaultPos);
-        }
+        state = "";
     }
+}
+function addArrow() {
+    let obj = new Arrow(new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.0, 0.0));
+    collection.objects[obj.name] = obj;
+    changeActiveObject(obj.name);
+    state = "add_arrow_start";
+}
+function addText() {
+    let obj = new Text(new THREE.Vector2(0.0, 0.0), "Text");
+    collection.objects[obj.name] = obj;
+    changeActiveObject(obj.name);
+    state = "move";
+}
+function setDisplayToAll(elements, value) {
+    elements.forEach((element) => {
+        element.style.display = value;
+    });
+}
+function changeActiveObject(newActiveObject) {
+    activeObject = newActiveObject;
+    // 1) if activeObject is "", disable tool-bar
+    setDisplayToAll(document.querySelectorAll('.tool-bar'), (activeObject == "" || activeObject.startsWith("ball")) ? "none" : "block");
+    // 2) hide all "object-option":s
+    setDisplayToAll(document.querySelectorAll('.object-option'), "none");
+    // 3) show all "arrow-option" or "text-option"
+    if (activeObject.startsWith("arrow"))
+        setDisplayToAll(document.querySelectorAll('.arrow-option'), "block");
+    if (activeObject.startsWith("text"))
+        setDisplayToAll(document.querySelectorAll('.text-option'), "block");
 }

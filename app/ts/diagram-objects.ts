@@ -4,22 +4,26 @@
 
 export { Text, Arrow, Ball, ObjectCollection }
 import { TableScene, TableView } from "./tableView.js";
-import { canvasTextBoundingBox } from "./util.js";
+import { canvasTextBoundingBox, drawArrow, closestIntervalPoint } from "./util.js";
 import * as THREE from 'three';
 
 console.log("diagram-objects.ts")
 
 class Arrow {
+    public static counter = 0;
     public p1: THREE.Vector2;
     public p2: THREE.Vector2;
     public width: number;
     public type: string;
+    public name: string;
 
     constructor(p1: THREE.Vector2, p2: THREE.Vector2) {
+        Arrow.counter++;
         this.p1 = p1;
         this.p2 = p2;
         this.width = 1.0;
         this.type = "";
+        this.name = `arrow_${Arrow.counter}`;
     }
 
     public closestPoint(p: THREE.Vector2): THREE.Vector2 {
@@ -30,19 +34,29 @@ class Arrow {
 }
 
 class Text {
+    public static counter = 0;
     public p: THREE.Vector2;
-    public size: number;
+    public font: string;
     public text: string;
+    public name: string;
+    public bbox: any;
 
     constructor(p: THREE.Vector2, text: string) {
+        Text.counter++;
         this.p = p;
-        this.size = 1.0;
+        this.font = "30px Open Sans";
         this.text = text;
+        this.bbox = [this.p, this.p];
+        this.name = `text_${Text.counter}`;
     }
 
     public closestPoint(p: THREE.Vector2): THREE.Vector2 {
-        // should calculate from canvas element probably
-        return new THREE.Vector2(0.0, 0.0);
+        if (!this.bbox)
+            return this.p;
+        const q1 = this.bbox[0];
+        const q2 = this.bbox[1];
+        const q = new THREE.Vector2(closestIntervalPoint(p.x, q1.x, q2.x), closestIntervalPoint(p.y, q1.y, q2.y))        
+        return q;
     }
 }
 
@@ -56,7 +70,7 @@ class Ball {
 
 class ObjectCollection {
     public tableView: TableView;
-    public objects: {};
+    public objects: { [key: string]: any };
 
     constructor(tableView: TableView) {
         this.onWindowResize = this.onWindowResize.bind(this); // Ensure the correct 'this' inside onWindowResize
@@ -66,83 +80,126 @@ class ObjectCollection {
 		this.onWindowResize();
     }
 
+    public move(objectName: string, ndc: THREE.Vector2) {
+        if (objectName.startsWith("ball")) {
+            let intersect = this.NDCToWorld3(ndc, this.tableView.tableScene.specs.BALL_RADIUS);
+            if (!!intersect) {
+                const ball = this.tableView.tableScene.objects[objectName];
+                const oldBallPosition = ball.position.clone();
+                ball.position.x = intersect.x;
+                ball.position.y = intersect.y;
+                const resolved = this.tableView.tableScene.resolveIntersections(objectName, ball.position);
+                let oob = this.tableView.tableScene.outOfBoundsString(resolved);
+                if ((this.tableView.tableScene.intersections(objectName, resolved).length == 0) && (!oob))
+                    ball.position.copy(resolved);
+                else
+                    ball.position.copy(oldBallPosition);
+                if (oob == "pocket") {
+                    let ballNumber = Ball.getBallNumber(objectName) as number;
+                    const defaultPos = this.tableView.tableScene.defaultBallPosition(ballNumber);
+                    ball.position.copy(defaultPos);
+                }
+            }
+        } else if (objectName.startsWith("text")) {
+            let p = this.NDCToWorld2(ndc, 0.0);
+            let text = this.objects[objectName] as Text;
+            text.p = p;
+        } else if (objectName.startsWith("arrow")) {
+            let p = this.NDCToWorld2(ndc, 0.0);
+            let arrow = this.objects[objectName] as Arrow;
+            arrow.p1 = p;
+        }
+    }
+
     /**
      * Returns point on plane z=height where ray from camera to mouse intersects it.
      */
-    public mouseToWorld(nMouse: THREE.Vector2, height: number) {
-        const rect = this.tableView.element.getBoundingClientRect();
-		const mouse3D = new THREE.Vector3(nMouse.x, nMouse.y, 0.0);
-        let cameraDir = this.tableView.camera.getWorldDirection(new THREE.Vector3());
-		let a = mouse3D.unproject(this.tableView.camera);
-        if (this.tableView.camera instanceof THREE.OrthographicCamera)
-            a = new THREE.Vector3(a.x, a.y, 2.0);
-        else 
-            a = a.clone().sub(this.tableView.camera.position).normalize();
-		let ray = new THREE.Ray(this.tableView.camera.position, a);
-        if (this.tableView.camera instanceof THREE.OrthographicCamera)
-            ray = new THREE.Ray(a, cameraDir);
+    public NDCToWorld3(ndc: THREE.Vector2, height: number): THREE.Vector3 {
+        const ndc1 = new THREE.Vector3(ndc.x, ndc.y, -1);
+        const ndc2 = new THREE.Vector3(ndc.x, ndc.y, 1);
+		let a1 = ndc1.unproject(this.tableView.camera);
+        let a2 = ndc2.unproject(this.tableView.camera);
+		let ray = new THREE.Ray(a1, a2);
 		const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -height);
 		let intersect = new THREE.Vector3();
 		ray.intersectPlane(plane, intersect);
         return intersect;
     }
 
-    public getObject(nMouse: THREE.Vector2): any {
-        let obj = this.tableView.tableScene.findObjectNameOnMouse(nMouse, this.tableView.camera);
+    public NDCToWorld2(ndc: THREE.Vector2, height: number): THREE.Vector2 {
+        let p = this.NDCToWorld3(ndc, height);
+        return new THREE.Vector2(p.x, p.y);
+    }
+
+    public world2ToNDC(p: THREE.Vector2, height: number): THREE.Vector2 {
+        let ndc = new THREE.Vector3(p.x, p.y, height).project(this.tableView.camera);
+        return new THREE.Vector2(ndc.x, ndc.y);
+    }
+
+    public getObject(ndc: THREE.Vector2): any {
+        let obj = this.tableView.tableScene.findObjectNameOnMouse(ndc, this.tableView.camera);
 		if ((!!obj) && obj.startsWith("ball_"))
             return obj;
+
+        console.log("this.objects", this.objects);
+        let closest: [string, number] = ["", Infinity];
+        const w = this.NDCToWorld2(ndc, 0);
+        for (const key in this.objects) {
+            const obj = this.objects[key] as (Arrow | Text);
+            const cp = obj.closestPoint(w);
+            const dist = cp.distanceTo(w);
+            if (dist < closest[1]) {
+                closest[0] = key;
+                closest[1] = dist;
+            }
+        }
+        // console.log("closest", closest);
+        if (closest[1] < 0.01)
+            return closest[0];
+        return "";
     }
 
     public draw() {
         const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Example: Draw an arrow on the overlay canvas
-        let t = Math.random();
-        ctx.beginPath();
-        ctx.moveTo(250+100*t, 250);
-        ctx.lineTo(350, 350);
-        ctx.lineTo(300, 350);
-        ctx.lineTo(350, 300);
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 10;
-        ctx.stroke();
-        ctx.closePath();
+        for (const key in this.objects) {
+            let obj = this.objects[key];
+            if (obj instanceof Arrow) {
+                let q1 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p1, 0));
+                let q2 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p2, 0));
+                drawArrow(ctx, q1, q2);
+            } else if (obj instanceof Text) {
+                ctx.font = obj.font;
+                ctx.fillStyle = '#ffff00';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let p = this.tableView.NDCToPixels(this.world2ToNDC(obj.p, 0));
+                let text = obj.text;
+                ctx.fillText(text, p.x, p.y);
 
-        const fonts = [
-            'Arial',
-            'Helvetica',
-            'Roboto',
-            'Open Sans',
-            'Lato',
-            'Times New Roman',
-            'Garamond',
-            'Georgia',
-            'Merriweather',
-            'PT Serif'
-        ];
-        const randomIndex = Math.floor(Math.random() * fonts.length);
-        const fontName = fonts[randomIndex];
+                // Compute obj.bbox
+                // A little awkward to do here but here we have all the info needed.
+                const bbox = canvasTextBoundingBox(ctx, text, p.x, p.y);
+                const bbox1 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[0]), 0);
+                const bbox2 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[1]), 0);
+                obj.bbox = [bbox1, bbox2];
+            }
+        }
+    }
 
+    public drawDebug(activeObject: string, state: string) {
+        // Just for debugging
+        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-        let size = Math.round(50+50*Math.random());
-        ctx.font = `${size}px ${fontName}`;
-        ctx.fillStyle = '#ffff00';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        let x = 800;
-        let y = 350;
-        let text = 'Hello, world! ' + fontName;
-        ctx.fillText(text, x, y);
-        let bbox = canvasTextBoundingBox(ctx, text, x, y);
-
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
-        ctx.stroke();
+        ctx.font = `20px px Arial`;
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText("activeObject: " + activeObject, 10, canvas.height-10);
+        ctx.fillText("state: " + state, 10, canvas.height-30);
     }
 
     public onWindowResize() {

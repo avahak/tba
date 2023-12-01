@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint }
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint }
 import * as THREE from 'three';
 
 console.log("util.ts");
@@ -68,11 +68,32 @@ function closestPoint(p: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3, c: T
 /**
  * Returns bounding box for text drawn on canvas element.
  */
-function canvasTextBoundingBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): number[] {
+function canvasTextBoundingBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): THREE.Vector2[] {
     let textMetrics = ctx.measureText(text);
     let x1 = textMetrics.actualBoundingBoxLeft;
     let x2 = textMetrics.actualBoundingBoxRight;
     let y1 = textMetrics.actualBoundingBoxAscent;
     let y2 = textMetrics.actualBoundingBoxDescent;
-    return [x-x1, y-y1, x1+x2, y1+y2];
+    return [new THREE.Vector2(x-x1, y-y1), new THREE.Vector2(x+x2, y+y2)];
+}
+
+function drawArrow(ctx: CanvasRenderingContext2D, p1: THREE.Vector2, p2: THREE.Vector2) {
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    ctx.closePath();
+}
+
+/**
+ * Returns point closest to x on interval [min(a,b),max(a,b)].
+ */
+function closestIntervalPoint(x: number, a: number, b: number) {
+    if (x < a && x < b)
+        return Math.min(a, b);
+    if (x > a && x > b)
+        return Math.max(a, b);
+    return x;
 }

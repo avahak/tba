@@ -487,13 +487,24 @@ class TableView {
 	}
 
 	/**
-	 * Converts x, y given in pixels to OpenGL normalized device coordinates.
+	 * Converts p given in pixels to OpenGL normalized device coordinates.
 	 */
-	public normalizedMousePosition(x: number, y: number) {
+	public pixelsToNDC(p: THREE.Vector2): THREE.Vector2 {
 		const rect = this.element.getBoundingClientRect();
-		const nMouse = new THREE.Vector2();
-		nMouse.x = 2*((x-rect.left) / rect.width) - 1;
-		nMouse.y = -2*((y-rect.top) / rect.height) + 1;
-		return nMouse;
+		const ndc = new THREE.Vector2();
+		ndc.x = 2*((p.x-rect.left) / rect.width) - 1;
+		ndc.y = -2*((p.y-rect.top) / rect.height) + 1;
+		return ndc;
+	}
+
+	/**
+	 * Converts ndc given in OpenGL normalized device coordinates to pixels.
+	 */
+	public NDCToPixels(ndc: THREE.Vector2): THREE.Vector2 {
+		const rect = this.element.getBoundingClientRect();
+		const p = new THREE.Vector2();
+		p.x = rect.left + rect.width*(ndc.x+1)/2;
+		p.y = rect.top + rect.height*(1-ndc.y)/2;
+		return p;
 	}
 }
