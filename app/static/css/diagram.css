@@ -26,3 +26,18 @@
     border-radius: 5px;
     margin-top: 20px;
 }
+
+.canvas-container {
+    position: relative;
+    overflow: hidden;
+}
+
+#three-box, #overlay-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+#overlay-canvas {
+    pointer-events: none;
+}

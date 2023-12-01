@@ -1,4 +1,4 @@
-export { closestPoint };
+export { canvasTextBoundingBox, closestPoint };
 import * as THREE from 'three';
 console.log("util.ts");
 /**
@@ -54,4 +54,15 @@ function closestPoint(p, a, b, c) {
     const lambda_sum = lambda_a + lambda_b + lambda_c;
     const lambdas = new THREE.Vector3(lambda_a / lambda_sum, lambda_b / lambda_sum, lambda_c / lambda_sum);
     return a.clone().multiplyScalar(lambdas.x).add(b.clone().multiplyScalar(lambdas.y)).add(c.clone().multiplyScalar(lambdas.z));
+}
+/**
+ * Returns bounding box for text drawn on canvas element.
+ */
+function canvasTextBoundingBox(ctx, text, x, y) {
+    let textMetrics = ctx.measureText(text);
+    let x1 = textMetrics.actualBoundingBoxLeft;
+    let x2 = textMetrics.actualBoundingBoxRight;
+    let y1 = textMetrics.actualBoundingBoxAscent;
+    let y2 = textMetrics.actualBoundingBoxDescent;
+    return [x - x1, y - y1, x1 + x2, y1 + y2];
 }

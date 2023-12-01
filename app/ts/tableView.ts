@@ -230,21 +230,21 @@ class TableScene {
 	}
 
 	/**
-	 * Returns true if ball with center p is clearly out of bounds.
+	 * Returns out of bounds string or null p is not out of bounds.
 	 */
-	public outOfBounds(p: THREE.Vector3): boolean {
+	public outOfBoundsString(p: THREE.Vector3): string | null {
 		const railbox = this.json_all.railbox;
 		if (p.z < this.specs.BALL_RADIUS)
-			return true;
-		if ((Math.abs(p.x) > railbox.x) || (Math.abs(p.y) > railbox.y))
-			return true;
+			return "slate";
+		if ((Math.abs(p.x) > railbox[0]) || (Math.abs(p.y) > railbox[1]))
+			return "box";
 		for (let k = 1; k <= 6; k++) {
-			const pc = this.json_all[`pocket_fall_center${k}`];
-			const pr = this.json_all[`pocket_fall_radius${k}`];
-			if (p.distanceTo(new THREE.Vector3(pc.x, pc.y, pc.z)) < pr)
-				return true;
+			const pc = this.json_all[`pocket_fall_center_${k}`];
+			const pr = this.json_all[`pocket_fall_radius_${k}`];
+			if (p.distanceTo(new THREE.Vector3(pc[0], pc[1], pc[2])) < pr)
+				return "pocket";
 		}
-		return false;
+		return null;
 	}
 
 	/**

@@ -3,6 +3,7 @@
 */
 
 export { initDiagram };
+import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js"
 import { TableScene, TableView } from "./tableView.js";
 import * as THREE from 'three';
 
@@ -19,18 +20,22 @@ type MouseAction = {
 let mouse: any = {
     lastX: null,
     lastY: null,
-    isDragging: false,
-    mouseDragObject: null,
+    isDragging: false,	// if true, dragging happens to activeObject
 };
 
 let tableScene: TableScene;
 let tableView: TableView;
+
+// Current 
+let activeObject: string = "";
+let collection: ObjectCollection;
 
 function initDiagram() {
     tableScene = new TableScene();
     tableView = new TableView(document.getElementById("three-box") as HTMLElement, tableScene);
     tableView.setCamera("orthographic");
     tableView.animate();
+	collection = new ObjectCollection(tableView);
 
 	document.addEventListener('contextmenu', (event) => {
 		event.preventDefault(); // Disable the default context menu
@@ -47,8 +52,8 @@ function initDiagram() {
 }
 
 function handleMouseDown(event: MouseEvent) {
+	collection.draw();
 	if (event.button === 0) { // Left mouse button
-    	mouse.isDragging = true;
     	mouse.lastX = event.clientX;
     	mouse.lastY = event.clientY;
 		mouseAction({ action: "down", x: mouse.lastX, y: mouse.lastY } as MouseAction);
@@ -87,49 +92,41 @@ function mouseAction(mouseAction: MouseAction) {
     const nMouse = tableView.normalizedMousePosition(mouseAction.x, mouseAction.y);
 	if (mouseAction.action == "down") {
 		let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-		if (y && y.startsWith("ball_")) {
-			const result = y.match(/\d+/);
-			// mouse.mouseDragObject = result ? parseInt(result[0]) : null;
-            mouse.mouseDragObject = result ? y : null;
+		if ((!!y) && y.startsWith("ball_")) {
+            activeObject = y;
+			mouse.isDragging = true;
 		} 
 	} else if (mouseAction.action == "up") {
-		mouse.mouseDragObject = null;
+		mouse.isDragging = false;
 	} else if (mouseAction.action == "drag") {
-		const rect = tableView.element.getBoundingClientRect();
-		const mouse3D = new THREE.Vector3(nMouse.x, nMouse.y, 0.0);
-        let cameraDir = tableView.camera.getWorldDirection(new THREE.Vector3());
-		let a = mouse3D.unproject(tableView.camera);
-        if (tableView.camera instanceof THREE.OrthographicCamera)
-            a = new THREE.Vector3(a.x, a.y, 2.0);
-        else 
-            a = a.clone().sub(tableView.camera.position).normalize();
-		let ray = new THREE.Ray(tableView.camera.position, a);
-        if (tableView.camera instanceof THREE.OrthographicCamera)
-            ray = new THREE.Ray(a, cameraDir);
-		const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -tableScene.specs.BALL_RADIUS);
-		let intersect = new THREE.Vector3();
-		ray.intersectPlane(plane, intersect);
+		// dragging active object:
+		let intersect = collection.mouseToWorld(nMouse, tableScene.specs.BALL_RADIUS);
 		if (!!intersect) {
-			if (!!mouse.mouseDragObject) {
-				const ball = tableScene.objects[mouse.mouseDragObject];
+			if (!!activeObject) {
+				const ball = tableScene.objects[activeObject];
+				const oldBallPosition = ball.position.clone();
 				ball.position.x = intersect.x;
 				ball.position.y = intersect.y;
-
-                let is = tableScene.intersections(mouse.mouseDragObject, ball.position);
-                const resolved = tableScene.resolveIntersections(mouse.mouseDragObject, ball.position);
-                ball.position.copy(resolved);
+                const resolved = tableScene.resolveIntersections(activeObject, ball.position);
+				let oob = tableScene.outOfBoundsString(resolved);
+				if ((tableScene.intersections(activeObject, resolved).length == 0) && (!oob))
+                	ball.position.copy(resolved);
+				else
+					ball.position.copy(oldBallPosition);
+				if (oob == "pocket") {
+					let ballNumber = Ball.getBallNumber(activeObject) as number;
+					const defaultPos = tableScene.defaultBallPosition(ballNumber);
+                	ball.position.copy(defaultPos);
+				}
 			}
 		}
 	} else if (mouseAction.action == "contextmenu") {
+		mouse.isDragging = false;
 		let y = tableScene.findObjectNameOnMouse(nMouse, tableView.camera);
-		if (y && y.startsWith("ball_")) {
-			mouse.mouseDragObject = null;
-            const result = y.match(/\d+/);
-			const ballNumber =  result ? parseInt(result[0]) : null;
-            if (ballNumber) {
-                const defaultPos = tableScene.defaultBallPosition(ballNumber);
-                tableScene.objects[y].position.copy(defaultPos);
-            }
+		if ((!!y) && y.startsWith("ball_")) {
+			const ballNumber = Ball.getBallNumber(y) as number;
+			const defaultPos = tableScene.defaultBallPosition(ballNumber);
+			tableScene.objects[y].position.copy(defaultPos);
 		}
 	}
 }
