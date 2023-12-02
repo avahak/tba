@@ -4,7 +4,7 @@
 
 export { Text, Arrow, Ball, ObjectCollection }
 import { TableScene, TableView } from "./tableView.js";
-import { canvasTextBoundingBox, drawArrow, closestIntervalPoint } from "./util.js";
+import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
 import * as THREE from 'three';
 
 console.log("diagram-objects.ts")
@@ -209,11 +209,14 @@ class ObjectCollection {
                 ctx.textBaseline = 'middle';
                 let p = this.tableView.NDCToPixels(this.world2ToNDC(obj.p, 0));
                 let text = obj.text;
-                ctx.fillText(text, p.x, p.y);
-
-                // Compute obj.bbox
-                // A little awkward to do here but here we have all the info needed.
-                const bbox = canvasTextBoundingBox(ctx, text, p.x, p.y);
+                let lines = text.split("\n");
+                let bboxes = [];
+                for (let k = 0; k < lines.length; k++) {
+                    ctx.fillText(lines[k], p.x, p.y+obj.size*k);
+                    const bbox = canvasTextBoundingBox(ctx, lines[k], p.x, p.y+obj.size*k);
+                    bboxes.push(bbox);
+                }
+                const bbox = combineBboxes(bboxes);
                 const bbox1 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[0]), 0);
                 const bbox2 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[1]), 0);
                 obj.bbox = [bbox1, bbox2];

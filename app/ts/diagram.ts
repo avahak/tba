@@ -195,9 +195,11 @@ function addText() {
 	let obj = new Text(new THREE.Vector2(0.0, 0.0), "Text");
 	collection.objects[obj.name] = obj;
 
-	// Here we want to use current options:
+	// Here we want to use current options except for text itself:
 	changeActiveObject(obj.name, "", false);
 	propagateOptionsToObject();
+	obj.text = "Text";
+	propagateObjectToOptions();
 
 	changeState("add_text");
 }
@@ -313,7 +315,7 @@ function propagateObjectToOptions() {
 	} else if (activeObject[0].startsWith("text")) {
 		const text = collection.objects[activeObject[0]] as Text;
 		// Text:
-		let textInput = document.getElementById("textInput") as HTMLInputElement;
+		let textInput = document.getElementById("textInput") as HTMLTextAreaElement;
 		textInput.value = text.text;
 		// Color:
 		let colorInput = document.getElementById("textColorInput") as HTMLInputElement;
@@ -339,7 +341,7 @@ function propagateOptionsToObject() {
 	} else if (activeObject[0].startsWith("text")) {
 		const text = collection.objects[activeObject[0]] as Text;
 		// Text:
-		let textValue = (document.getElementById("textInput") as HTMLInputElement).value;
+		let textValue = (document.getElementById("textInput") as HTMLTextAreaElement).value;
 		text.text = textValue;
 		// Color:
 		let colorValue = (document.getElementById("textColorInput") as HTMLInputElement).value;

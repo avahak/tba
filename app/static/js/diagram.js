@@ -173,9 +173,11 @@ function addArrow() {
 function addText() {
     let obj = new Text(new THREE.Vector2(0.0, 0.0), "Text");
     collection.objects[obj.name] = obj;
-    // Here we want to use current options:
+    // Here we want to use current options except for text itself:
     changeActiveObject(obj.name, "", false);
     propagateOptionsToObject();
+    obj.text = "Text";
+    propagateObjectToOptions();
     changeState("add_text");
 }
 function reset() {

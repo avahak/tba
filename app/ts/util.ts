@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween }
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes }
 import * as THREE from 'three';
 
 console.log("util.ts");
@@ -115,4 +115,15 @@ function parseNumberBetween(value: string, minValue: number, maxValue: number, d
     if (isFinite(x)) 
         return Math.max(Math.min(x, maxValue), minValue);
     return defaultValue;
+}
+
+function combineBboxes(bboxes: THREE.Vector2[][]) {
+    const bb = [+Infinity, +Infinity, -Infinity, -Infinity];
+    bboxes.forEach((bbox) => {
+        bb[0] = Math.min(bb[0], bbox[0].x);
+        bb[1] = Math.min(bb[1], bbox[0].y);
+        bb[2] = Math.max(bb[2], bbox[1].x);
+        bb[3] = Math.max(bb[3], bbox[1].y);
+    });
+    return [new THREE.Vector2(bb[0], bb[1]), new THREE.Vector2(bb[2], bb[3])];
 }
