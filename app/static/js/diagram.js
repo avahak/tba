@@ -2,10 +2,7 @@
  * Represents the state of one pool diagram.
  *
  * TODO:
- * 1) function propagateOptionsToObject
- * 2) function propagateObjectToOptions (also called when new created)
- *
- * later) move balls to "add ball" menu instead
+ * - move balls to "add ball" menu instead
 */
 export { initDiagram };
 import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js";
@@ -72,6 +69,9 @@ function addButtonClickEventHandlers() {
     });
 }
 function handleKeyDown(event) {
+    // Do not handle events from tool-bar
+    if (event.target.closest(".tool-bar"))
+        return;
     if (event.key == "Delete") {
         if (!!activeObject[0])
             deleteObject(activeObject[0]);
