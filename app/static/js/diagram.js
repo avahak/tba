@@ -1,9 +1,16 @@
 /**
  * Represents the state of one pool diagram.
+ *
+ * TODO:
+ * 1) function propagateOptionsToObject
+ * 2) function propagateObjectToOptions (also called when new created)
+ *
+ * later) move balls to "add ball" menu instead
 */
 export { initDiagram };
 import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js";
 import { TableScene, TableView } from "./tableView.js";
+import { parseNumberBetween } from "./util.js";
 import * as THREE from 'three';
 console.log("diagram.ts");
 let mouse = {
@@ -38,6 +45,16 @@ function initDiagram() {
         handleKeyDown(event);
     });
     addButtonClickEventHandlers();
+    const inputs = ["arrowColorInput", "textColorInput", "widthInput", "textInput", "sizeInput"];
+    inputs.forEach((inputName) => {
+        const element = document.getElementById(inputName);
+        element.addEventListener("input", () => {
+            propagateOptionsToObject();
+        });
+        element.addEventListener("change", () => {
+            checkActiveObjectValidity();
+        });
+    });
 }
 function addButtonClickEventHandlers() {
     var _a, _b, _c, _d;
@@ -92,9 +109,13 @@ function mouseAction(mouseAction) {
     // console.log("mouseAction", mouseAction);
     if (mouseAction.action == "down") {
         if (state == "") {
-            changeState("move");
             const obj = collection.getObject(ndc);
+            changeState("move");
             changeActiveObject(obj[0], obj[1]);
+            // if (!!obj[0]) {
+            // 	changeState("move");
+            // 	changeActiveObject(obj[0], obj[1]);
+            // }
         }
         else if (state == "move") {
             changeState("");
@@ -144,13 +165,17 @@ function mouseAction(mouseAction) {
 function addArrow() {
     let obj = new Arrow(new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.0, 0.0));
     collection.objects[obj.name] = obj;
-    changeActiveObject(obj.name);
+    // Here we want to use current options:
+    changeActiveObject(obj.name, "", false);
+    propagateOptionsToObject();
     changeState("add_arrow_start");
 }
 function addText() {
     let obj = new Text(new THREE.Vector2(0.0, 0.0), "Text");
     collection.objects[obj.name] = obj;
-    changeActiveObject(obj.name);
+    // Here we want to use current options:
+    changeActiveObject(obj.name, "", false);
+    propagateOptionsToObject();
     changeState("add_text");
 }
 function reset() {
@@ -177,7 +202,6 @@ function changeCamera() {
         }
     }
     tableView.setCamera(activeCamera);
-    console.log("changeCamera", activeCamera);
     draw();
 }
 function setDisplayToAll(elements, value) {
@@ -187,6 +211,8 @@ function setDisplayToAll(elements, value) {
 }
 function checkActiveObjectValidity() {
     if (activeObject[0].startsWith("arrow")) {
+        if ((state == "add_arrow_start") || (state == "add_arrow_end"))
+            return;
         const arrow = collection.objects[activeObject[0]];
         if (arrow.p1.distanceTo(arrow.p2) < 0.02) {
             // degenerate arrow - delete
@@ -212,7 +238,6 @@ function changeState(newState) {
     draw();
 }
 function draw() {
-    console.log("draw", activeCamera);
     if (activeCamera != "perspective") {
         collection.draw(); // TODO REMOVE!
         collection.drawDebug(activeObject, state, collection.objects);
@@ -221,7 +246,7 @@ function draw() {
         collection.clear();
     }
 }
-function changeActiveObject(newActiveObject, newActiveObjectPart = "") {
+function changeActiveObject(newActiveObject, newActiveObjectPart = "", propagateToOptions = true) {
     // If we are in middle of adding arrow, delete it first:
     if ((state == "add_arrow_start") || (state == "add_arrow_end") || (state == "add_text"))
         deleteObject(activeObject[0]);
@@ -232,8 +257,63 @@ function changeActiveObject(newActiveObject, newActiveObjectPart = "") {
     setDisplayToAll(document.querySelectorAll('.object-option'), "none");
     // 3) show all "arrow-option" or "text-option"
     if (activeObject[0].startsWith("arrow"))
-        setDisplayToAll(document.querySelectorAll('.arrow-option'), "block");
+        setDisplayToAll(document.querySelectorAll('.arrow-option'), "flex");
     if (activeObject[0].startsWith("text"))
-        setDisplayToAll(document.querySelectorAll('.text-option'), "block");
+        setDisplayToAll(document.querySelectorAll('.text-option'), "flex");
+    if (propagateToOptions)
+        propagateObjectToOptions();
+    draw();
+}
+/**
+ * Sets html tool options to match activeObject properties.
+ */
+function propagateObjectToOptions() {
+    if (activeObject[0].startsWith("arrow")) {
+        const arrow = collection.objects[activeObject[0]];
+        // Width:
+        let widthInput = document.getElementById("widthInput");
+        widthInput.value = arrow.width.toString();
+        // Color:
+        let colorInput = document.getElementById("arrowColorInput");
+        colorInput.value = arrow.color;
+    }
+    else if (activeObject[0].startsWith("text")) {
+        const text = collection.objects[activeObject[0]];
+        // Text:
+        let textInput = document.getElementById("textInput");
+        textInput.value = text.text;
+        // Color:
+        let colorInput = document.getElementById("textColorInput");
+        colorInput.value = text.color;
+        // Size:
+        let sizeInput = document.getElementById("sizeInput");
+        sizeInput.value = text.size.toString();
+    }
+}
+/**
+ * Sets activeObject properties to match html tool options.
+ */
+function propagateOptionsToObject() {
+    if (activeObject[0].startsWith("arrow")) {
+        const arrow = collection.objects[activeObject[0]];
+        // Width:
+        let widthValue = document.getElementById("widthInput").value;
+        arrow.width = parseNumberBetween(widthValue, 1.0, 30.0, 10.0);
+        // Color:
+        let colorValue = document.getElementById("arrowColorInput").value;
+        arrow.color = colorValue;
+    }
+    else if (activeObject[0].startsWith("text")) {
+        const text = collection.objects[activeObject[0]];
+        // Text:
+        let textValue = document.getElementById("textInput").value;
+        text.text = textValue;
+        // Color:
+        let colorValue = document.getElementById("textColorInput").value;
+        text.color = colorValue;
+        // Size:
+        let sizeValue = document.getElementById("sizeInput").value;
+        text.size = Math.round(parseNumberBetween(sizeValue, 5.0, 50.0, 30.0));
+    }
     draw();
 }

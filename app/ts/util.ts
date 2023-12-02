@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint }
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween }
 import * as THREE from 'three';
 
 console.log("util.ts");
@@ -83,7 +83,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, p1: THREE.Vector2, p2: THREE.V
     let dir2 = dir.clone().rotateAround(new THREE.Vector2(), 0.8*Math.PI);
     let dir3 = dir.clone().rotateAround(new THREE.Vector2(), -0.8*Math.PI);
 
-    const hookLength = Math.min(0.2*p1.distanceTo(p2), 30);
+    const hookLength = Math.min(0.15*p1.distanceTo(p2), 20);
 
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
@@ -95,8 +95,6 @@ function drawArrow(ctx: CanvasRenderingContext2D, p1: THREE.Vector2, p2: THREE.V
     // ctx.setLineDash([20, 10]);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 10;
     ctx.stroke();
     ctx.closePath();
 }
@@ -110,4 +108,11 @@ function closestIntervalPoint(x: number, a: number, b: number) {
     if (x > a && x > b)
         return Math.max(a, b);
     return x;
+}
+
+function parseNumberBetween(value: string, minValue: number, maxValue: number, defaultValue: number): number {
+    let x = parseFloat(value);
+    if (isFinite(x)) 
+        return Math.max(Math.min(x, maxValue), minValue);
+    return defaultValue;
 }

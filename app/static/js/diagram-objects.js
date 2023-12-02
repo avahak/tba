@@ -10,8 +10,8 @@ class Arrow {
         Arrow.counter++;
         this.p1 = p1;
         this.p2 = p2;
-        this.width = 1.0;
-        this.type = "";
+        this.width = 5.0;
+        this.color = "#ff0000";
         this.name = `arrow_${Arrow.counter}`;
     }
     closestPoint(p) {
@@ -25,8 +25,10 @@ class Text {
     constructor(p, text) {
         Text.counter++;
         this.p = p;
-        this.font = "30px Open Sans";
+        this.font = "Open Sans";
+        this.size = 30;
         this.text = text;
+        this.color = "#ffff00";
         this.bbox = [this.p, this.p];
         this.name = `text_${Text.counter}`;
     }
@@ -123,7 +125,6 @@ class ObjectCollection {
         let obj = this.tableView.tableScene.findObjectNameOnMouse(ndc, this.tableView.camera);
         if ((!!obj) && obj.startsWith("ball_"))
             return [obj, ""];
-        console.log("this.objects", this.objects);
         let closest = ["", Infinity];
         const w = this.NDCToWorld2(ndc, 0);
         for (const key in this.objects) {
@@ -163,12 +164,14 @@ class ObjectCollection {
             if (obj instanceof Arrow) {
                 let q1 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p1, 0));
                 let q2 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p2, 0));
+                ctx.strokeStyle = obj.color;
+                ctx.lineWidth = obj.width;
                 if (obj.p1.distanceTo(obj.p2) >= 0.02)
                     drawArrow(ctx, q1, q2);
             }
             else if (obj instanceof Text) {
-                ctx.font = obj.font;
-                ctx.fillStyle = '#ffff00';
+                ctx.font = `${obj.size}px ${obj.font}`;
+                ctx.fillStyle = obj.color;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 let p = this.tableView.NDCToPixels(this.world2ToNDC(obj.p, 0));
@@ -196,7 +199,7 @@ class ObjectCollection {
         ctx.fillText("objects: " + Object.keys(objects), 10, canvas.height - 50);
     }
     onWindowResize() {
-        console.log("diagram-objects: onWindowResize");
+        // console.log("diagram-objects: onWindowResize");
         const canvas = document.getElementById("overlay-canvas");
         canvas.width = this.tableView.element.offsetWidth;
         canvas.height = this.tableView.element.offsetHeight;

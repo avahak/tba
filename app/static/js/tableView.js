@@ -200,7 +200,7 @@ class TableScene {
         const intersects = raycaster.intersectObjects(this.objectGroup.children, true);
         if (intersects.length > 0) {
             const name = findNameForObject(intersects[0].object, this.objects);
-            console.log("intersects[0]:", name);
+            // console.log("intersects[0]:", name);
             return name;
         }
         return null;

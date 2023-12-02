@@ -50,42 +50,51 @@
             </div>
         </div>
 
-        <div class="tool-bar">
+        <div class="tool-bar" style="display:none;max-width:200px;">
             <p class="lead">Tool Options</p>
-            <!-- colorInput -->
-            <div class="row align-items-center object-option arrow-option text-option">
-                <div class="col-auto">
-                    <input type="color" id="colorInput" value="#ffffff">
+            <!-- arrowColorInput -->
+            <div class="row object-option arrow-option">
+                <div class="col-6">
+                    <input type="color" class="form-control" id="arrowColorInput" value="#ffffff">
                 </div>
-                <div class="col-auto">
-                    <label for="colorInput" class="ms-2">Pick Color</label>
+                <div class="col-6">
+                    <label for="arrowColorInput" class="form-label ms-2">Color</label>
+                </div>
+            </div>
+            <!-- textColorInput -->
+            <div class="row object-option text-option">
+                <div class="col-6">
+                    <input type="color" class="form-control" id="textColorInput" value="#ffffff">
+                </div>
+                <div class="col-6">
+                    <label for="textColorInput" class="form-label ms-2">Color</label>
                 </div>
             </div>
             <!-- widthInput -->
             <div class="row align-items-center object-option arrow-option">
-                <div class="col-auto">
-                    <input type="number" id="widthInput" value="10">
+                <div class="col-6">
+                    <input type="number" class="form-control" id="widthInput" value="5">
                 </div>
-                <div class="col-auto">
-                    <label for="widthInput" class="ms-2">Width</label>
+                <div class="col-6">
+                    <label for="widthInput" class="form-label ms-2">Width</label>
                 </div>
             </div>
             <!-- sizeInput -->
             <div class="row align-items-center object-option text-option">
-                <div class="col-auto">
-                    <input type="number" id="sizeInput" value="30">
+                <div class="col-6">
+                    <input type="number" class="form-control" id="sizeInput" value="30">
                 </div>
-                <div class="col-auto">
-                    <label for="sizeInput" class="ms-2">Size</label>
+                <div class="col-6">
+                    <label for="sizeInput" class="form-label ms-2">Size</label>
                 </div>
             </div>
             <!-- textInput -->
             <div class="row align-items-center object-option text-option">
-                <div class="col-auto">
-                    <input type="text" id="textInput" value="Text">
+                <div class="col-6">
+                    <input type="text" class="form-control" id="textInput" value="Text">
                 </div>
-                <div class="col-auto">
-                    <label for="textInput" class="ms-2">Text</label>
+                <div class="col-6">
+                    <label for="textInput" class="form-label ms-2">Text</label>
                 </div>
             </div>
         </div>
