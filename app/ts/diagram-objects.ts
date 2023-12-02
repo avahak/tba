@@ -80,7 +80,9 @@ class ObjectCollection {
 		this.onWindowResize();
     }
 
-    public move(objectName: string, ndc: THREE.Vector2) {
+    public move(object: string[], ndc: THREE.Vector2) {
+        const objectName = object[0];
+        const objectPart = object[1];
         if (objectName.startsWith("ball")) {
             let intersect = this.NDCToWorld3(ndc, this.tableView.tableScene.specs.BALL_RADIUS);
             if (!!intersect) {
@@ -107,7 +109,15 @@ class ObjectCollection {
         } else if (objectName.startsWith("arrow")) {
             let p = this.NDCToWorld2(ndc, 0.0);
             let arrow = this.objects[objectName] as Arrow;
-            arrow.p1 = p;
+            if (objectPart == "p1")
+                arrow.p1 = p;
+            else if (objectPart == "p2")
+                arrow.p2 = p;
+            else {
+                const dir = arrow.p2.clone().sub(arrow.p1).multiplyScalar(0.5);
+                arrow.p1 = p.clone().sub(dir);
+                arrow.p2 = p.clone().add(dir);
+            }
         }
     }
 
@@ -136,10 +146,10 @@ class ObjectCollection {
         return new THREE.Vector2(ndc.x, ndc.y);
     }
 
-    public getObject(ndc: THREE.Vector2): any {
+    public getObject(ndc: THREE.Vector2): string[] {
         let obj = this.tableView.tableScene.findObjectNameOnMouse(ndc, this.tableView.camera);
 		if ((!!obj) && obj.startsWith("ball_"))
-            return obj;
+            return [obj, ""];
 
         console.log("this.objects", this.objects);
         let closest: [string, number] = ["", Infinity];
@@ -154,22 +164,39 @@ class ObjectCollection {
             }
         }
         // console.log("closest", closest);
-        if (closest[1] < 0.01)
-            return closest[0];
-        return "";
+        if (closest[1] < 0.02) {
+            let part = "";
+            const obj = this.objects[closest[0]];
+            if (obj instanceof Arrow) {
+                if (w.distanceTo(obj.p1) < 0.05)
+                    part = "p1";
+                else if (w.distanceTo(obj.p2) < 0.05)
+                    part = "p2";
+            }
+            return [closest[0], part];
+        }
+        return ["", ""];
+    }
+
+    public clear() {
+        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     public draw() {
         const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        this.clear();
 
         for (const key in this.objects) {
             let obj = this.objects[key];
             if (obj instanceof Arrow) {
                 let q1 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p1, 0));
                 let q2 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p2, 0));
-                drawArrow(ctx, q1, q2);
+                if (obj.p1.distanceTo(obj.p2) >= 0.02)
+                    drawArrow(ctx, q1, q2);
             } else if (obj instanceof Text) {
                 ctx.font = obj.font;
                 ctx.fillStyle = '#ffff00';
@@ -189,7 +216,7 @@ class ObjectCollection {
         }
     }
 
-    public drawDebug(activeObject: string, state: string) {
+    public drawDebug(activeObject: string[], state: string, objects: any) {
         // Just for debugging
         const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -198,8 +225,9 @@ class ObjectCollection {
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
-        ctx.fillText("activeObject: " + activeObject, 10, canvas.height-10);
+        ctx.fillText("activeObject: " + activeObject[0] + ", " + activeObject[1], 10, canvas.height-10);
         ctx.fillText("state: " + state, 10, canvas.height-30);
+        ctx.fillText("objects: " + Object.keys(objects), 10, canvas.height-50);
     }
 
     public onWindowResize() {

@@ -55,7 +55,9 @@ class ObjectCollection {
         window.addEventListener('resize', this.onWindowResize);
         this.onWindowResize();
     }
-    move(objectName, ndc) {
+    move(object, ndc) {
+        const objectName = object[0];
+        const objectPart = object[1];
         if (objectName.startsWith("ball")) {
             let intersect = this.NDCToWorld3(ndc, this.tableView.tableScene.specs.BALL_RADIUS);
             if (!!intersect) {
@@ -84,7 +86,15 @@ class ObjectCollection {
         else if (objectName.startsWith("arrow")) {
             let p = this.NDCToWorld2(ndc, 0.0);
             let arrow = this.objects[objectName];
-            arrow.p1 = p;
+            if (objectPart == "p1")
+                arrow.p1 = p;
+            else if (objectPart == "p2")
+                arrow.p2 = p;
+            else {
+                const dir = arrow.p2.clone().sub(arrow.p1).multiplyScalar(0.5);
+                arrow.p1 = p.clone().sub(dir);
+                arrow.p2 = p.clone().add(dir);
+            }
         }
     }
     /**
@@ -112,7 +122,7 @@ class ObjectCollection {
     getObject(ndc) {
         let obj = this.tableView.tableScene.findObjectNameOnMouse(ndc, this.tableView.camera);
         if ((!!obj) && obj.startsWith("ball_"))
-            return obj;
+            return [obj, ""];
         console.log("this.objects", this.objects);
         let closest = ["", Infinity];
         const w = this.NDCToWorld2(ndc, 0);
@@ -126,20 +136,35 @@ class ObjectCollection {
             }
         }
         // console.log("closest", closest);
-        if (closest[1] < 0.01)
-            return closest[0];
-        return "";
+        if (closest[1] < 0.02) {
+            let part = "";
+            const obj = this.objects[closest[0]];
+            if (obj instanceof Arrow) {
+                if (w.distanceTo(obj.p1) < 0.05)
+                    part = "p1";
+                else if (w.distanceTo(obj.p2) < 0.05)
+                    part = "p2";
+            }
+            return [closest[0], part];
+        }
+        return ["", ""];
+    }
+    clear() {
+        const canvas = document.getElementById("overlay-canvas");
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     draw() {
         const canvas = document.getElementById("overlay-canvas");
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.clear();
         for (const key in this.objects) {
             let obj = this.objects[key];
             if (obj instanceof Arrow) {
                 let q1 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p1, 0));
                 let q2 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p2, 0));
-                drawArrow(ctx, q1, q2);
+                if (obj.p1.distanceTo(obj.p2) >= 0.02)
+                    drawArrow(ctx, q1, q2);
             }
             else if (obj instanceof Text) {
                 ctx.font = obj.font;
@@ -158,7 +183,7 @@ class ObjectCollection {
             }
         }
     }
-    drawDebug(activeObject, state) {
+    drawDebug(activeObject, state, objects) {
         // Just for debugging
         const canvas = document.getElementById("overlay-canvas");
         const ctx = canvas.getContext('2d');
@@ -166,8 +191,9 @@ class ObjectCollection {
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
-        ctx.fillText("activeObject: " + activeObject, 10, canvas.height - 10);
+        ctx.fillText("activeObject: " + activeObject[0] + ", " + activeObject[1], 10, canvas.height - 10);
         ctx.fillText("state: " + state, 10, canvas.height - 30);
+        ctx.fillText("objects: " + Object.keys(objects), 10, canvas.height - 50);
     }
     onWindowResize() {
         console.log("diagram-objects: onWindowResize");

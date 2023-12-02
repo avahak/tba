@@ -67,10 +67,20 @@ function canvasTextBoundingBox(ctx, text, x, y) {
     return [new THREE.Vector2(x - x1, y - y1), new THREE.Vector2(x + x2, y + y2)];
 }
 function drawArrow(ctx, p1, p2) {
+    let dir = p2.clone().sub(p1).normalize();
+    let dir2 = dir.clone().rotateAround(new THREE.Vector2(), 0.8 * Math.PI);
+    let dir3 = dir.clone().rotateAround(new THREE.Vector2(), -0.8 * Math.PI);
+    const hookLength = Math.min(0.2 * p1.distanceTo(p2), 30);
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
-    ctx.strokeStyle = 'red';
+    ctx.lineTo(p2.x + hookLength * dir2.x, p2.y + hookLength * dir2.y);
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p2.x + hookLength * dir3.x, p2.y + hookLength * dir3.y);
+    // ctx.setLineDash([20, 10]);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "red";
     ctx.lineWidth = 10;
     ctx.stroke();
     ctx.closePath();

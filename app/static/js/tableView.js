@@ -379,6 +379,7 @@ class TableView {
             cam.lookAt(0.0, 0.0, 0.0);
         }
         this.camera = this.cameraOrthographic;
+        this.animateCamera = false;
         this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio * 2);
         this.renderer.setClearColor(0x000000, 0);
@@ -390,32 +391,45 @@ class TableView {
         this.onWindowResize();
     }
     setCamera(name) {
+        this.animateCamera = false;
         if (name == "orthographic") {
             this.camera = this.cameraOrthographic;
+            this.camera.position.set(0, 0, 3.5);
+            this.camera.up.set(0, 1, 0);
+            this.camera.lookAt(0.0, 0.0, -0.25);
             this.tableScene.setLights("ambient");
             if (!!this.tableScene.cushionEdgeCylinders)
                 this.tableScene.cushionEdgeCylinders.visible = true;
         }
         else if (name == "perspective") {
             this.camera = this.cameraPerspective;
+            this.animateCamera = true;
             this.tableScene.setLights("square");
             if (!!this.tableScene.cushionEdgeCylinders)
                 this.tableScene.cushionEdgeCylinders.visible = false;
         }
+        else if (name == "back") {
+            this.camera = this.cameraPerspective;
+            this.camera.position.set(-2.5, 0.0, 1);
+            this.camera.up.set(0, 0, 1);
+            this.camera.lookAt(0.0, 0.0, -0.3);
+            this.tableScene.setLights("square");
+            if (!!this.tableScene.cushionEdgeCylinders)
+                this.tableScene.cushionEdgeCylinders.visible = false;
+        }
+        this._render();
+    }
+    _render() {
+        this.renderer.render(this.tableScene.scene, this.camera);
     }
     animate() {
-        const time = performance.now() / 1000.0;
-        if (this.camera instanceof THREE.PerspectiveCamera) {
+        const time = performance.now() / 1000;
+        if (this.animateCamera) {
             this.camera.position.set(3.0 * Math.cos(time / 10), 3.0 * Math.sin(time / 10), 2.0);
             this.camera.up.set(0, 0, 1);
             this.camera.lookAt(0.0, 0.0, -0.25);
         }
-        else if (this.camera instanceof THREE.OrthographicCamera) {
-            this.camera.position.set(0, 0, 3.5);
-            this.camera.up.set(0, 1, 0);
-            this.camera.lookAt(0.0, 0.0, -0.25);
-        }
-        this.renderer.render(this.tableScene.scene, this.camera);
+        this._render();
         requestAnimationFrame(this.animate);
     }
     onWindowResize() {
