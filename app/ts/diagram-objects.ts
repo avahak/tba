@@ -3,7 +3,7 @@
  */
 
 export { Text, Arrow, Ball, ObjectCollection }
-import { TableScene, TableView } from "./tableView.js";
+import { TableView } from "./tableView.js";
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
 import * as THREE from 'three';
 

@@ -6,13 +6,12 @@
 */
 export { initDiagram };
 import { ObjectCollection, Arrow, Text } from "./diagram-objects.js";
-import { TableScene, TableView } from "./tableView.js";
-import { copyToClipboard, parseNumberBetween } from "./util.js";
+import { TableView } from "./tableView.js";
+import { TableScene } from "./tableScene.js";
+import { copyToClipboard, parseNumberBetween, clamp } from "./util.js";
 import * as THREE from 'three';
 console.log("diagram.ts");
-let mouse = {
-    last: null,
-};
+let mouseLast = {};
 let tableScene;
 let tableView;
 // Current 
@@ -20,6 +19,7 @@ let activeCamera = "orthographic";
 let activeObject; // activeObject, activeObjectPart
 let state = ""; // "", move, add_arrow_start, add_arrow_end, add_text
 let collection;
+let lastDrawTime = performance.now();
 function initDiagram() {
     tableScene = new TableScene();
     const element = document.getElementById("three-box");
@@ -28,6 +28,7 @@ function initDiagram() {
     tableView.animate();
     collection = new ObjectCollection(tableView);
     changeActiveObject("");
+    tableView.renderCallback = () => draw();
     element.addEventListener('contextmenu', (event) => {
         event.preventDefault(); // Disable the default context menu
         mouseAction({ action: "contextmenu", p: new THREE.Vector2(event.clientX, event.clientY) });
@@ -96,42 +97,44 @@ function handleKeyDown(event) {
     }
 }
 function handleMouseDown(event) {
-    if (event.button == 0) { // Left mouse button
-        mouse.last = new THREE.Vector2(event.clientX, event.clientY);
-        mouseAction({ action: "down", p: mouse.last });
-    }
+    const p = new THREE.Vector2(event.clientX, event.clientY);
+    mouseLast[event.button] = p;
+    mouseAction({ action: "down", button: event.button, buttons: event.buttons, p: p });
 }
 function handleMouseMove(event) {
-    if (event.button == 0) {
-        const newX = event.clientX;
-        const newY = event.clientY;
-        let dp = new THREE.Vector2(newX - mouse.lastX, newY - mouse.lastY);
-        mouse.last = new THREE.Vector2(newX, newY);
-        mouseAction({ action: "move", p: mouse.last, dp: dp });
-    }
+    const newX = event.clientX;
+    const newY = event.clientY;
+    const p = new THREE.Vector2(newX, newY);
+    let dp = p;
+    if (!!mouseLast[event.button])
+        dp = new THREE.Vector2(newX - mouseLast[event.button].x, newY - mouseLast[event.button].y);
+    mouseLast[event.button] = p;
+    mouseAction({ action: "move", button: event.button, buttons: event.buttons, p: p, dp: dp });
 }
 function handleMouseUp(event) {
-    if (event.button == 0) {
-        mouseAction({ action: "up", p: new THREE.Vector2(event.clientX, event.clientY) });
-    }
+    mouseAction({ action: "up", button: event.button, buttons: event.buttons, p: new THREE.Vector2(event.clientX, event.clientY) });
 }
 function handleScroll(event) {
     event.preventDefault(); // Disable the default scroll behavior
-    // if (event.deltaY > 0)
+    if (tableView.camera instanceof THREE.PerspectiveCamera) {
+        const factor = Math.exp(0.002 * event.deltaY);
+        const p = tableView.camera.position.clone();
+        const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
+        const dist = -p.z / dir.z;
+        const q = p.clone().add(dir.clone().multiplyScalar(dist)); // q.z = 0
+        tableView.camera.position.copy(q.clone().add(dir.clone().multiplyScalar(-dist * factor)));
+        draw();
+    }
 }
 // Custom mouse left click/drag handler:
 function mouseAction(mouseAction) {
     const ndc = tableView.pixelsToNDC(mouseAction.p);
     // console.log("mouseAction", mouseAction);
-    if (mouseAction.action == "down") {
+    if ((mouseAction.action == "down") && (mouseAction.button == 0)) {
         if (state == "") {
             const obj = collection.getObject(ndc);
             changeState("move");
             changeActiveObject(obj[0], obj[1]);
-            // if (!!obj[0]) {
-            // 	changeState("move");
-            // 	changeActiveObject(obj[0], obj[1]);
-            // }
         }
         else if (state == "move") {
             changeState("");
@@ -149,7 +152,7 @@ function mouseAction(mouseAction) {
             changeState("add_arrow_end");
         }
     }
-    else if (mouseAction.action == "up") {
+    else if ((mouseAction.action == "up") && (mouseAction.button == 0)) {
         if (state == "move") {
             changeState("");
             checkActiveObjectValidity();
@@ -161,20 +164,62 @@ function mouseAction(mouseAction) {
             checkActiveObjectValidity();
         }
     }
-    else if (mouseAction.action == "move") {
-        if (state == "move") {
-            collection.move(activeObject, ndc);
-        }
-        else if (state == "add_arrow_end") {
+    if (mouseAction.action == "move") {
+        if (state == "add_arrow_end") {
             let arrow = collection.objects[activeObject[0]];
             arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
         }
         else if (state == "add_text") {
             collection.move(activeObject, ndc);
         }
-    }
-    else if (mouseAction.action == "contextmenu") {
-        changeState("");
+        if (mouseAction.buttons & 1) {
+            // Left mouse button:
+            if (state == "move") {
+                collection.move(activeObject, ndc);
+            }
+            else if (state == "add_arrow_end") {
+                let arrow = collection.objects[activeObject[0]];
+                arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
+            }
+        }
+        if (mouseAction.buttons & 2) {
+            // Right mouse button:
+            if (tableView.camera instanceof THREE.PerspectiveCamera) {
+                tableView.cameraAnimates = false;
+                function swizzle(p, inverse = false) {
+                    if (inverse)
+                        return new THREE.Vector3(p.z, p.x, p.y);
+                    return new THREE.Vector3(p.y, p.z, p.x);
+                }
+                /* The reason we swizzle is that three.js computes spherical coordinates with:
+                this.theta = Math.atan2( x, z );
+                this.phi = Math.acos( MathUtils.clamp( y / this.radius, - 1, 1 ) );
+                instead of this.theta = Math.atan2(y, x);
+                */
+                const ndcLast = tableView.pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp));
+                const dir1 = new THREE.Vector3(ndc.x, ndc.y, 1.0).unproject(tableView.camera).normalize();
+                const dir2 = new THREE.Vector3(ndcLast.x, ndcLast.y, 1.0).unproject(tableView.camera).normalize();
+                const spherical1 = new THREE.Spherical().setFromVector3(swizzle(dir1));
+                const spherical2 = new THREE.Spherical().setFromVector3(swizzle(dir2));
+                const dTheta = spherical2.theta - spherical1.theta;
+                const dPhi = spherical2.phi - spherical1.phi;
+                const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
+                const spherical = new THREE.Spherical().setFromVector3(swizzle(dir));
+                const newPhi = clamp(spherical.phi + dPhi, 0.6 * Math.PI, 0.9 * Math.PI);
+                const newTheta = spherical.theta + dTheta;
+                const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(spherical.radius, newPhi, newTheta), true);
+                tableView.camera.lookAt(tableView.camera.position.clone().add(dirNew));
+            }
+        }
+        if (mouseAction.buttons & 4) {
+            // Middle mouse button:
+            tableView.cameraAnimates = false;
+            const ndcLast = tableView.pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp));
+            const p = collection.NDCToWorld2(ndc, 0.0);
+            const pLast = collection.NDCToWorld2(ndcLast, 0.0);
+            const dp3 = new THREE.Vector3(p.x - pLast.x, p.y - pLast.y, 0);
+            tableView.camera.position.sub(dp3);
+        }
     }
     draw();
 }
@@ -249,6 +294,11 @@ function changeState(newState) {
     draw();
 }
 function draw() {
+    // Check that at least some time has elapsed from last draw:
+    const time = performance.now();
+    if (time - lastDrawTime < 20)
+        return;
+    lastDrawTime = time;
     if (activeCamera != "perspective") {
         collection.draw(); // TODO REMOVE!
         collection.drawDebug(activeObject, state, collection.objects);

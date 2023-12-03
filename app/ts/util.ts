@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard }
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard, clamp }
 import * as THREE from 'three';
 
 console.log("util.ts");
@@ -113,7 +113,7 @@ function closestIntervalPoint(x: number, a: number, b: number) {
 function parseNumberBetween(value: string, minValue: number, maxValue: number, defaultValue: number): number {
     let x = parseFloat(value);
     if (isFinite(x)) 
-        return Math.max(Math.min(x, maxValue), minValue);
+        return clamp(x, minValue, maxValue);
     return defaultValue;
 }
 
@@ -135,4 +135,8 @@ async function copyToClipboard(text: string): Promise<void> {
     } catch (err) {
         console.error('Unable to copy text to clipboard:', err);
     }
+}
+
+function clamp(x: number, xMin: number, xMax: number): number {
+    return Math.max(Math.min(x, xMax), xMin);
 }
