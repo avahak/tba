@@ -234,7 +234,7 @@ def diagram():
     diagram_id = request.args.get("id")
     if diagram_id is None:
         return render_template("diagram.html")
-    file_path = f"{userdata_folder}/{f"diagram_{diagram_id}.json"}"
+    file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
     if not os.path.isfile(file_path):
         return render_template("diagram.html")
     with open(file_path, "r") as f:
