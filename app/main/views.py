@@ -212,8 +212,7 @@ def test():
 
 @main.route('/diagram', methods=["GET", "POST"])
 def diagram():
-    userdata_folder = os.path.join(current_app.root_path, 'userdata')
-    os.makedirs(userdata_folder, exist_ok=True)
+    userdata_folder = current_app.config.get('DIAGRAM_FILE_DIRECTORY', '.')
     if request.method == "POST":
         try:
             data = json.dumps(request.json)

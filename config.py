@@ -93,8 +93,10 @@ def get_logger(name: str) -> logging.Logger:
 def initialize_directories():
     """Creates log directory if it does not exist yet.
     """
-    if not os.path.exists(f"{load.get('LOG_FILE_DIRECTORY', '')}/"):
-        os.mkdir(f"{load.get('LOG_FILE_DIRECTORY', '')}/")
+    if not os.path.exists(f"{load.get('LOG_FILE_DIRECTORY', '.')}/"):
+        os.mkdir(f"{load.get('LOG_FILE_DIRECTORY', '.')}/")
+    if not os.path.exists(f"{load.get('DIAGRAM_FILE_DIRECTORY', '.')}/"):
+        os.mkdir(f"{load.get('DIAGRAM_FILE_DIRECTORY', '.')}/")
 
 def initialize_sqlalchemy_loggers(load):
     """Sets up logging for sqlalchemy and sqlalchemy.engine.
@@ -102,7 +104,7 @@ def initialize_sqlalchemy_loggers(load):
     # Setting up logging for sqlalchemy:
     sqlalchemy_logger = logging.getLogger('sqlalchemy')
     sqlalchemy_logger.setLevel(logging.DEBUG)
-    log_file = f"{load.get('LOG_FILE_DIRECTORY', '')}/sqlalchemy.log"
+    log_file = f"{load.get('LOG_FILE_DIRECTORY', '.')}/sqlalchemy.log"
     handler = TrimmableFileHandler(log_file)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
@@ -138,7 +140,8 @@ class Config:
     SITE = load.get("SITE", "")
     SECRET_KEY = load.get("SECRET_KEY", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    LOG_FILE_DIRECTORY = load.get('LOG_FILE_DIRECTORY', '')
+    LOG_FILE_DIRECTORY = load.get('LOG_FILE_DIRECTORY', '.')
+    DIAGRAM_FILE_DIRECTORY = load.get('DIAGRAM_FILE_DIRECTORY', '.')
     EMAIL_SERVICE_PROVIDER = esp
     APP_START_TIME = datetime.datetime.now()
 
