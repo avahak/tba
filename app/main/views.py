@@ -67,7 +67,8 @@ def email():
 @main.route('/config')
 def config():
     s = "<h1>"
-    s += f"LOG_FILE_NAME: {current_app.config.get('LOG_FILE_NAME')}<br>"
+    s += f"LOG_FILE_DIRECTORY: {current_app.config.get('LOG_FILE_DIRECTORY')}<br>"
+    s += f"DIAGRAM_FILE_DIRECTORY: {current_app.config.get('DIAGRAM_FILE_DIRECTORY')}<br>"
     s += f"SITE: {current_app.config.get('SITE')}<br>"
     s += f"CONFIG_SETTING: {current_app.config.get('CONFIG_SETTING')}<br>"
     s += f"MAIL_SENDER: {current_app.config.get('MAIL_SENDER')}<br>"

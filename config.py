@@ -66,7 +66,7 @@ def get_logger(name: str) -> logging.Logger:
         logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
 
     def init_app(app):
-        """Initialized logger to write to file specified in config variable LOG_FILE_NAME.
+        """Initialized logger to write to file in folder LOG_FILE_DIRECTORY.
         """
         file_name = f"{app.config.get('LOG_FILE_DIRECTORY', '')}/tba.log"
         handler = TrimmableFileHandler(file_name)
@@ -93,10 +93,8 @@ def get_logger(name: str) -> logging.Logger:
 def initialize_directories():
     """Creates log directory if it does not exist yet.
     """
-    if not os.path.exists(f"{load.get('LOG_FILE_DIRECTORY', '.')}/"):
-        os.mkdir(f"{load.get('LOG_FILE_DIRECTORY', '.')}/")
-    if not os.path.exists(f"{load.get('DIAGRAM_FILE_DIRECTORY', '.')}/"):
-        os.mkdir(f"{load.get('DIAGRAM_FILE_DIRECTORY', '.')}/")
+    os.makedirs(f"{load.get('LOG_FILE_DIRECTORY', '.')}/", exist_ok=True)
+    os.makedirs(f"{load.get('DIAGRAM_FILE_DIRECTORY', '.')}/", exist_ok=True)
 
 def initialize_sqlalchemy_loggers(load):
     """Sets up logging for sqlalchemy and sqlalchemy.engine.
