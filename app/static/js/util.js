@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes };
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard };
 import * as THREE from 'three';
 console.log("util.ts");
 /**
@@ -108,4 +108,13 @@ function combineBboxes(bboxes) {
         bb[3] = Math.max(bb[3], bbox[1].y);
     });
     return [new THREE.Vector2(bb[0], bb[1]), new THREE.Vector2(bb[2], bb[3])];
+}
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        console.log('Text successfully copied to clipboard:', text);
+    }
+    catch (err) {
+        console.error('Unable to copy text to clipboard:', err);
+    }
 }

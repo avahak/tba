@@ -19,6 +19,21 @@ class Arrow {
         const q = line.closestPointToPoint(new THREE.Vector3(p.x, p.y, 0.0), true, new THREE.Vector3());
         return new THREE.Vector2(q.x, q.y);
     }
+    serialize() {
+        const data = {};
+        ["p1", "p2", "width", "color", "name"].forEach((key) => {
+            data[key] = this[key];
+        });
+        return data;
+    }
+    load(source) {
+        this.p1 = new THREE.Vector2(source.p1.x, source.p1.y);
+        this.p2 = new THREE.Vector2(source.p2.x, source.p2.y);
+        this.width = parseFloat(source.width);
+        ["color", "name"].forEach((key) => {
+            this[key] = source[key];
+        });
+    }
 }
 Arrow.counter = 0;
 class Text {
@@ -39,6 +54,20 @@ class Text {
         const q2 = this.bbox[1];
         const q = new THREE.Vector2(closestIntervalPoint(p.x, q1.x, q2.x), closestIntervalPoint(p.y, q1.y, q2.y));
         return q;
+    }
+    serialize() {
+        const data = {};
+        ["p", "font", "size", "text", "color", "name"].forEach((key) => {
+            data[key] = this[key];
+        });
+        return data;
+    }
+    load(source) {
+        this.p = new THREE.Vector2(source.p.x, source.p.y);
+        this.size = parseFloat(source.size);
+        ["font", "text", "color", "name"].forEach((key) => {
+            this[key] = source[key];
+        });
     }
 }
 Text.counter = 0;
@@ -73,11 +102,8 @@ class ObjectCollection {
                     ball.position.copy(resolved);
                 else
                     ball.position.copy(oldBallPosition);
-                if (oob == "pocket") {
-                    let ballNumber = Ball.getBallNumber(objectName);
-                    const defaultPos = this.tableView.tableScene.defaultBallPosition(ballNumber);
-                    ball.position.copy(defaultPos);
-                }
+                if (oob == "pocket")
+                    this.resetBall(objectName);
             }
         }
         else if (objectName.startsWith("text")) {
@@ -98,6 +124,12 @@ class ObjectCollection {
                 arrow.p2 = p.clone().add(dir);
             }
         }
+    }
+    resetBall(ballName) {
+        const ball = this.tableView.tableScene.objects[ballName];
+        let ballNumber = Ball.getBallNumber(ballName);
+        const defaultPos = this.tableView.tableScene.defaultBallPosition(ballNumber);
+        ball.position.copy(defaultPos);
     }
     /**
      * Returns point on plane z=height where ray from camera to mouse intersects it.
@@ -208,5 +240,53 @@ class ObjectCollection {
         canvas.width = this.tableView.element.offsetWidth;
         canvas.height = this.tableView.element.offsetHeight;
         this.draw();
+    }
+    reset() {
+        Object.keys(this.objects).forEach((key) => {
+            delete this.objects[key];
+        });
+        Object.keys(this.tableView.tableScene.objects).forEach((key) => {
+            if (key.startsWith("ball"))
+                this.resetBall(key);
+        });
+    }
+    serialize() {
+        let data = {};
+        for (let k = 0; k < 16; k++) {
+            const ballName = `ball_${k}`;
+            data[ballName] = this.tableView.tableScene.objects[ballName].position;
+        }
+        for (const objName in this.objects) {
+            if (objName.startsWith("arrow")) {
+                const save = this.objects[objName].serialize();
+                data[objName] = save;
+            }
+            else if (objName.startsWith("text")) {
+                const save = this.objects[objName].serialize();
+                data[objName] = save;
+            }
+        }
+        return data;
+    }
+    load(data) {
+        this.reset();
+        for (let k = 0; k < 16; k++) {
+            const ballName = `ball_${k}`;
+            const p = new THREE.Vector3(data[ballName].x, data[ballName].y, data[ballName].z);
+            this.tableView.tableScene.objects[ballName].position.copy(p);
+        }
+        for (const objName in data) {
+            if (objName.startsWith("arrow")) {
+                const arrow = new Arrow(new THREE.Vector2(), new THREE.Vector2());
+                arrow.load(data[objName]);
+                this.objects[objName] = arrow;
+            }
+            else if (objName.startsWith("text")) {
+                const text = new Text(new THREE.Vector2(), "");
+                text.load(data[objName]);
+                this.objects[objName] = text;
+            }
+        }
+        return data;
     }
 }

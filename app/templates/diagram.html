@@ -29,6 +29,9 @@
         }
     }
     </script>
+    {% if (data) %}
+    <script id="diagram-initial-values" type="application/json">{{ data|safe }}</script>
+    {% endif %}
 
     <script defer type="module" src="./static/js/main.js"></script>
 </head>
@@ -107,6 +110,9 @@
             </div>
             <div class="mt-2">
                 <button id="buttonSave" class="btn btn-sm btn-warning">Save</button>
+            </div>
+            <div class="mt-2">
+                <a href="{{ url_for('main.front') }}">Back</a>
             </div>
         </div>
     </div>

@@ -4,6 +4,15 @@ from . import db, login_manager, logger
 from .tokens import *
 from datetime import datetime
 
+class Diagram(db.Model):
+    """Stores a pool shot diagram.
+    """
+    __tablename__ = "diagrams"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), default=None)
+    name = db.Column(db.String(32), unique=True)    # url identifier
+    path = db.Column(db.String(255))
+
 class Role(db.Model):
     """Available roles: User, Moderator, Admin
     """

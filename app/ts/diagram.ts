@@ -8,7 +8,7 @@
 export { initDiagram };
 import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js"
 import { TableScene, TableView } from "./tableView.js";
-import { parseNumberBetween } from "./util.js";
+import { copyToClipboard, parseNumberBetween } from "./util.js";
 import * as THREE from 'three';
 
 console.log("diagram.ts");
@@ -70,6 +70,19 @@ function initDiagram() {
 			checkActiveObjectValidity();
 		});
 	});
+
+	document.addEventListener('tableSceneLoaded', function() {
+		console.log('tableSceneLoaded');
+		const initialValuesElement = document.getElementById('diagram-initial-values');
+		if ((!!initialValuesElement) && (!!initialValuesElement.textContent)) {
+			const data = JSON.parse(atob(initialValuesElement.textContent));
+			collection.load(data);
+			console.log("Initial values loaded.");
+		} else {
+			console.log("No initial values.");
+		}
+		draw();
+	});
 }
 
 function addButtonClickEventHandlers() {
@@ -84,6 +97,9 @@ function addButtonClickEventHandlers() {
 	});
 	document.getElementById("buttonCamera")?.addEventListener("click", () => {
 		changeCamera();
+	});
+	document.getElementById("buttonSave")?.addEventListener("click", () => {
+		save();
 	});
 }
 
@@ -206,17 +222,7 @@ function addText() {
 }
 
 function reset() {
-	Object.keys(collection.objects).forEach((key) => {
-		delete collection.objects[key];
-	});
-	Object.keys(tableScene.objects).forEach((key) => {
-		if (key.startsWith("ball")) {
-			const ball = tableScene.objects[key];
-			let ballNumber = Ball.getBallNumber(key) as number;
-            const defaultPos = tableScene.defaultBallPosition(ballNumber);
-            ball.position.copy(defaultPos);
-		}
-	});
+	collection.reset();
 	changeState("");
 	changeActiveObject("");
 }
@@ -261,7 +267,10 @@ function checkActiveObjectValidity() {
 }
 
 function deleteObject(objectName: string) {
-	delete collection.objects[objectName];
+	if (objectName.startsWith("ball"))
+		collection.resetBall(objectName);
+	else
+		delete collection.objects[objectName];
 	draw();
 }
 
@@ -352,4 +361,34 @@ function propagateOptionsToObject() {
 		text.size = Math.round(parseNumberBetween(sizeValue, 5.0, 50.0, 30.0));
 	}
 	draw();
+}
+
+function save() {
+	const dataString = JSON.stringify(collection.serialize());
+	// console.log("dataString", dataString);
+
+	const currentURL = window.location.origin + window.location.pathname;
+	const headers = new Headers({
+		'Content-Type': 'application/json',
+	});
+	const requestOptions = {
+		method: 'POST',
+		headers: headers,
+		body: dataString,
+	};
+	fetch(currentURL, requestOptions)
+		.then(response => {
+			if (!response.ok)
+				throw new Error('Network response was not ok');
+			return response.json();
+		})
+		.then(data => {
+			console.log("save() got data back:", data);
+			copyToClipboard(data.url).then(() => {
+				alert("Diagram saved. Link " + data.url + " copied to clipboard.")
+			});
+		})
+		.catch(error => {
+			console.error('There was a problem with the fetch operation:', error);
+		});
 }

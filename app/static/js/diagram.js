@@ -5,9 +5,9 @@
  * - move balls to "add ball" menu instead
 */
 export { initDiagram };
-import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js";
+import { ObjectCollection, Arrow, Text } from "./diagram-objects.js";
 import { TableScene, TableView } from "./tableView.js";
-import { parseNumberBetween } from "./util.js";
+import { copyToClipboard, parseNumberBetween } from "./util.js";
 import * as THREE from 'three';
 console.log("diagram.ts");
 let mouse = {
@@ -52,9 +52,22 @@ function initDiagram() {
             checkActiveObjectValidity();
         });
     });
+    document.addEventListener('tableSceneLoaded', function () {
+        console.log('tableSceneLoaded');
+        const initialValuesElement = document.getElementById('diagram-initial-values');
+        if ((!!initialValuesElement) && (!!initialValuesElement.textContent)) {
+            const data = JSON.parse(atob(initialValuesElement.textContent));
+            collection.load(data);
+            console.log("Initial values loaded.");
+        }
+        else {
+            console.log("No initial values.");
+        }
+        draw();
+    });
 }
 function addButtonClickEventHandlers() {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     (_a = document.getElementById("buttonAddArrow")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
         addArrow();
     });
@@ -66,6 +79,9 @@ function addButtonClickEventHandlers() {
     });
     (_d = document.getElementById("buttonCamera")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", () => {
         changeCamera();
+    });
+    (_e = document.getElementById("buttonSave")) === null || _e === void 0 ? void 0 : _e.addEventListener("click", () => {
+        save();
     });
 }
 function handleKeyDown(event) {
@@ -181,17 +197,7 @@ function addText() {
     changeState("add_text");
 }
 function reset() {
-    Object.keys(collection.objects).forEach((key) => {
-        delete collection.objects[key];
-    });
-    Object.keys(tableScene.objects).forEach((key) => {
-        if (key.startsWith("ball")) {
-            const ball = tableScene.objects[key];
-            let ballNumber = Ball.getBallNumber(key);
-            const defaultPos = tableScene.defaultBallPosition(ballNumber);
-            ball.position.copy(defaultPos);
-        }
-    });
+    collection.reset();
     changeState("");
     changeActiveObject("");
 }
@@ -232,7 +238,10 @@ function checkActiveObjectValidity() {
     }
 }
 function deleteObject(objectName) {
-    delete collection.objects[objectName];
+    if (objectName.startsWith("ball"))
+        collection.resetBall(objectName);
+    else
+        delete collection.objects[objectName];
     draw();
 }
 function changeState(newState) {
@@ -318,4 +327,32 @@ function propagateOptionsToObject() {
         text.size = Math.round(parseNumberBetween(sizeValue, 5.0, 50.0, 30.0));
     }
     draw();
+}
+function save() {
+    const dataString = JSON.stringify(collection.serialize());
+    // console.log("dataString", dataString);
+    const currentURL = window.location.origin + window.location.pathname;
+    const headers = new Headers({
+        'Content-Type': 'application/json',
+    });
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: dataString,
+    };
+    fetch(currentURL, requestOptions)
+        .then(response => {
+        if (!response.ok)
+            throw new Error('Network response was not ok');
+        return response.json();
+    })
+        .then(data => {
+        console.log("save() got data back:", data);
+        copyToClipboard(data.url).then(() => {
+            alert("Diagram saved. Link " + data.url + " copied to clipboard.");
+        });
+    })
+        .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
 }

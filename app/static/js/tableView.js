@@ -140,6 +140,8 @@ class TableScene {
                 this.objectGroup.add(this.objects[`ball_${k}`]);
                 setShadow(this.objects[`ball_${k}`], true, true);
             }
+            const event = new Event('tableSceneLoaded');
+            document.dispatchEvent(event);
         })
             .catch(error => {
             console.log("Error loading resources: ", error);

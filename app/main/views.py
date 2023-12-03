@@ -1,6 +1,7 @@
-import sys
+import sys, os, uuid
 import numpy as np
 import datetime
+import base64
 from flask import *
 from . import main
 from .. import logger
@@ -120,10 +121,6 @@ def sqlalchemy_engine_logs():
         s = "<br>".join(f.readlines())
     return f"{s}"
 
-@main.route('/diagram')
-def diagram():
-    return render_template("diagram.html")
-
 @main.route('/julia')
 def julia():
     return send_from_directory(current_app.root_path + "/static/html", "julia.html")
@@ -212,6 +209,38 @@ def message():
 def test():
     token = encrypt("foo", 60)
     return render_template("userkit/email/confirm.html", token=token)
+
+@main.route('/diagram', methods=["GET", "POST"])
+def diagram():
+    userdata_folder = os.path.join(current_app.root_path, 'userdata')
+    os.makedirs(userdata_folder, exist_ok=True)
+    if request.method == "POST":
+        try:
+            data = json.dumps(request.json)
+            logger.debug("diagram() received data in POST", extra={"data": data})
+            # should save data here and create short url
+
+            diagram_id = uuid.uuid4().hex
+            file_path = f"{userdata_folder}/{f"diagram_{diagram_id}.json"}"
+            with open(file_path, "w") as f:
+                f.write(data)
+
+            response_data = {"message": f"Data received successfully, id={diagram_id}", "url": url_for("main.diagram", id=diagram_id, _external=True)}
+            return jsonify(response_data), 200  # Respond with a JSON message
+        except Exception as e:
+            logger.debug("Error processing JSON in diagram() POST", exc_info=e)
+            return jsonify({'error': 'Invalid JSON data'}), 400  # 400 Bad Request
+    # GET: 
+    diagram_id = request.args.get("id")
+    if diagram_id is None:
+        return render_template("diagram.html")
+    file_path = f"{userdata_folder}/{f"diagram_{diagram_id}.json"}"
+    if not os.path.isfile(file_path):
+        return render_template("diagram.html")
+    with open(file_path, "r") as f:
+        data = f.read()
+    data = base64.b64encode(data.encode('utf-8')).decode('utf-8')
+    return render_template("diagram.html", data=data)
 
 @main.route("/")
 def front():
