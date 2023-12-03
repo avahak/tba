@@ -221,7 +221,7 @@ def diagram():
             # should save data here and create short url
 
             diagram_id = uuid.uuid4().hex
-            file_path = f"{userdata_folder}/{f"diagram_{diagram_id}.json"}"
+            file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
             with open(file_path, "w") as f:
                 f.write(data)
 
