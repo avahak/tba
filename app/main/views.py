@@ -229,6 +229,8 @@ def write_diagram_to_file(data):
 @main.route('/diagram', methods=["GET"])
 def diagram():
     diagram_id = request.args.get("id")
+    s = url_for(f"main.api", diagram_id=diagram_id, _external=True)
+    logger.info("diagram() schemes: ", extra={"request.scheme": request.scheme, "url_for": s})
     if (diagram_id is None) or (not re.match("^[a-zA-Z0-9]+$", diagram_id)):
         return render_template("diagram.html")      # diagram_id contains illegal characters
     return render_template("diagram.html", diagram_url=url_for(f"main.api", diagram_id=diagram_id, _external=True))
