@@ -5,7 +5,9 @@
 export { Text, Arrow, Ball, ObjectCollection }
 import { TableView } from "./tableView.js";
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
+import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from "./transformation.js"
 import * as THREE from 'three';
+import { TableScene } from "./tableScene.js";
 
 console.log("diagram-objects.ts")
 
@@ -17,7 +19,7 @@ class Arrow {
     public color: string;
     public name: string;
 
-    constructor(p1: THREE.Vector2, p2: THREE.Vector2) {
+    public constructor(p1: THREE.Vector2, p2: THREE.Vector2) {
         Arrow.counter++;
         this.p1 = p1;
         this.p2 = p2;
@@ -60,7 +62,7 @@ class Text {
     public name: string;
     public bbox: any;
 
-    constructor(p: THREE.Vector2, text: string) {
+    public constructor(p: THREE.Vector2, text: string) {
         Text.counter++;
         this.p = p;
         this.font = "Open Sans";
@@ -98,6 +100,63 @@ class Text {
 }
 
 class Ball {
+    public p: THREE.Vector3;
+    public name: string;
+    public tableScene: TableScene;
+
+    public constructor(name: string, tableScene: TableScene) {
+        this.name = name;
+        this.tableScene = tableScene;
+        const ballObject = this.tableScene.objects[this.name];
+        this.p = ballObject.position.clone();
+    }
+
+    public move(ndc: THREE.Vector2, camera: THREE.Camera) {
+        const ballObject = this.tableScene.objects[this.name];
+        let intersect = NDCToWorld3(ndc, this.tableScene.specs.BALL_RADIUS, camera);
+        if (!!intersect) {
+            const oldBallPosition = ballObject.position.clone();
+            ballObject.position.x = intersect.x;
+            ballObject.position.y = intersect.y;
+            const resolved = this.tableScene.resolveIntersections(this.name, ballObject.position);
+            let oob = this.tableScene.outOfBoundsString(resolved);
+            if ((this.tableScene.intersections(this.name, resolved).length == 0) && (!oob))
+                ballObject.position.copy(resolved);
+            else
+                ballObject.position.copy(oldBallPosition);
+            if (oob == "pocket") 
+                this.resetBall();
+        }
+        this._updatePosition();
+    }
+
+    /**
+     * Updates this.p from actual object position.
+     */
+    public _updatePosition() {
+        const ballObject = this.tableScene.objects[this.name];
+        this.p.copy(ballObject.position);
+    }
+
+    public resetBall() {
+        const ballObject = this.tableScene.objects[this.name];
+        let ballNumber = Ball.getBallNumber(this.name) as number;
+        const defaultPos = this.tableScene.defaultBallPosition(ballNumber);
+        ballObject.position.copy(defaultPos);
+        this._updatePosition();
+    }
+
+    public serialize() {
+        return { "p": this.p, "name": this.name };
+    }
+
+    public load(source: any, tableScene: TableScene) {
+        this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
+        this.name = source.name;
+        const ballObject = this.tableScene.objects[this.name];
+        ballObject.position.copy(this.p);
+    }
+
     public static getBallNumber(name: string): number | null {
         const result = name.match(/\d+/);
 		const ballNumber =  result ? parseInt(result[0]) : null;
@@ -106,42 +165,31 @@ class Ball {
 }
 
 class ObjectCollection {
-    public tableView: TableView;
+    public tableScene: TableScene;
     public objects: { [key: string]: any };
 
-    constructor(tableView: TableView) {
-        this.onWindowResize = this.onWindowResize.bind(this); // Ensure the correct 'this' inside onWindowResize
-        this.tableView = tableView;
+    public constructor(tableScene: TableScene) {
+        this.tableScene = tableScene;
         this.objects = {};
-        window.addEventListener('resize', this.onWindowResize);
-		this.onWindowResize();
+        for (let k = 0; k < 16; k++) {
+            const name = `ball_${k}`;
+            const ball = new Ball(name, this.tableScene);
+            this.objects[name] = ball;
+        }
     }
 
-    public move(object: string[], ndc: THREE.Vector2) {
+    public move(object: string[], ndc: THREE.Vector2, camera: THREE.Camera) {
         const objectName = object[0];
         const objectPart = object[1];
         if (objectName.startsWith("ball")) {
-            let intersect = this.NDCToWorld3(ndc, this.tableView.tableScene.specs.BALL_RADIUS);
-            if (!!intersect) {
-                const ball = this.tableView.tableScene.objects[objectName];
-                const oldBallPosition = ball.position.clone();
-                ball.position.x = intersect.x;
-                ball.position.y = intersect.y;
-                const resolved = this.tableView.tableScene.resolveIntersections(objectName, ball.position);
-                let oob = this.tableView.tableScene.outOfBoundsString(resolved);
-                if ((this.tableView.tableScene.intersections(objectName, resolved).length == 0) && (!oob))
-                    ball.position.copy(resolved);
-                else
-                    ball.position.copy(oldBallPosition);
-                if (oob == "pocket") 
-                    this.resetBall(objectName);
-            }
+            const ball = this.objects[objectName] as Ball;
+            ball.move(ndc, camera)
         } else if (objectName.startsWith("text")) {
-            let p = this.NDCToWorld2(ndc, 0.0);
+            let p = NDCToWorld2(ndc, 0.0, camera);
             let text = this.objects[objectName] as Text;
             text.p = p;
         } else if (objectName.startsWith("arrow")) {
-            let p = this.NDCToWorld2(ndc, 0.0);
+            let p = NDCToWorld2(ndc, 0.0, camera);
             let arrow = this.objects[objectName] as Arrow;
             if (objectPart == "p1")
                 arrow.p1 = p;
@@ -155,46 +203,16 @@ class ObjectCollection {
         }
     }
 
-    public resetBall(ballName: string) {
-        const ball = this.tableView.tableScene.objects[ballName];
-        let ballNumber = Ball.getBallNumber(ballName) as number;
-        const defaultPos = this.tableView.tableScene.defaultBallPosition(ballNumber);
-        ball.position.copy(defaultPos);
-    }
-
-    /**
-     * Returns point on plane z=height where ray from camera to mouse intersects it.
-     */
-    public NDCToWorld3(ndc: THREE.Vector2, height: number): THREE.Vector3 {
-        const ndc1 = new THREE.Vector3(ndc.x, ndc.y, -1);
-        const ndc2 = new THREE.Vector3(ndc.x, ndc.y, 1);
-		let a1 = ndc1.unproject(this.tableView.camera);
-        let a2 = ndc2.unproject(this.tableView.camera);
-		let ray = new THREE.Ray(a1, a2);
-		const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -height);
-		let intersect = new THREE.Vector3();
-		ray.intersectPlane(plane, intersect);
-        return intersect;
-    }
-
-    public NDCToWorld2(ndc: THREE.Vector2, height: number): THREE.Vector2 {
-        let p = this.NDCToWorld3(ndc, height);
-        return new THREE.Vector2(p.x, p.y);
-    }
-
-    public world2ToNDC(p: THREE.Vector2, height: number): THREE.Vector2 {
-        let ndc = new THREE.Vector3(p.x, p.y, height).project(this.tableView.camera);
-        return new THREE.Vector2(ndc.x, ndc.y);
-    }
-
-    public getObject(ndc: THREE.Vector2): string[] {
-        let obj = this.tableView.tableScene.findObjectNameOnMouse(ndc, this.tableView.camera);
+    public getObject(ndc: THREE.Vector2, camera: THREE.Camera): string[] {
+        let obj = this.tableScene.findObjectNameOnMouse(ndc, camera);
 		if ((!!obj) && obj.startsWith("ball_"))
             return [obj, ""];
 
         let closest: [string, number] = ["", Infinity];
-        const w = this.NDCToWorld2(ndc, 0);
+        const w = NDCToWorld2(ndc, 0, camera);
         for (const key in this.objects) {
+            if (key.startsWith("ball"))
+                continue;
             const obj = this.objects[key] as (Arrow | Text);
             const cp = obj.closestPoint(w);
             const dist = cp.distanceTo(w);
@@ -218,23 +236,21 @@ class ObjectCollection {
         return ["", ""];
     }
 
-    public clear() {
-        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+    public clear(canvas: HTMLCanvasElement) {
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    public draw() {
-        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+    public draw(camera: THREE.Camera, canvas: HTMLCanvasElement) {
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-        this.clear();
+        this.clear(canvas);
 
         for (const key in this.objects) {
             let obj = this.objects[key];
             if (obj instanceof Arrow) {
-                let q1 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p1, 0));
-                let q2 = this.tableView.NDCToPixels(this.world2ToNDC(obj.p2, 0));
+                let q1 = NDCToPixels(world2ToNDC(obj.p1, 0, camera), canvas);
+                let q2 = NDCToPixels(world2ToNDC(obj.p2, 0, camera), canvas);
                 ctx.strokeStyle = obj.color;
                 ctx.lineWidth = obj.width;
                 if (obj.p1.distanceTo(obj.p2) >= 0.02)
@@ -244,7 +260,7 @@ class ObjectCollection {
                 ctx.fillStyle = obj.color;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                let p = this.tableView.NDCToPixels(this.world2ToNDC(obj.p, 0));
+                let p = NDCToPixels(world2ToNDC(obj.p, 0, camera), canvas);
                 let text = obj.text;
                 let lines = text.split("\n");
                 let bboxes = [];
@@ -254,16 +270,15 @@ class ObjectCollection {
                     bboxes.push(bbox);
                 }
                 const bbox = combineBboxes(bboxes);
-                const bbox1 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[0]), 0);
-                const bbox2 = this.NDCToWorld2(this.tableView.pixelsToNDC(bbox[1]), 0);
+                const bbox1 = NDCToWorld2(pixelsToNDC(bbox[0], canvas), 0, camera);
+                const bbox2 = NDCToWorld2(pixelsToNDC(bbox[1], canvas), 0, camera);
                 obj.bbox = [bbox1, bbox2];
             }
         }
     }
 
-    public drawDebug(activeObject: string[], state: string, objects: any) {
+    public drawDebug(activeObject: string[], state: string, objects: any, canvas: HTMLCanvasElement) {
         // Just for debugging
-        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         ctx.font = `20px px Arial`;
@@ -272,35 +287,26 @@ class ObjectCollection {
         ctx.textBaseline = 'bottom';
         ctx.fillText("activeObject: " + activeObject[0] + ", " + activeObject[1], 10, canvas.height-10);
         ctx.fillText("state: " + state, 10, canvas.height-30);
-        ctx.fillText("objects: " + Object.keys(objects), 10, canvas.height-50);
-    }
-
-    public onWindowResize() {
-        // console.log("diagram-objects: onWindowResize");
-        const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
-        canvas.width = this.tableView.element.offsetWidth; 
-        canvas.height = this.tableView.element.offsetHeight;
-        this.draw();
+        const nonBallKeys = Object.keys(objects).filter((key) => !key.startsWith("ball"));
+        ctx.fillText("objects: " + nonBallKeys, 10, canvas.height-50);
     }
 
     public reset() {
         Object.keys(this.objects).forEach((key) => {
-            delete this.objects[key];
-        });
-        Object.keys(this.tableView.tableScene.objects).forEach((key) => {
             if (key.startsWith("ball")) 
-                this.resetBall(key);
+                (this.objects[key] as Ball).resetBall();
+            else 
+                delete this.objects[key];
         });
     }
 
     public serialize() {
         let data: { [key: string]: any } = {};
-        for (let k = 0; k < 16; k++) {
-            const ballName = `ball_${k}`;
-            data[ballName] = this.tableView.tableScene.objects[ballName].position;
-        }
         for (const objName in this.objects) {
-            if (objName.startsWith("arrow")) {
+            if (objName.startsWith("ball")) {
+                const save = (this.objects[objName] as Ball).serialize();
+                data[objName] = save;
+            } else if (objName.startsWith("arrow")) {
                 const save = (this.objects[objName] as Arrow).serialize();
                 data[objName] = save;
             } else if (objName.startsWith("text")) {
@@ -313,13 +319,11 @@ class ObjectCollection {
 
     public load(data: any) {
         this.reset();
-        for (let k = 0; k < 16; k++) {
-            const ballName = `ball_${k}`;
-            const p = new THREE.Vector3(data[ballName].x, data[ballName].y, data[ballName].z);
-            this.tableView.tableScene.objects[ballName].position.copy(p);
-        }
         for (const objName in data) {
-            if (objName.startsWith("arrow")) {
+            if (objName.startsWith("ball")) {
+                const ball = this.objects[objName] as Ball;
+                ball.load(data[objName], this.tableScene);
+            } else if (objName.startsWith("arrow")) {
                 const arrow = new Arrow(new THREE.Vector2(), new THREE.Vector2());
                 arrow.load(data[objName]);
                 this.objects[objName] = arrow;
@@ -329,6 +333,5 @@ class ObjectCollection {
                 this.objects[objName] = text;
             }
         }
-        return data;
     }
 }

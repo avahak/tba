@@ -116,26 +116,4 @@ class TableView {
 
 		this.renderer.setSize(container.offsetWidth, container.offsetHeight);
 	}
-
-	/**
-	 * Converts p given in pixels to OpenGL normalized device coordinates.
-	 */
-	public pixelsToNDC(p: THREE.Vector2): THREE.Vector2 {
-		const rect = this.element.getBoundingClientRect();
-		const ndc = new THREE.Vector2();
-		ndc.x = 2*((p.x-rect.left) / rect.width) - 1;
-		ndc.y = -2*((p.y-rect.top) / rect.height) + 1;
-		return ndc;
-	}
-
-	/**
-	 * Converts ndc given in OpenGL normalized device coordinates to pixels.
-	 */
-	public NDCToPixels(ndc: THREE.Vector2): THREE.Vector2 {
-		const rect = this.element.getBoundingClientRect();
-		const p = new THREE.Vector2();
-		p.x = rect.left + rect.width*(ndc.x+1)/2;
-		p.y = rect.top + rect.height*(1-ndc.y)/2;
-		return p;
-	}
 }

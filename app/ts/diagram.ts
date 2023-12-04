@@ -2,7 +2,7 @@
  * Represents the state of one pool diagram.
  * 
  * TODO:
- * - move balls to "add ball" menu instead
+ * - add balls instead of having fixed 16
 */
 
 export { initDiagram };
@@ -10,6 +10,7 @@ import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js"
 import { TableView } from "./tableView.js";
 import { TableScene } from "./tableScene.js";
 import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
+import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from "./transformation.js"
 import * as THREE from 'three';
 
 console.log("diagram.ts");
@@ -40,10 +41,45 @@ function initDiagram() {
     tableView = new TableView(element, tableScene);
     tableView.setCamera(activeCamera);
     tableView.animate();
-	collection = new ObjectCollection(tableView);
-	changeActiveObject("");
-	tableView.renderCallback = () => draw();
 
+	document.addEventListener('tableSceneLoaded', () => {
+		console.log('tableSceneLoaded');
+
+		collection = new ObjectCollection(tableScene);
+		changeActiveObject("");
+		tableView.renderCallback = () => draw();
+
+		addMouseListeners(element);
+
+		document.addEventListener("keydown", (event) => {
+			handleKeyDown(event);
+		});
+
+		addButtonClickEventListeners();
+
+		addInputListeners();
+
+		loadDiagram();
+
+		window.addEventListener('resize', onWindowResize);
+		onWindowResize();
+	});
+}
+
+function addInputListeners() {
+	const inputs = ["arrowColorInput", "textColorInput", "widthInput", "textInput", "sizeInput"];
+	inputs.forEach((inputName) => {
+		const element = document.getElementById(inputName) as HTMLInputElement;
+		element.addEventListener("input", () => {
+			propagateOptionsToObject();
+		});
+		element.addEventListener("change", () => {
+			checkActiveObjectValidity();
+		});
+	});
+}
+
+function addMouseListeners(element: HTMLElement) {
 	element.addEventListener('contextmenu', (event) => {
 		event.preventDefault(); // Disable the default context menu
 		mouseAction({ action: "contextmenu", p: new THREE.Vector2(event.clientX, event.clientY) } as MouseAction);
@@ -56,46 +92,27 @@ function initDiagram() {
 	element.addEventListener('mousedown', handleMouseDown);
 	element.addEventListener('mousemove', handleMouseMove);
 	element.addEventListener('mouseup', handleMouseUp);
-
-	document.addEventListener("keydown", (event) => {
-		handleKeyDown(event);
-	});
-
-	addButtonClickEventHandlers();
-
-	const inputs = ["arrowColorInput", "textColorInput", "widthInput", "textInput", "sizeInput"];
-	inputs.forEach((inputName) => {
-		const element = document.getElementById(inputName) as HTMLInputElement;
-		element.addEventListener("input", () => {
-			propagateOptionsToObject();
-		});
-		element.addEventListener("change", () => {
-			checkActiveObjectValidity();
-		});
-	});
-
-	document.addEventListener('tableSceneLoaded', function() {
-		console.log('tableSceneLoaded');
-		const diagramURL = document.getElementById("canvas-container")?.dataset["diagramUrl"];
-		let initialValuesUsed = false;
-		if (!!diagramURL) {
-			loadJSON(diagramURL).then((data: any) => {
-				if (!!data) {
-					console.log("data", data);
-					collection.load(data);
-					initialValuesUsed = true;
-				}
-			});
-		}
-		if (initialValuesUsed)
-			console.log("Initial values loaded.");
-		else 
-			console.log("No initial values.");
-		draw();
-	});
 }
 
-function addButtonClickEventHandlers() {
+function loadDiagram() {
+	const diagramURL = document.getElementById("canvas-container")?.dataset["diagramUrl"];
+	let initialValuesUsed = false;
+	if (!!diagramURL) {
+		loadJSON(diagramURL).then((data: any) => {
+			if (!!data) {
+				console.log("data", data);
+				collection.load(data);
+				initialValuesUsed = true;
+			}
+		});
+	}
+	if (initialValuesUsed)
+		console.log("Initial values loaded.");
+	else 
+		console.log("No initial values.");
+}
+
+function addButtonClickEventListeners() {
 	document.getElementById("buttonAddArrow")?.addEventListener("click", () => {
 		addArrow();
 	});
@@ -165,11 +182,11 @@ function handleScroll(event: WheelEvent) {
 
 // Custom mouse left click/drag handler:
 function mouseAction(mouseAction: MouseAction) {
-    const ndc = tableView.pixelsToNDC(mouseAction.p);
+    const ndc = pixelsToNDC(mouseAction.p, tableView.element);
 	// console.log("mouseAction", mouseAction);
 	if ((mouseAction.action == "down") && (mouseAction.button == 0)) {
 		if (state == "") {
-			const obj = collection.getObject(ndc);
+			const obj = collection.getObject(ndc, tableView.camera);
 			changeState("move");
 			changeActiveObject(obj[0], obj[1]);
 		} else if (state == "move") {
@@ -177,11 +194,11 @@ function mouseAction(mouseAction: MouseAction) {
 			changeActiveObject("");
 		} else if (state == "add_text") {
 			let text = collection.objects[activeObject[0]] as Text;
-			text.p = collection.NDCToWorld2(ndc, 0.0);
+			text.p = NDCToWorld2(ndc, 0.0, tableView.camera);
 			changeState("");
 		} else if (state == "add_arrow_start") {
 			let arrow = collection.objects[activeObject[0]] as Arrow;
-			arrow.p1 = collection.NDCToWorld2(ndc, 0.0);
+			arrow.p1 = NDCToWorld2(ndc, 0.0, tableView.camera);
 			arrow.p2 = arrow.p1;
 			changeState("add_arrow_end");
 		} 
@@ -192,7 +209,7 @@ function mouseAction(mouseAction: MouseAction) {
 		}
 		else if (state == "add_arrow_end") {
 			let arrow = collection.objects[activeObject[0]] as Arrow;
-			arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
+			arrow.p2 = NDCToWorld2(ndc, 0.0, tableView.camera);
 			changeState("");
 			checkActiveObjectValidity();
 		}
@@ -201,18 +218,18 @@ function mouseAction(mouseAction: MouseAction) {
 	if (mouseAction.action == "move") {
 		if (state == "add_arrow_end") {
 			let arrow = collection.objects[activeObject[0]] as Arrow;
-			arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
+			arrow.p2 = NDCToWorld2(ndc, 0.0, tableView.camera);
 		} else if (state == "add_text") {
-			collection.move(activeObject, ndc);
+			collection.move(activeObject, ndc, tableView.camera);
 		}
 	
 		if (mouseAction.buttons & 1) {
 			// Left mouse button:
 			if (state == "move") {
-				collection.move(activeObject, ndc);
+				collection.move(activeObject, ndc, tableView.camera);
 			} else if (state == "add_arrow_end") {
 				let arrow = collection.objects[activeObject[0]] as Arrow;
-				arrow.p2 = collection.NDCToWorld2(ndc, 0.0);
+				arrow.p2 = NDCToWorld2(ndc, 0.0, tableView.camera);
 			} 
 		} 
 
@@ -231,7 +248,7 @@ function mouseAction(mouseAction: MouseAction) {
 				this.phi = Math.acos( MathUtils.clamp( y / this.radius, - 1, 1 ) );
 				instead of this.theta = Math.atan2(y, x);
 				*/
-				const ndcLast = tableView.pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp));
+				const ndcLast = pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp), tableView.element);
 				const dir1 = new THREE.Vector3(ndc.x, ndc.y, 1.0).unproject(tableView.camera).normalize();
 				const dir2 = new THREE.Vector3(ndcLast.x, ndcLast.y, 1.0).unproject(tableView.camera).normalize();
 				const spherical1 = new THREE.Spherical().setFromVector3(swizzle(dir1));
@@ -251,9 +268,9 @@ function mouseAction(mouseAction: MouseAction) {
 		if (mouseAction.buttons & 4) {
 			// Middle mouse button:
 			tableView.cameraAnimates = false;
-			const ndcLast = tableView.pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp));
-			const p = collection.NDCToWorld2(ndc, 0.0);
-			const pLast = collection.NDCToWorld2(ndcLast, 0.0);
+			const ndcLast = pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp), tableView.element);
+			const p = NDCToWorld2(ndc, 0.0, tableView.camera);
+			const pLast = NDCToWorld2(ndcLast, 0.0, tableView.camera);
 			const dp3 = new THREE.Vector3(p.x-pLast.x, p.y-pLast.y, 0);
 			tableView.camera.position.sub(dp3);
 		}
@@ -333,7 +350,7 @@ function checkActiveObjectValidity() {
 
 function deleteObject(objectName: string) {
 	if (objectName.startsWith("ball"))
-		collection.resetBall(objectName);
+		(collection.objects[objectName] as Ball).resetBall();
 	else
 		delete collection.objects[objectName];
 	draw();
@@ -351,11 +368,12 @@ function draw() {
 		return;
 	lastDrawTime = time;
 
+	const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
 	if (activeCamera != "perspective") {
-		collection.draw();		// TODO REMOVE!
-		collection.drawDebug(activeObject, state, collection.objects);
+		collection.draw(tableView.camera, canvas);		// TODO REMOVE!
+		collection.drawDebug(activeObject, state, collection.objects, canvas);
 	} else {
-		collection.clear();
+		collection.clear(canvas);
 	}
 }
 
@@ -467,4 +485,12 @@ function save() {
 		.catch(error => {
 			console.error('There was a problem with the fetch operation:', error);
 		});
+}
+
+function onWindowResize() {
+	// console.log("diagram: onWindowResize");
+	const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+	canvas.width = tableView.element.offsetWidth; 
+	canvas.height = tableView.element.offsetHeight;
+	draw();
 }
