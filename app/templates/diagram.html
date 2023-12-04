@@ -29,15 +29,12 @@
         }
     }
     </script>
-    {% if (data) %}
-    <script id="diagram-initial-values" type="application/json">{{ data|safe }}</script>
-    {% endif %}
 
     <script defer type="module" src="./static/js/main.js"></script>
 </head>
 
 <body style="height:100vh;width:100vw;">
-    <div class="canvas-container m-0 p-0" style="width:100%;height:100%;" id="canvas-container">
+    <div class="canvas-container m-0 p-0" style="width:100%;height:100%;" id="canvas-container" data-diagram-url="{% if diagram_url %}{{ diagram_url }}{% endif %}">
         <div class="bg-dark m-0 p-0" id="three-box" style="width:100%;height:100%;"></div>
         <canvas id="overlay-canvas" class="m-0 p-0"></canvas>
     </div>
@@ -92,9 +89,9 @@
                 </div>
             </div>
             <!-- textInput -->
-            <div class="row align-items-center object-option text-option">
-                <div class="col">
-                    <label for="textInput" class="form-label ms-2">Text</label>
+            <div class="row object-option text-option">
+                <div class="col mt-2">
+                    <label for="textInput" class="form-label">Text</label>
                     <textarea id="textInput" class="form-control" spellcheck="false" rows="2" cols="16">Text</textarea>
                 </div>
             </div>

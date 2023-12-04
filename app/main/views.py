@@ -1,4 +1,4 @@
-import sys, os, uuid
+import sys, os, uuid, re
 import numpy as np
 import datetime
 import base64
@@ -33,10 +33,6 @@ def exception():
         1 / 0
     else:
         '2' + 2
-
-@main.route('/api/data')
-def get_data():
-    return send_from_directory(current_app.root_path + "/../", "package.json")
 
 @main.route('/node_modules/<path:filename>')
 def serve_node_modules(filename):
@@ -211,36 +207,52 @@ def test():
     token = encrypt("foo", 60)
     return render_template("userkit/email/confirm.html", token=token)
 
-@main.route('/diagram', methods=["GET", "POST"])
-def diagram():
+def load_diagram_from_file(diagram_id): 
+    if diagram_id is None:
+        return None
     userdata_folder = current_app.config.get('DIAGRAM_FILE_DIRECTORY', '.')
+    file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
+    if not os.path.isfile(file_path):
+        return None
+    with open(file_path, "r") as f:
+        data = f.read()
+    return data
+
+def write_diagram_to_file(data): 
+    userdata_folder = current_app.config.get('DIAGRAM_FILE_DIRECTORY', '.')
+    diagram_id = uuid.uuid4().hex
+    file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
+    with open(file_path, "w") as f:
+        f.write(data)
+    return diagram_id
+
+@main.route('/diagram', methods=["GET"])
+def diagram():
+    diagram_id = request.args.get("id")
+    if (diagram_id is None) or (not re.match("^[a-zA-Z0-9]+$", diagram_id)):
+        return render_template("diagram.html")      # diagram_id contains illegal characters
+    return render_template("diagram.html", diagram_url=url_for(f"main.api", diagram_id=diagram_id, _external=True))
+
+@main.route('/api/<diagram_id>', methods=["GET"])
+@main.route('/api', methods=["POST"])
+def api(diagram_id=None):
     if request.method == "POST":
         try:
             data = json.dumps(request.json)
-            logger.debug("diagram() received data in POST", extra={"data": data})
-            # should save data here and create short url
+            logger.debug("api() received data in POST", extra={"data": data})
 
-            diagram_id = uuid.uuid4().hex
-            file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
-            with open(file_path, "w") as f:
-                f.write(data)
+            diagram_id = write_diagram_to_file(data)
 
             response_data = {"message": f"Data received successfully, id={diagram_id}", "url": url_for("main.diagram", id=diagram_id, _external=True)}
             return jsonify(response_data), 200  # Respond with a JSON message
         except Exception as e:
-            logger.debug("Error processing JSON in diagram() POST", exc_info=e)
+            logger.debug("Error processing JSON in api() POST", exc_info=e)
             return jsonify({'error': 'Invalid JSON data'}), 400  # 400 Bad Request
     # GET: 
-    diagram_id = request.args.get("id")
-    if diagram_id is None:
-        return render_template("diagram.html")
-    file_path = f"{userdata_folder}/diagram_{diagram_id}.json"
-    if not os.path.isfile(file_path):
-        return render_template("diagram.html")
-    with open(file_path, "r") as f:
-        data = f.read()
-    data = base64.b64encode(data.encode('utf-8')).decode('utf-8')
-    return render_template("diagram.html", data=data)
+    data = load_diagram_from_file(diagram_id)
+    if data is None:
+        return jsonify({'error': 'Data not found'}), 404
+    return data
 
 @main.route("/")
 def front():

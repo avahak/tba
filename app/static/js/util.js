@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard, clamp };
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard, clamp, loadJSON };
 import * as THREE from 'three';
 console.log("util.ts");
 /**
@@ -120,4 +120,16 @@ async function copyToClipboard(text) {
 }
 function clamp(x, xMin, xMax) {
     return Math.max(Math.min(x, xMax), xMin);
+}
+async function loadJSON(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok)
+            throw new Error(`Failed to fetch data from ${url}`);
+        return await response.json();
+    }
+    catch (error) {
+        console.error(error.message);
+        return null;
+    }
 }

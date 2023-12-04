@@ -11,6 +11,13 @@ def error_404(error):
     return messenger.render_message_template(message)
     # return render_template("errors/404.html", error=error), 404
 
+@main.app_errorhandler(405)
+def error_405(error):
+    """Method Not Allowed
+    """
+    message = { "type": "error", "title": "405 Method Not Allowed", "heading": "405 Method Not Allowed", "message": error } 
+    return messenger.render_message_template(message)
+
 @main.app_errorhandler(500)
 def error_500(error):
     """Internal Server Error

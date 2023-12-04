@@ -8,7 +8,7 @@ export { initDiagram };
 import { ObjectCollection, Arrow, Text } from "./diagram-objects.js";
 import { TableView } from "./tableView.js";
 import { TableScene } from "./tableScene.js";
-import { copyToClipboard, parseNumberBetween, clamp } from "./util.js";
+import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
 import * as THREE from 'three';
 console.log("diagram.ts");
 let mouseLast = {};
@@ -54,16 +54,23 @@ function initDiagram() {
         });
     });
     document.addEventListener('tableSceneLoaded', function () {
+        var _a;
         console.log('tableSceneLoaded');
-        const initialValuesElement = document.getElementById('diagram-initial-values');
-        if ((!!initialValuesElement) && (!!initialValuesElement.textContent)) {
-            const data = JSON.parse(atob(initialValuesElement.textContent));
-            collection.load(data);
+        const diagramURL = (_a = document.getElementById("canvas-container")) === null || _a === void 0 ? void 0 : _a.dataset["diagramUrl"];
+        let initialValuesUsed = false;
+        if (!!diagramURL) {
+            loadJSON(diagramURL).then((data) => {
+                if (!!data) {
+                    console.log("data", data);
+                    collection.load(data);
+                    initialValuesUsed = true;
+                }
+            });
+        }
+        if (initialValuesUsed)
             console.log("Initial values loaded.");
-        }
-        else {
+        else
             console.log("No initial values.");
-        }
         draw();
     });
 }
@@ -381,7 +388,10 @@ function propagateOptionsToObject() {
 function save() {
     const dataString = JSON.stringify(collection.serialize());
     // console.log("dataString", dataString);
-    const currentURL = window.location.origin + window.location.pathname;
+    var currentOrigin = window.location.origin;
+    var basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+    const apiURL = `${window.location.origin}${basePath}/api`;
+    console.log(apiURL);
     const headers = new Headers({
         'Content-Type': 'application/json',
     });
@@ -390,7 +400,7 @@ function save() {
         headers: headers,
         body: dataString,
     };
-    fetch(currentURL, requestOptions)
+    fetch(apiURL, requestOptions)
         .then(response => {
         if (!response.ok)
             throw new Error('Network response was not ok');

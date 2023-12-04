@@ -165,8 +165,8 @@ class TableScene {
 	}
 
 	/**
-	 * Sets up 
-	 * @param name 
+	 * Sets up lights for the scene in the lightGroup.
+	 * @param name Options are "square", "ambient".
 	 */
 	public setLights(name: string): void {
 		// Dispose old lights to avoid avoid memory leak:
@@ -199,10 +199,10 @@ class TableScene {
 	}
 
 	/**
-	 * @param nMouse Normalized mouse position (-1..1, -1..1).
+	 * @param ndc Normalized device coordinates.
 	 * @returns Returns name for object on mouse position.
 	 */
-	public findObjectNameOnMouse(nMouse: THREE.Vector2, camera: THREE.Camera): string | null {
+	public findObjectNameOnMouse(ndc: THREE.Vector2, camera: THREE.Camera): string | null {
 		function findNameForObject(object: any, objects: any): string | null {
 			// First find group for object:
 			do {
@@ -217,7 +217,7 @@ class TableScene {
 			return null
 		}
 		const raycaster = new THREE.Raycaster();
-		raycaster.setFromCamera(nMouse, camera);
+		raycaster.setFromCamera(ndc, camera);
 		const intersects = raycaster.intersectObjects(this.objectGroup.children, true);
 		if (intersects.length > 0) {
 			const name = findNameForObject(intersects[0].object, this.objects);
