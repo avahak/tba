@@ -1,15 +1,17 @@
 export {};
 
+import { ObjectCollection } from "./diagramObjects.js";
 import { TableScene } from "./tableScene.js";
 import { loadJSON } from "./util.js";
 import * as THREE from 'three';
 
 interface WidgetInfo {
-    diagram: any;
+    collection: ObjectCollection;
+    canvas: HTMLCanvasElement;
     canvasContext: CanvasRenderingContext2D;
 }
 
-const VIEWER_SIZE = new THREE.Vector2(400, 200);
+const VIEWER_SIZE = new THREE.Vector2(400, 300);
 
 let widgets: Map<Element, WidgetInfo>;   // cannot use object but Map can use any kind of keys
 
@@ -24,6 +26,7 @@ function init() {
     camera = new THREE.OrthographicCamera(-1.0, 1.0, 1.0, -1.0, 0.1, 1000.0);
     camera.position.set(0, 0, 3.5);
     camera.lookAt(0.0, 0.0, 0.0);
+    tableScene.setLights("ambient");
 
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     // renderer.setPixelRatio(window.devicePixelRatio * 2);
@@ -31,22 +34,43 @@ function init() {
     renderer.setSize(VIEWER_SIZE.x, VIEWER_SIZE.y);
     // element.appendChild(renderer.domElement);        // NO!
 
-    widgets = new Map();
-    let elements = document.querySelectorAll(".widget-container");
-    elements.forEach((element) => {
-        const diagramURL = (element as HTMLElement).dataset["diagramUrl"];
-        if (!diagramURL)
-            return;
-        loadJSON(diagramURL).then((diagram) => {
-            initElement(element, diagram);
-            renderElement(element);
+    document.addEventListener('tableSceneLoaded', () => {
+		console.log('tableSceneLoaded');
+
+        widgets = new Map();
+        let elements = document.querySelectorAll(".widget-container");
+        elements.forEach((element) => {
+            if (!(element instanceof HTMLElement))
+                return;
+            const diagramURL = element.dataset["diagram"];
+            if (!diagramURL)
+                return;
+            loadJSON(diagramURL).then((diagram) => {
+                initElement(element, diagram);
+                renderElement(element);
+            });
         });
     });
 }
 
-function initElement(element: Element, diagram: any) {
-    widgets.set(element, diagram);
+function initElement(element: HTMLElement, diagram: any) {
+    // Create and add a Canvas for the element:
+    let canvas = document.createElement('canvas');
+    canvas.width = VIEWER_SIZE.x;
+    canvas.height = VIEWER_SIZE.y;
+    element.appendChild(canvas);
+    let canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+    const collection = new ObjectCollection(tableScene);
+    collection.load(diagram);
+
+    const widgetInfo = { collection: collection, canvas: canvas, canvasContext: canvasContext };
+    widgets.set(element, widgetInfo);
 }
 
-function renderElement(element: Element) {
+function renderElement(element: HTMLElement) {
+    let widgetInfo = widgets.get(element) as WidgetInfo;
+    renderer.render(tableScene.scene, camera);
+    widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
+    widgetInfo.collection.draw(camera, widgetInfo.canvas);
 }

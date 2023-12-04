@@ -22,12 +22,18 @@ class ResourceLoader {
 	public static textures: { [key: string]: THREE.MeshStandardMaterial } = {};	// loaded textures
 	public static objects: { [key: string]: any } = {};	// loaded objects
 
-	public static loadTexture(name: string, filePath: string): void {
-		ResourceLoader.textures[name] = new THREE.MeshStandardMaterial({ color: 0x336699, roughness: 0.2, metalness: 0.2 });
-		ResourceLoader.textureLoader.load(filePath, (texture) => {
-			ResourceLoader.textures[name].color = new THREE.Color('white');
-			ResourceLoader.textures[name].map = texture;
-			ResourceLoader.textures[name].needsUpdate = true;
+	public static loadTexture(name: string, filePath: string): Promise<THREE.Texture> {
+		return new Promise((resolve, reject) => {
+			const material = new THREE.MeshStandardMaterial({ color: 0x336699, roughness: 0.2, metalness: 0.2 });
+			ResourceLoader.textureLoader.load(filePath, (texture) => {
+				material.color = new THREE.Color('white');
+				material.map = texture;
+				material.needsUpdate = true;
+				resolve(material.map);
+			}, undefined, (error) => {
+				reject(error);
+			});	
+			ResourceLoader.textures[name] = material;
 		});
 	}
 
@@ -45,6 +51,7 @@ class ResourceLoader {
 				mtlLoader.load(material, (materials) => {
 					materials.preload();
 					objLoader.setMaterials(materials);
+
 					objLoader.load(objPath, (object) => {
 						ResourceLoader.objects[name] = object;
 						resolve(object);
@@ -94,6 +101,8 @@ class ResourceLoader {
 
 /**
  * TableScene handles storing and rendering the three.js scene for the table.
+ * Fires "tableSceneTexturesLoaded", "tableSceneModelsLoaded", "tableSceneLoaded" events
+ * during load.
  */
 class TableScene {
 	public scene: THREE.Scene;
@@ -113,8 +122,16 @@ class TableScene {
 		this.scene.add(this.objectGroup);
 		this.scene.add(this.lightGroup);
 
-		for (let k = 0; k < 16; k++) 
-			ResourceLoader.loadTexture(`ball_${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
+		const texturePromises = [];
+		for (let k = 0; k < 16; k++) {
+			const texturePromise = ResourceLoader.loadTexture(`ball_${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
+			texturePromises.push(texturePromise);
+		}
+		Promise.all(texturePromises)
+			.then((textures) => {
+				const event = new Event('tableSceneTexturesLoaded');
+				document.dispatchEvent(event);
+			});
 
 		const resourcePromises = [
 			ResourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
@@ -124,7 +141,7 @@ class TableScene {
 		];
 	
 		Promise.all(resourcePromises)
-			.then(() => {
+			.then((resources) => {
 				this.json_all = ResourceLoader.objects.json_all;
 				this.specs = this.json_all.specs;
 				this.objects.table = ResourceLoader.objects.table;
@@ -156,11 +173,21 @@ class TableScene {
 					setShadow(this.objects[`ball_${k}`], true, true);
 				}
 
-				const event = new Event('tableSceneLoaded');
+				const event = new Event('tableSceneModelsLoaded');
 				document.dispatchEvent(event);
 			})
 			.catch(error => {
 				console.log("Error loading resources: ", error);
+			});
+
+		// Finally we fire an event when both resources and textures are loaded:
+		Promise.all([Promise.all(texturePromises), Promise.all(resourcePromises)])
+			.then(([textures, models]) => {
+				const event = new Event('tableSceneLoaded');
+				document.dispatchEvent(event);
+			})
+			.catch((error) => {
+				console.error("Error:", error);
 			});
 	}
 

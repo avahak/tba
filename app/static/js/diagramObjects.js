@@ -95,21 +95,28 @@ class Ball {
             if (oob == "pocket")
                 this.resetBall();
         }
-        this._updatePosition();
+        this.updatePositionFromScene();
     }
     /**
-     * Updates this.p from actual object position.
+     * Updates this.p taking value from ball position in scene.
      */
-    _updatePosition() {
+    updatePositionFromScene() {
         const ballObject = this.tableScene.objects[this.name];
         this.p.copy(ballObject.position);
+    }
+    /**
+     * Updates ball position in scene taking value from this.p.
+     */
+    updatePositionToScene() {
+        const ballObject = this.tableScene.objects[this.name];
+        ballObject.position.copy(this.p);
     }
     resetBall() {
         const ballObject = this.tableScene.objects[this.name];
         let ballNumber = Ball.getBallNumber(this.name);
         const defaultPos = this.tableScene.defaultBallPosition(ballNumber);
         ballObject.position.copy(defaultPos);
-        this._updatePosition();
+        this.updatePositionFromScene();
     }
     serialize() {
         return { "p": this.p, "name": this.name };
@@ -202,7 +209,6 @@ class ObjectCollection {
     }
     draw(camera, canvas) {
         const ctx = canvas.getContext('2d');
-        this.clear(canvas);
         for (const key in this.objects) {
             let obj = this.objects[key];
             if (obj instanceof Arrow) {

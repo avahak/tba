@@ -3,11 +3,10 @@
  */
 
 export { Text, Arrow, Ball, ObjectCollection }
-import { TableView } from "./tableView.js";
+import { TableScene } from "./tableScene.js";
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
 import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from "./transformation.js"
 import * as THREE from 'three';
-import { TableScene } from "./tableScene.js";
 
 console.log("diagram-objects.ts")
 
@@ -127,15 +126,23 @@ class Ball {
             if (oob == "pocket") 
                 this.resetBall();
         }
-        this._updatePosition();
+        this.updatePositionFromScene();
     }
 
     /**
-     * Updates this.p from actual object position.
+     * Updates this.p taking value from ball position in scene.
      */
-    public _updatePosition() {
+    public updatePositionFromScene() {
         const ballObject = this.tableScene.objects[this.name];
         this.p.copy(ballObject.position);
+    }
+
+    /**
+     * Updates ball position in scene taking value from this.p.
+     */
+    public updatePositionToScene() {
+        const ballObject = this.tableScene.objects[this.name];
+        ballObject.position.copy(this.p);
     }
 
     public resetBall() {
@@ -143,7 +150,7 @@ class Ball {
         let ballNumber = Ball.getBallNumber(this.name) as number;
         const defaultPos = this.tableScene.defaultBallPosition(ballNumber);
         ballObject.position.copy(defaultPos);
-        this._updatePosition();
+        this.updatePositionFromScene();
     }
 
     public serialize() {
@@ -164,6 +171,9 @@ class Ball {
     }
 }
 
+/**
+ * Stores arrows, texts, and positions of balls and has methods to handle them.
+ */
 class ObjectCollection {
     public tableScene: TableScene;
     public objects: { [key: string]: any };
@@ -243,8 +253,6 @@ class ObjectCollection {
 
     public draw(camera: THREE.Camera, canvas: HTMLCanvasElement) {
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
-        this.clear(canvas);
 
         for (const key in this.objects) {
             let obj = this.objects[key];

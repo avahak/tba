@@ -256,6 +256,10 @@ def api(diagram_id=None):
         return jsonify({'error': 'Data not found'}), 404
     return data
 
+@main.route('/shots')
+def shots():
+    return render_template("shots.html")
+
 @main.route("/")
 def front():
     return render_template("front.html")

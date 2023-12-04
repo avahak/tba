@@ -5,7 +5,7 @@
  * - add balls instead of having fixed 16
 */
 export { initDiagram };
-import { ObjectCollection, Arrow, Text } from "./diagram-objects.js";
+import { ObjectCollection, Arrow, Text } from "./diagramObjects.js";
 import { TableView } from "./tableView.js";
 import { TableScene } from "./tableScene.js";
 import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
@@ -27,8 +27,8 @@ function initDiagram() {
     tableView = new TableView(element, tableScene);
     tableView.setCamera(activeCamera);
     tableView.animate();
-    document.addEventListener('tableSceneLoaded', () => {
-        console.log('tableSceneLoaded');
+    document.addEventListener('tableSceneModelsLoaded', () => {
+        console.log('tableSceneModelsLoaded');
         collection = new ObjectCollection(tableScene);
         changeActiveObject("");
         tableView.renderCallback = () => draw();
@@ -318,12 +318,10 @@ function draw() {
         return;
     lastDrawTime = time;
     const canvas = document.getElementById("overlay-canvas");
+    collection.clear(canvas);
     if (activeCamera != "perspective") {
         collection.draw(tableView.camera, canvas); // TODO REMOVE!
         collection.drawDebug(activeObject, state, collection.objects, canvas);
-    }
-    else {
-        collection.clear(canvas);
     }
 }
 function changeActiveObject(newActiveObject, newActiveObjectPart = "", propagateToOptions = true) {

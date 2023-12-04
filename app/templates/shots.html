@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Widget</title>
+    <style>
+        body { margin: 0; }
+    </style>
+
+    <!-- In actual use: import three.js from CDN. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/examples/": "/node_modules/three/examples/" 
+        }
+    }
+    </script>
+    <!-- <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+            "three/examples/": "https://unpkg.com/three@0.157.0/examples/"
+        }
+    }
+    </script> -->
+
+    <script defer type="module" src="./static/js/viewer.js"></script>
+
+</head>
+<body style="background:#333;">
+    <div style="display:grid;grid-template-columns: repeat(6, 1fr);grid-template-rows: repeat(14, 1fr);gap: 5px;">
+        <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+    </div>
+</body>
+</html>
+
+

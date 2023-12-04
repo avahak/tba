@@ -6,7 +6,7 @@
 */
 
 export { initDiagram };
-import { ObjectCollection, Arrow, Text, Ball } from "./diagram-objects.js"
+import { ObjectCollection, Arrow, Text, Ball } from "./diagramObjects.js"
 import { TableView } from "./tableView.js";
 import { TableScene } from "./tableScene.js";
 import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
@@ -42,8 +42,8 @@ function initDiagram() {
     tableView.setCamera(activeCamera);
     tableView.animate();
 
-	document.addEventListener('tableSceneLoaded', () => {
-		console.log('tableSceneLoaded');
+	document.addEventListener('tableSceneModelsLoaded', () => {
+		console.log('tableSceneModelsLoaded');
 
 		collection = new ObjectCollection(tableScene);
 		changeActiveObject("");
@@ -369,11 +369,10 @@ function draw() {
 	lastDrawTime = time;
 
 	const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+	collection.clear(canvas);
 	if (activeCamera != "perspective") {
 		collection.draw(tableView.camera, canvas);		// TODO REMOVE!
 		collection.drawDebug(activeObject, state, collection.objects, canvas);
-	} else {
-		collection.clear(canvas);
 	}
 }
 
