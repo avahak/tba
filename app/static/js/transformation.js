@@ -10,8 +10,8 @@ console.log("transformation.ts");
 function pixelsToNDC(p, element) {
     const rect = element.getBoundingClientRect();
     const ndc = new THREE.Vector2();
-    ndc.x = 2 * ((p.x - rect.left) / rect.width) - 1;
-    ndc.y = -2 * ((p.y - rect.top) / rect.height) + 1;
+    ndc.x = 2 * (p.x / rect.width) - 1;
+    ndc.y = -2 * (p.y / rect.height) + 1;
     return ndc;
 }
 /**
@@ -20,8 +20,8 @@ function pixelsToNDC(p, element) {
 function NDCToPixels(ndc, element) {
     const rect = element.getBoundingClientRect();
     const p = new THREE.Vector2();
-    p.x = rect.left + rect.width * (ndc.x + 1) / 2;
-    p.y = rect.top + rect.height * (1 - ndc.y) / 2;
+    p.x = rect.width * (ndc.x + 1) / 2;
+    p.y = rect.height * (1 - ndc.y) / 2;
     return p;
 }
 /**

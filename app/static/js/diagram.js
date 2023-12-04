@@ -21,6 +21,7 @@ let activeObject; // activeObject, activeObjectPart
 let state = ""; // "", move, add_arrow_start, add_arrow_end, add_text
 let collection;
 let lastDrawTime = performance.now();
+initDiagram();
 function initDiagram() {
     tableScene = new TableScene();
     const element = document.getElementById("three-box");
@@ -28,7 +29,6 @@ function initDiagram() {
     tableView.setCamera(activeCamera);
     tableView.animate();
     document.addEventListener('tableSceneModelsLoaded', () => {
-        console.log('tableSceneModelsLoaded');
         collection = new ObjectCollection(tableScene);
         changeActiveObject("");
         tableView.renderCallback = () => draw();

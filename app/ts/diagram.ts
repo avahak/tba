@@ -35,6 +35,8 @@ let collection: ObjectCollection;
 
 let lastDrawTime: number = performance.now();
 
+initDiagram();
+
 function initDiagram() {
     tableScene = new TableScene();
 	const element = document.getElementById("three-box") as HTMLElement;
@@ -43,8 +45,6 @@ function initDiagram() {
     tableView.animate();
 
 	document.addEventListener('tableSceneModelsLoaded', () => {
-		console.log('tableSceneModelsLoaded');
-
 		collection = new ObjectCollection(tableScene);
 		changeActiveObject("");
 		tableView.renderCallback = () => draw();

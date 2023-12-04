@@ -18,14 +18,24 @@ const SHADOW_MAP_SIZE = 1024*2;
  * Handles async loading of models and textures.
  */
 class ResourceLoader {
-	public static textureLoader = new THREE.TextureLoader();
-	public static textures: { [key: string]: THREE.MeshStandardMaterial } = {};	// loaded textures
-	public static objects: { [key: string]: any } = {};	// loaded objects
+	public textureLoader: THREE.TextureLoader;
+	public textures: { [key: string]: THREE.MeshStandardMaterial };	// loaded textures
+	public objects: { [key: string]: any };				// loaded objects
+	public manager: THREE.LoadingManager;
 
-	public static loadTexture(name: string, filePath: string): Promise<THREE.Texture> {
+	public constructor(manager: THREE.LoadingManager | null = null) {
+		if (!manager)
+			manager = new THREE.LoadingManager();
+		this.manager = manager;
+		this.textureLoader = new THREE.TextureLoader(manager);
+		this.textures = {};
+		this.objects = {};
+	}
+
+	public loadTexture(name: string, filePath: string): Promise<THREE.Texture> {
 		return new Promise((resolve, reject) => {
 			const material = new THREE.MeshStandardMaterial({ color: 0x336699, roughness: 0.2, metalness: 0.2 });
-			ResourceLoader.textureLoader.load(filePath, (texture) => {
+			this.textureLoader.load(filePath, (texture) => {
 				material.color = new THREE.Color('white');
 				material.map = texture;
 				material.needsUpdate = true;
@@ -33,27 +43,24 @@ class ResourceLoader {
 			}, undefined, (error) => {
 				reject(error);
 			});	
-			ResourceLoader.textures[name] = material;
+			this.textures[name] = material;
 		});
 	}
 
 	/** Loads an .obj file and attaches a .mtl file or a material to it.
 	 * Returns a promise that is resolved on load.
 	 */
-	public static loadObjMtlPromise(name: string, objPath: string, material: THREE.Material | string | null) {
-		if (material == null)
-			material = new THREE.MeshBasicMaterial({ });
+	public loadObjMtlPromise(name: string, objPath: string, mtlPath: string | null) {
 		return new Promise((resolve, reject) => {
-			const objLoader = new OBJLoader();
-			if (typeof material == "string") {
-				// If material is string, treat it as path for .mtl file
-				const mtlLoader = new MTLLoader();
-				mtlLoader.load(material, (materials) => {
+			const objLoader = new OBJLoader(this.manager);
+			if (!!mtlPath) {
+				const mtlLoader = new MTLLoader(this.manager);
+				mtlLoader.load(mtlPath, (materials) => {
 					materials.preload();
 					objLoader.setMaterials(materials);
 
 					objLoader.load(objPath, (object) => {
-						ResourceLoader.objects[name] = object;
+						this.objects[name] = object;
 						resolve(object);
 					}, undefined, error => {
 						reject(error);
@@ -62,14 +69,14 @@ class ResourceLoader {
 					reject(error);
 				});
 			} else {
-				// If material is not string, treat it as material and apply it to the object:
+				// If no mtlPath given, apply basic material:
+				const material = new THREE.MeshBasicMaterial();
 				objLoader.load(objPath, (object) => {
 					object.traverse((child) => {
 						if (child instanceof THREE.Mesh) 
 							child.material = material;
-							// child.material = getRandomColor(0.2, 0.2, 0.7);
 					});
-					ResourceLoader.objects[name] = object;
+					this.objects[name] = object;
 					resolve(object);
 				}, undefined, error => {
 					reject(error);
@@ -80,7 +87,7 @@ class ResourceLoader {
 
 	/** Returns a promise that is resolved after loading the .json file
 	 */
-	public static loadJsonPromise(name: string, filePath: string): Promise<any> {
+	public loadJsonPromise(name: string, filePath: string): Promise<any> {
 		return new Promise((resolve, reject) => {
 			fetch(filePath)
 				.then(response => {
@@ -89,7 +96,7 @@ class ResourceLoader {
 					return response.json();
 				})
 				.then(data => {
-					ResourceLoader.objects[name] = data;
+					this.objects[name] = data;
 					resolve(data);
 				})
 				.catch(error => {
@@ -112,6 +119,7 @@ class TableScene {
 	public json_all: any;
 	public specs: any;
 	public cushionEdgeCylinders: THREE.Object3D | undefined;
+	public resourceLoader: ResourceLoader;
 
 	constructor() {
 		this.objects = {};
@@ -122,37 +130,38 @@ class TableScene {
 		this.scene.add(this.objectGroup);
 		this.scene.add(this.lightGroup);
 
-		const texturePromises = [];
-		for (let k = 0; k < 16; k++) {
-			const texturePromise = ResourceLoader.loadTexture(`ball_${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
-			texturePromises.push(texturePromise);
-		}
-		Promise.all(texturePromises)
-			.then((textures) => {
-				const event = new Event('tableSceneTexturesLoaded');
-				document.dispatchEvent(event);
-			});
+		const manager = new THREE.LoadingManager(() => {
+			console.log("tableSceneLoaded");
+			const event = new Event('tableSceneLoaded');
+			document.dispatchEvent(event);
+		}, undefined, () => {
+			console.log("LoadingManager error!");
+		});
+		this.resourceLoader = new ResourceLoader(manager);
+
+		for (let k = 0; k < 16; k++) 
+			this.resourceLoader.loadTexture(`ball_${k}`, `${RESOURCES_PATH}models/images/balls/ball${k}.png`);
 
 		const resourcePromises = [
-			ResourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
-			ResourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
-			ResourceLoader.loadObjMtlPromise("ball", `${RESOURCES_PATH}models/ball.obj`, null),
-			ResourceLoader.loadJsonPromise("json_all", `${RESOURCES_PATH}models/pooltable.json`),
+			this.resourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
+			this.resourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
+			this.resourceLoader.loadObjMtlPromise("ball", `${RESOURCES_PATH}models/ball.obj`, null),
+			this.resourceLoader.loadJsonPromise("json_all", `${RESOURCES_PATH}models/pooltable.json`),
 		];
 	
 		Promise.all(resourcePromises)
 			.then((resources) => {
-				this.json_all = ResourceLoader.objects.json_all;
+				this.json_all = this.resourceLoader.objects.json_all;
 				this.specs = this.json_all.specs;
-				this.objects.table = ResourceLoader.objects.table;
-				this.objects.ball = ResourceLoader.objects.ball;
-				this.objects.cushions = ResourceLoader.objects.cushions;
+				this.objects.table = this.resourceLoader.objects.table;
+				this.objects.ball = this.resourceLoader.objects.ball;
+				this.objects.cushions = this.resourceLoader.objects.cushions;
 				let ball = this.objects.ball;
 				for (let k = 0; k < 16; k++) {
 					const cball: THREE.Object3D = ball.clone();
 					cball.traverse((child) => {
 						if (child instanceof THREE.Mesh)
-							child.material = ResourceLoader.textures[`ball_${k}`];
+							child.material = this.resourceLoader.textures[`ball_${k}`];
 					});
 					let r = this.specs.BALL_RADIUS;
 					cball.scale.set(r, r, r);
@@ -173,21 +182,12 @@ class TableScene {
 					setShadow(this.objects[`ball_${k}`], true, true);
 				}
 
+				console.log("tableSceneModelsLoaded");
 				const event = new Event('tableSceneModelsLoaded');
 				document.dispatchEvent(event);
 			})
 			.catch(error => {
 				console.log("Error loading resources: ", error);
-			});
-
-		// Finally we fire an event when both resources and textures are loaded:
-		Promise.all([Promise.all(texturePromises), Promise.all(resourcePromises)])
-			.then(([textures, models]) => {
-				const event = new Event('tableSceneLoaded');
-				document.dispatchEvent(event);
-			})
-			.catch((error) => {
-				console.error("Error:", error);
 			});
 	}
 

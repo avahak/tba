@@ -121,7 +121,7 @@ class Ball {
     serialize() {
         return { "p": this.p, "name": this.name };
     }
-    load(source, tableScene) {
+    load(source) {
         this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
         this.name = source.name;
         const ballObject = this.tableScene.objects[this.name];
@@ -283,7 +283,7 @@ class ObjectCollection {
         for (const objName in data) {
             if (objName.startsWith("ball")) {
                 const ball = this.objects[objName];
-                ball.load(data[objName], this.tableScene);
+                ball.load(data[objName]);
             }
             else if (objName.startsWith("arrow")) {
                 const arrow = new Arrow(new THREE.Vector2(), new THREE.Vector2());
