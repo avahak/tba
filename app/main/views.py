@@ -3,6 +3,7 @@ import numpy as np
 import datetime
 import base64
 from flask import *
+from flask_cors import cross_origin
 from . import main
 from .. import logger
 from ..email import send_mail
@@ -237,6 +238,7 @@ def diagram():
 
 @main.route('/api/<diagram_id>', methods=["GET"])
 @main.route('/api', methods=["POST"])
+@cross_origin()
 def api(diagram_id=None):
     if request.method == "POST":
         try:

@@ -1,36 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Famous Pool Shots</title>
-    <style>
-        body { margin: 0; }
-    </style>
+{% extends "base/nav_base.html" %}
+{% from "bootstrap5/form.html" import render_form %}
+{% import "base/macros.html" as macros %}
 
-    <!-- In actual use: import three.js from CDN. -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "/node_modules/three/build/three.module.js",
-            "three/examples/": "/node_modules/three/examples/" 
-        }
+{% block title %}Profile page{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<!-- In actual use: import three.js from CDN. -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/examples/": "/node_modules/three/examples/" 
     }
-    </script>
-    <!-- <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
-            "three/examples/": "https://unpkg.com/three@0.157.0/examples/"
-        }
+}
+</script>
+<!-- <script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+        "three/examples/": "https://unpkg.com/three@0.157.0/examples/"
     }
-    </script> -->
+}
+</script> -->
 
-    <script defer type="module" src="./static/js/viewer.js"></script>
+<script defer type="module" src="./static/js/viewer.js"></script>
+{% endblock %}
 
-</head>
-<body style="background:#333;">
-    <div style="display:grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);gap: 5px;">
+{% block content %}
+<div class="container">
+    <h1 class="my-3">Famous Pool Shots</h1>
+    <h3>Efren Reyes Z-shot (<a href="https://www.youtube.com/watch?v=cwD8rmHHNec">Link</a>)</h3>
+    <p>The Efren Reyes Z-shot is a legendary pool shot that showcases the Filipino pool player's exceptional cue ball control, creative approach, and ability to execute under pressure. Named after its resemblance to the letter "Z," this shot involves maneuvering the cue ball around an object ball and into the pocket using a series of precise bank shots.
+
+        The Z-shot was first executed by Reyes in the 1995 Sands Regency Open 9-ball tournament. Facing a seemingly impossible situation, where he needed to sink the 5-ball while leaving the cue ball behind the 6-ball, Reyes devised a clever strategy. He intentionally banked the 5-ball off the foot rail, aiming for it to hit the 6-ball and nudge it towards the head rail pocket. However, the 5-ball unexpectedly sank into the pocket, leaving Reyes with a challenging predicament.
+        
+        With the cue ball now behind the 6-ball and no direct shot to the 6-ball, Reyes had to employ a creative solution. He carefully positioned the cue ball and executed a series of bank shots, zig-zagging the cue ball around the 6-ball and into the pocket. The shot defied expectations, demonstrating Reyes's exceptional cue ball control and ability to think outside the box.
+        
+        The Z-shot quickly gained fame, not only for its remarkable execution but also for the dramatic circumstances under which it was performed. It became a signature move for Reyes, showcasing his mastery of the game and his ability to rise to the occasion. The Z-shot has been analyzed and admired by pool enthusiasts worldwide, solidifying its place among the most iconic shots in pool history.
+    </p>
+    <div class="d-flex">
+        <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+        <div class="widget-container" data-diagram="https://vahakangasma.azurewebsites.net/api/7155cbb4fbc64a1091cae1c071bede09"></div>
+    </div>
+    <h3>Chris Melling 8-ball runout (<a href="https://www.youtube.com/watch?v=vKD7EdzMjAM">Link</a>)</h3>
+    The iconic Chris Melling 8-ball runout, also known as the "most unbelievable runout in history," is a legendary display of skill, precision, and creativity that cemented Melling's reputation as one of the greatest pool players of all time. This remarkable runout occurred during the 2013 World Pool Series tournament, leaving spectators and fellow professionals in awe of his extraordinary talent.
+
+As Melling approached the table, the pressure was palpable. He faced a challenging rack, with the balls scattered across the table and no easy shots apparent. However, Melling remained composed, exuding an air of confidence as he surveyed the situation.
+
+With his signature calm demeanor, Melling began the runout, carefully analyzing each shot and selecting the most effective strategy. His first shot, a cut-carom-kick-combo, set the tone for the rest of the runout, showcasing his mastery of cue ball control and his ability to execute intricate sequences.
+
+As the rack progressed, Mlling demonstrated exceptional creativity and resourcefulness. He used an array of techniques, including masse shots, bank shots, and carom shots, to navigate the table and sink balls with pinpoint accuracy. Each shot was executed with precision, leaving the cue ball in perfect position for the next.
+
+One particularly memorable shot was a four-rail bank shot, where Melling maneuvered the cue ball around the table with remarkable control, banking it off four rails before sinking the ball into the pocket. This shot exemplified Melling's ability to think outside the box and execute shots that seemed impossible to most players.
+
+As the final ball approached, Melling maintained his composure, treating each shot with the same level of focus and attention. He sank the final ball with a decisive stroke, completing the remarkable runout and leaving the crowd speechless.
+
+Melling's 8-ball runout is a testament to his exceptional talent, unwavering focus, and ability to perform under pressure. It remains one of the most iconic moments in pool history, inspiring aspiring players and solidifying Melling's status as a legend of the game.
+    <div class="d-flex">
+        <div class="row">
+            <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+            <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+        </div>
+        <div class="row">
+            <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+            <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
+        </div>
+    </div>
+    <h3>Any other shot by Efren Reyes pretty much</h3>
+    <div style="display:grid;grid-template-columns: repeat(2, 1fr);grid-template-rows: repeat(2, 1fr);gap: 5px;">
         <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
         <div class="widget-container" data-diagram="http://localhost:5000/api/97f5baf64c424aedaf958985fdcfe622"></div>
         <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
@@ -44,7 +83,7 @@
         <div class="widget-container" data-diagram="http://localhost:5000/api/6f794450a7d14b5893a6b6dee77670f1"></div>
         <div class="widget-container" data-diagram="http://localhost:5000/api/97f5baf64c424aedaf958985fdcfe622"></div>
     </div>
-</body>
-</html>
-
+    <a href="https://www.youtube.com/watch?v=a-mAxW0k5Qk">See Dr Dave video on the subject</a>
+</div>
+{% endblock %}
 

@@ -1,3 +1,8 @@
+/**
+ * TODO 
+ * - handle zoom and window.devicePixelRatio.
+ */
+
 export {};
 
 import { ObjectCollection } from "./diagramObjects.js";
@@ -20,7 +25,7 @@ interface WidgetInfo {
 }
 
 const E3 = new THREE.Vector3(0, 0, 1);
-const VIEWER_SIZE = new THREE.Vector2(500, 300);
+const VIEWER_SIZE = new THREE.Vector2(650, 400);
 
 let widgets: Map<Element, WidgetInfo>;   // cannot use object but Map can use any kind of keys
 
@@ -40,7 +45,7 @@ function init() {
     tableScene.setLights("ambient");
 
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    // renderer.setPixelRatio(window.devicePixelRatio * 2);
+    // renderer.setPixelRatio(2*window.devicePixelRatio);
     renderer.setClearColor(0x000000, 0);
     renderer.setSize(VIEWER_SIZE.x, VIEWER_SIZE.y);
     // element.appendChild(renderer.domElement);        // NO!
@@ -61,13 +66,16 @@ function init() {
                 element.addEventListener('contextmenu', (event) => {
                     event.preventDefault();
                 });
-                element.addEventListener('mousedown', (event) => {
-                    if (event.button === 1)
-                        event.preventDefault(); // Prevent default browser behavior
-                });
+                // element.addEventListener('mousedown', (event) => {
+                //     if (event.button === 1)
+                //         event.preventDefault(); // Prevent default browser behavior
+                // });
                 element.addEventListener('wheel', (event) => handleMouseWheel(element, event), {passive: false});
             });
         });
+    });
+    window.addEventListener('resize', () => {
+        resize();
     });
 }
 
@@ -98,17 +106,17 @@ function handleMouseWheel(element: HTMLElement, event: WheelEvent) {
 function handleMouseMove(element: HTMLElement, event: MouseEvent) {
     let widgetInfo = widgets.get(element) as WidgetInfo;
     const cp = widgetInfo.cameraPose;
-    if (event.buttons & 2) {
-        // Right mouse button:
-        cp.phi = clamp(cp.phi + 0.01*event.movementY, 0.1, Math.PI/2-0.02);
-        cp.theta = cp.theta - 0.01*event.movementX;
-    }
-    if (event.buttons & 4) {
-        // Middle mouse button:
+    if (event.buttons & 1) {
+        // Left mouse button:
         const dir = new THREE.Vector3(cp.r*Math.cos(cp.phi)*Math.cos(cp.theta), cp.r*Math.cos(cp.phi)*Math.sin(cp.theta), 0).normalize();
         const dir2 = dir.clone().cross(E3).normalize();
         cp.p.add(dir.multiplyScalar(-0.001*event.movementY*cp.r));
         cp.p.add(dir2.multiplyScalar(0.001*event.movementX*cp.r));
+    }
+    if (event.buttons & 2) {
+        // Right mouse button:
+        cp.phi = clamp(cp.phi + 0.01*event.movementY, 0.1, Math.PI/2-0.02);
+        cp.theta = cp.theta - 0.01*event.movementX;
     }
     renderElement(element);
 }
@@ -134,4 +142,16 @@ function renderElement(element: HTMLElement) {
     widgetInfo.collection.clear(widgetInfo.canvas);
     widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
     widgetInfo.collection.draw(camera, widgetInfo.canvas);
+}
+
+function resize() {
+    // renderer.setPixelRatio(window.devicePixelRatio);
+    // renderer.setSize(VIEWER_SIZE.x, VIEWER_SIZE.y);
+    // camera.updateProjectionMatrix();
+    // widgets.forEach((widget, element) => {
+    //     const canvas = widget.canvas;
+    //     canvas.width = VIEWER_SIZE.x;
+    //     canvas.height = VIEWER_SIZE.y;
+    //     renderElement(element as HTMLElement);
+    // });
 }
