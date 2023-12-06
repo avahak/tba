@@ -259,7 +259,7 @@ function mouseAction(mouseAction: MouseAction) {
 				const newTheta = spherical.theta - 0.005*mouseAction.movement.x;
 				const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(1, newPhi, newTheta), true);
 				tableView.camera.position.set(pivot.x-r*dirNew.x, pivot.y-r*dirNew.y, pivot.z-r*dirNew.z);
-				tableView.camera.lookAt(pivot.clone().add(dirNew));
+				tableView.camera.lookAt(pivot);
 			}
 		}
 

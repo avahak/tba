@@ -20,7 +20,7 @@ function init() {
     cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI / 2, phi: Math.PI / 2 - 0.02 };
     element = document.getElementById("three-box");
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(2 * window.devicePixelRatio);
+    renderer.setPixelRatio(window.devicePixelRatio * 1.5);
     renderer.setClearColor(0x000000, 0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -72,7 +72,6 @@ function poseCamera() {
 function animate() {
     poseCamera();
     renderer.render(tableScene.scene, camera);
-    console.log("ANIMATE!");
     requestAnimationFrame(animate);
 }
 function resize() {

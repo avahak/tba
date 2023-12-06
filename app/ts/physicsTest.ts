@@ -4,7 +4,6 @@
 
 export {};
 
-import { ObjectCollection } from "./diagramObjects.js";
 import { TableScene } from "./tableScene.js";
 import { loadJSON, clamp } from "./util.js";
 import * as THREE from 'three';
@@ -37,7 +36,7 @@ function init() {
     element = document.getElementById("three-box") as HTMLElement;
 
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(2*window.devicePixelRatio);
+    renderer.setPixelRatio(window.devicePixelRatio * 1.5);
     renderer.setClearColor(0x000000, 0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -99,7 +98,6 @@ function poseCamera() {
 function animate() {
     poseCamera();
     renderer.render(tableScene.scene, camera);
-    console.log("ANIMATE!");
     requestAnimationFrame(animate);
 }
 
