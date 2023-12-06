@@ -21,6 +21,7 @@ type MouseAction = {
 	buttons: number;		// tracks state of all mouse buttons
 	p: THREE.Vector2;
 	dp: THREE.Vector2;
+	movement: THREE.Vector2;
 };
 
 let mouseLast: { [key: number]: any } = {};
@@ -158,7 +159,8 @@ function handleMouseMove(event: MouseEvent) {
 	if (!!mouseLast[event.button])
 		dp = new THREE.Vector2(newX-mouseLast[event.button].x, newY-mouseLast[event.button].y);
 	mouseLast[event.button] = p;
-	mouseAction({ action: "move", button: event.button, buttons: event.buttons, p: p, dp: dp });
+	const movement = new THREE.Vector2(event.movementX, event.movementY);
+	mouseAction({ action: "move", button: event.button, buttons: event.buttons, p: p, dp: dp, movement: movement });
 }
 
 function handleMouseUp(event: MouseEvent) {
@@ -251,8 +253,8 @@ function mouseAction(mouseAction: MouseAction) {
 				*/
 				const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
 				const spherical = new THREE.Spherical().setFromVector3(swizzle(dir));
-				const newPhi = clamp(spherical.phi - 0.002*mouseAction.dp.y, Math.PI/2+0.1, Math.PI-0.05);
-				const newTheta = spherical.theta + 0.002*mouseAction.dp.x;
+				const newPhi = clamp(spherical.phi + 0.005*mouseAction.movement.y, Math.PI/2+0.1, Math.PI-0.05);
+				const newTheta = spherical.theta - 0.005*mouseAction.movement.x;
 				const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(spherical.radius, newPhi, newTheta), true);
 				tableView.camera.lookAt(tableView.camera.position.clone().add(dirNew));
 			}

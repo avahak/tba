@@ -39,12 +39,14 @@ class TableView {
 			cam.position.set(0, 0, 3.5);
 			cam.lookAt(0.0, 0.0, 0.0);
 		}
+		this.cameraOrthographic.up.set(0, 1, 0);
+		this.cameraPerspective.up.set(0, 0, 1);
 		this.camera = this.cameraOrthographic;
 		this.cameraAnimates = false;
 		this.renderCallback = null;
 
 		this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-		this.renderer.setPixelRatio(window.devicePixelRatio * 2);
+		this.renderer.setPixelRatio(window.devicePixelRatio * 1.5);
 		this.renderer.setClearColor(0x000000, 0);
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -61,7 +63,6 @@ class TableView {
 		if (name == "orthographic") {
 			this.camera = this.cameraOrthographic;
 			this.camera.position.set(0, 0, 3.5);
-			this.camera.up.set(0, 1, 0);
 			this.camera.lookAt(0.0, 0.0, -0.25);
 			this.tableScene.setLights("ambient");
 			if (!!this.tableScene.cushionEdgeCylinders)
@@ -75,14 +76,12 @@ class TableView {
 		} else if (name == "back") {
 			this.camera = this.cameraPerspective;
 			this.camera.position.set(-2.2, 0.0, 1.1);
-			this.camera.up.set(0, 0, 1);
 			this.camera.lookAt(0.0, 0.0, -0.45);
 			this.tableScene.setLights("square");
 			if (!!this.tableScene.cushionEdgeCylinders)
 				this.tableScene.cushionEdgeCylinders.visible = false;
 		}
-		if (!this.cameraAnimates)
-			this._render();
+		this._render();
 	}
 
 	public _render() {
@@ -94,7 +93,6 @@ class TableView {
 
 		if (this.cameraAnimates) {
 			this.camera.position.set(2.2*Math.cos(time/10), 2.2*Math.sin(time/10), 1.3);
-			this.camera.up.set(0, 0, 1);
 			this.camera.lookAt(0.0, 0.0, -0.2);
 		}
 	

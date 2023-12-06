@@ -60,8 +60,8 @@ function handleMouseMove(event) {
     }
     if (event.buttons & 2) {
         // Right mouse button:
-        cameraPose.phi = clamp(cameraPose.phi + 0.01 * event.movementY, 0.1, Math.PI / 2 - 0.02);
-        cameraPose.theta = cameraPose.theta - 0.01 * event.movementX;
+        cameraPose.phi = clamp(cameraPose.phi + 0.005 * event.movementY, 0.1, Math.PI / 2 - 0.02);
+        cameraPose.theta = cameraPose.theta - 0.005 * event.movementX;
     }
 }
 function poseCamera() {

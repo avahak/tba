@@ -9,7 +9,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 console.log("tableScene.ts");
 const RESOURCES_PATH = "./static/";
-const SHADOW_MAP_SIZE = 1024 * 2;
+const SHADOW_MAP_SIZE = 1024;
 /**
  * Handles async loading of models and textures.
  */
