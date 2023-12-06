@@ -40,11 +40,12 @@ initDiagram();
 function initDiagram() {
     tableScene = new TableScene();
 	const element = document.getElementById("three-box") as HTMLElement;
-    tableView = new TableView(element, tableScene);
-    tableView.setCamera(activeCamera);
-    tableView.animate();
 
 	document.addEventListener('tableSceneLoaded', () => {
+		tableView = new TableView(element, tableScene);
+		tableView.setCamera(activeCamera);
+		tableView.animate();
+		
 		collection = new ObjectCollection(tableScene);
 		changeActiveObject("");
 		tableView.renderCallback = () => draw();
