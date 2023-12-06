@@ -216,11 +216,14 @@ function mouseAction(mouseAction) {
                 instead of this.theta = Math.atan2(y, x);
                 */
                 const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
+                const r = tableView.camera.position.z / (-dir.z);
+                const pivot = new THREE.Vector3(tableView.camera.position.x + r * dir.x, tableView.camera.position.y + r * dir.y, 0.0);
                 const spherical = new THREE.Spherical().setFromVector3(swizzle(dir));
                 const newPhi = clamp(spherical.phi + 0.005 * mouseAction.movement.y, Math.PI / 2 + 0.1, Math.PI - 0.05);
                 const newTheta = spherical.theta - 0.005 * mouseAction.movement.x;
-                const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(spherical.radius, newPhi, newTheta), true);
-                tableView.camera.lookAt(tableView.camera.position.clone().add(dirNew));
+                const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(1, newPhi, newTheta), true);
+                tableView.camera.position.set(pivot.x - r * dirNew.x, pivot.y - r * dirNew.y, pivot.z - r * dirNew.z);
+                tableView.camera.lookAt(pivot.clone().add(dirNew));
             }
         }
         if (mouseAction.buttons & 4) {
