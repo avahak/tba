@@ -28,7 +28,7 @@ function initDiagram() {
     tableView = new TableView(element, tableScene);
     tableView.setCamera(activeCamera);
     tableView.animate();
-    document.addEventListener('tableSceneModelsLoaded', () => {
+    document.addEventListener('tableSceneLoaded', () => {
         collection = new ObjectCollection(tableScene);
         changeActiveObject("");
         tableView.renderCallback = () => draw();
