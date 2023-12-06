@@ -30,7 +30,7 @@ init();
 
 function init() {
     tableScene = new TableScene();
-    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
     camera.up = E3;
     cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI/2, phi: Math.PI/2-0.02 }
 
@@ -57,13 +57,14 @@ function init() {
         //         event.preventDefault(); // Prevent default browser behavior
         // });
         element.addEventListener('wheel', (event) => handleMouseWheel(event), {passive: false});
+
+        window.addEventListener('resize', () => {
+            resize();
+        });
+        resize();
+
         animate();
     });
-
-    window.addEventListener('resize', () => {
-        resize();
-    });
-    resize();
 }
 
 function handleMouseWheel(event: WheelEvent) {
@@ -72,7 +73,7 @@ function handleMouseWheel(event: WheelEvent) {
 }
 
 function handleMouseMove(event: MouseEvent) {
-    if (event.buttons & 1) {
+    if (event.buttons & 4) {
         // Left mouse button:
         const dir = new THREE.Vector3(cameraPose.r*Math.cos(cameraPose.phi)*Math.cos(cameraPose.theta), cameraPose.r*Math.cos(cameraPose.phi)*Math.sin(cameraPose.theta), 0).normalize();
         const dir2 = dir.clone().cross(E3).normalize();

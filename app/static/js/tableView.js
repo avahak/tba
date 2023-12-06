@@ -64,7 +64,8 @@ class TableView {
             if (!!this.tableScene.cushionEdgeCylinders)
                 this.tableScene.cushionEdgeCylinders.visible = false;
         }
-        this._render();
+        if (!this.cameraAnimates)
+            this._render();
     }
     _render() {
         this.renderer.render(this.tableScene.scene, this.camera);

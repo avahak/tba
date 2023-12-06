@@ -167,11 +167,15 @@ class TableScene {
      */
     setLights(name) {
         // Dispose old lights to avoid avoid memory leak:
+        const lightsRemoved = [];
         this.lightGroup.traverse((light) => {
             if (light instanceof THREE.Light)
-                light.dispose();
+                lightsRemoved.push(light);
         });
         this.lightGroup.clear();
+        lightsRemoved.forEach((light) => {
+            light.dispose();
+        });
         if (name == "square") {
             for (let k1 = -1; k1 <= 1; k1 += 2) {
                 for (let k2 = -1; k2 <= 1; k2 += 2) {
