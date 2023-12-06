@@ -6,6 +6,7 @@ export {};
 
 import { TableScene } from "./tableScene.js";
 import { loadJSON, clamp } from "./util.js";
+import { initPhysics, fn } from "./physics.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -31,7 +32,7 @@ function init() {
     tableScene = new TableScene();
     camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
     camera.up = E3;
-    cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI/2, phi: Math.PI/2-0.02 }
+    cameraPose = { p: new THREE.Vector3(0,-0.2,0), r: 2.1, theta: -Math.PI/2, phi: 1.0 }
 
     element = document.getElementById("three-box") as HTMLElement;
 
@@ -61,6 +62,8 @@ function init() {
             resize();
         });
         resize();
+
+        initPhysics(tableScene);
 
         animate();
     });
@@ -96,6 +99,7 @@ function poseCamera() {
 }
 
 function animate() {
+    fn();
     poseCamera();
     renderer.render(tableScene.scene, camera);
     requestAnimationFrame(animate);
