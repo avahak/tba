@@ -248,18 +248,10 @@ function mouseAction(mouseAction: MouseAction) {
 				this.phi = Math.acos( MathUtils.clamp( y / this.radius, - 1, 1 ) );
 				instead of this.theta = Math.atan2(y, x);
 				*/
-				const ndcLast = pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp), tableView.element);
-				const dir1 = new THREE.Vector3(ndc.x, ndc.y, 1.0).unproject(tableView.camera).normalize();
-				const dir2 = new THREE.Vector3(ndcLast.x, ndcLast.y, 1.0).unproject(tableView.camera).normalize();
-				const spherical1 = new THREE.Spherical().setFromVector3(swizzle(dir1));
-				const spherical2 = new THREE.Spherical().setFromVector3(swizzle(dir2));
-				const dTheta = spherical2.theta-spherical1.theta;
-				const dPhi = spherical2.phi-spherical1.phi;
-
 				const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
 				const spherical = new THREE.Spherical().setFromVector3(swizzle(dir));
-				const newPhi = clamp(spherical.phi + dPhi, 0.6*Math.PI, 0.9*Math.PI);
-				const newTheta = spherical.theta + dTheta;
+				const newPhi = clamp(spherical.phi - 0.002*mouseAction.dp.y, Math.PI/2+0.1, Math.PI-0.05);
+				const newTheta = spherical.theta + 0.002*mouseAction.dp.x;
 				const dirNew = swizzle(new THREE.Vector3().setFromSphericalCoords(spherical.radius, newPhi, newTheta), true);
 				tableView.camera.lookAt(tableView.camera.position.clone().add(dirNew));
 			}

@@ -453,7 +453,7 @@ def draw_packing(packing):
     plt.show()
 
 def test_pack():
-    n = 100
+    n = 700
     wh_list = random_wh(n, 5000.0)
     A0 = np.sum(wh_list[0]*wh_list[1])
     WH0 = (np.max(wh_list[0]), np.max(wh_list[1]))

@@ -262,6 +262,10 @@ def api(diagram_id=None):
 def shots():
     return render_template("shots.html")
 
+@main.route('/physics')
+def physics():
+    return render_template("physics.html")
+
 @main.route("/")
 def front():
     return render_template("front.html")

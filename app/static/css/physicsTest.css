@@ -1,0 +1,27 @@
+.menu-bar {
+    position: fixed; 
+    top: 20px; 
+    left: 20px;
+}
+
+.top-bar {
+    background-color: #808080; 
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.canvas-container {
+    position: relative;
+    overflow: hidden;
+}
+
+#three-box, #overlay-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+#overlay-canvas {
+    pointer-events: none;
+}
