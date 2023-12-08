@@ -3,7 +3,7 @@
  */
 import { TableScene } from "./tableScene.js";
 import { clamp } from "./util.js";
-import { initPhysics, fn } from "./physics.js";
+import { initPhysics, fn, reset, changeSpeed } from "./physics/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
@@ -45,7 +45,17 @@ function init() {
         });
         resize();
         initPhysics(tableScene);
+        addToolListeners();
         animate();
+    });
+}
+function addToolListeners() {
+    var _a, _b;
+    (_a = document.getElementById("buttonReset")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (event) => {
+        reset();
+    });
+    (_b = document.getElementById("inputSpeed")) === null || _b === void 0 ? void 0 : _b.addEventListener("input", (event) => {
+        changeSpeed(parseFloat(event.target.value));
     });
 }
 function handleMouseWheel(event) {

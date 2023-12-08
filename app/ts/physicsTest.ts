@@ -6,7 +6,7 @@ export {};
 
 import { TableScene } from "./tableScene.js";
 import { loadJSON, clamp } from "./util.js";
-import { initPhysics, fn } from "./physics.js";
+import { initPhysics, fn, reset, changeSpeed } from "./physics/physics.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -65,7 +65,19 @@ function init() {
 
         initPhysics(tableScene);
 
+        addToolListeners();
+
         animate();
+    });
+}
+
+function addToolListeners() {
+    document.getElementById("buttonReset")?.addEventListener("click", (event) => {
+        reset();
+    });
+
+    document.getElementById("inputSpeed")?.addEventListener("input", (event) => {
+        changeSpeed(parseFloat((event.target as HTMLInputElement).value));
     });
 }
 
