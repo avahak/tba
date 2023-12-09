@@ -5,8 +5,9 @@
 export {};
 
 import { TableScene } from "./tableScene.js";
+import { Table } from "./physics/table.js";
 import { loadJSON, clamp } from "./util.js";
-import { initPhysics, fn, reset, changeSpeed } from "./physics/physics.js";
+import { initPhysics, physicsLoop, reset, changeSpeed } from "./physics/physics.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -20,6 +21,7 @@ interface CameraPose {
     phi: number;
 }
 
+let table: Table;
 let tableScene: TableScene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
@@ -63,7 +65,8 @@ function init() {
         });
         resize();
 
-        initPhysics(tableScene);
+        table = new Table(tableScene);
+        initPhysics(table);
 
         addToolListeners();
 
@@ -111,7 +114,7 @@ function poseCamera() {
 }
 
 function animate() {
-    fn();
+    physicsLoop();
     poseCamera();
     renderer.render(tableScene.scene, camera);
     requestAnimationFrame(animate);

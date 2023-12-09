@@ -113,8 +113,7 @@ class Ball {
     }
     resetBall() {
         const ballObject = this.tableScene.objects[this.name];
-        let ballNumber = Ball.getBallNumber(this.name);
-        const defaultPos = this.tableScene.defaultBallPosition(ballNumber);
+        const defaultPos = this.tableScene.defaultBallPosition(this.name);
         ballObject.position.copy(defaultPos);
         this.updatePositionFromScene();
     }
@@ -126,11 +125,6 @@ class Ball {
         this.name = source.name;
         const ballObject = this.tableScene.objects[this.name];
         ballObject.position.copy(this.p);
-    }
-    static getBallNumber(name) {
-        const result = name.match(/\d+/);
-        const ballNumber = result ? parseInt(result[0]) : null;
-        return ballNumber;
     }
 }
 /**

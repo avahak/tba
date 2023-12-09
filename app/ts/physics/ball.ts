@@ -59,8 +59,8 @@ class Ball {
     }
 
     public advanceTime(dt: number) {
-        if (dt > 0.5)
-            dt = 0.5;
+        if (dt > 0.2)
+            dt = 0.2;
         if (this.v.length()+this.r*this.w.length() < 1.0e-3) {
             this.stop();
             // if (this.name == "ball_0")
@@ -81,7 +81,7 @@ class Ball {
         //     console.log("iter", iter);
     }
 
-    public computeForces() {
+    public computeAcceleration() {
         this.a.set(0, 0, 0);
         this.dw.set(0, 0, 0);
 
@@ -118,7 +118,7 @@ class Ball {
      * Basic Euler's (forward) method.
      */
     public integrateEuler(dt: number) {
-        this.computeForces();
+        this.computeAcceleration();
 
         this.a.z = 0;
         this.v.z = 0;
@@ -137,7 +137,7 @@ class Ball {
      * Heun's method, much better than Euler.
      */
     public integrateHeun(dt: number) {
-        this.computeForces();
+        this.computeAcceleration();
         this.a.z = 0;
 
         const v1 = this.v.clone();
@@ -150,7 +150,7 @@ class Ball {
         this.v.addScaledVector(this.a, dt);
         this.w.addScaledVector(this.dw, dt);
 
-        this.computeForces();
+        this.computeAcceleration();
         this.a.z = 0;
 
         this.p.addScaledVector(this.v.clone().sub(v1), 0.5*dt);

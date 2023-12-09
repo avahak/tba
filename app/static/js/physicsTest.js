@@ -2,12 +2,14 @@
  * Testing physics.
  */
 import { TableScene } from "./tableScene.js";
+import { Table } from "./physics/table.js";
 import { clamp } from "./util.js";
-import { initPhysics, fn, reset, changeSpeed } from "./physics/physics.js";
+import { initPhysics, physicsLoop, reset, changeSpeed } from "./physics/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
+let table;
 let tableScene;
 let camera;
 let renderer;
@@ -44,7 +46,8 @@ function init() {
             resize();
         });
         resize();
-        initPhysics(tableScene);
+        table = new Table(tableScene);
+        initPhysics(table);
         addToolListeners();
         animate();
     });
@@ -82,7 +85,7 @@ function poseCamera() {
     camera.lookAt(cameraPose.p);
 }
 function animate() {
-    fn();
+    physicsLoop();
     poseCamera();
     renderer.render(tableScene.scene, camera);
     requestAnimationFrame(animate);

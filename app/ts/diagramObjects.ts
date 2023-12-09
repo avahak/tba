@@ -9,7 +9,6 @@ import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from 
 import * as THREE from 'three';
 
 console.log("diagram-objects.ts")
-
 class Arrow {
     public static counter = 0;
     public p1: THREE.Vector2;
@@ -147,8 +146,7 @@ class Ball {
 
     public resetBall() {
         const ballObject = this.tableScene.objects[this.name];
-        let ballNumber = Ball.getBallNumber(this.name) as number;
-        const defaultPos = this.tableScene.defaultBallPosition(ballNumber);
+        const defaultPos = this.tableScene.defaultBallPosition(this.name);
         ballObject.position.copy(defaultPos);
         this.updatePositionFromScene();
     }
@@ -162,12 +160,6 @@ class Ball {
         this.name = source.name;
         const ballObject = this.tableScene.objects[this.name];
         ballObject.position.copy(this.p);
-    }
-
-    public static getBallNumber(name: string): number | null {
-        const result = name.match(/\d+/);
-		const ballNumber =  result ? parseInt(result[0]) : null;
-        return ballNumber;
     }
 }
 

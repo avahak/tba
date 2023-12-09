@@ -40,8 +40,8 @@ class Ball {
         this.dw.set(0, 0, 0);
     }
     advanceTime(dt) {
-        if (dt > 0.5)
-            dt = 0.5;
+        if (dt > 0.2)
+            dt = 0.2;
         if (this.v.length() + this.r * this.w.length() < 1.0e-3) {
             this.stop();
             // if (this.name == "ball_0")
@@ -61,7 +61,7 @@ class Ball {
         // if (this.name == "ball_0")
         //     console.log("iter", iter);
     }
-    computeForces() {
+    computeAcceleration() {
         this.a.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         // Kinetic friction for sliding:
@@ -92,7 +92,7 @@ class Ball {
      * Basic Euler's (forward) method.
      */
     integrateEuler(dt) {
-        this.computeForces();
+        this.computeAcceleration();
         this.a.z = 0;
         this.v.z = 0;
         // Advance position:
@@ -107,7 +107,7 @@ class Ball {
      * Heun's method, much better than Euler.
      */
     integrateHeun(dt) {
-        this.computeForces();
+        this.computeAcceleration();
         this.a.z = 0;
         const v1 = this.v.clone();
         const a1 = this.a.clone();
@@ -117,7 +117,7 @@ class Ball {
         this.p.addScaledVector(this.v, dt);
         this.v.addScaledVector(this.a, dt);
         this.w.addScaledVector(this.dw, dt);
-        this.computeForces();
+        this.computeAcceleration();
         this.a.z = 0;
         this.p.addScaledVector(this.v.clone().sub(v1), 0.5 * dt);
         this.v.addScaledVector(this.a.clone().sub(a1), 0.5 * dt);

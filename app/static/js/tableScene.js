@@ -77,6 +77,7 @@ class ResourceLoader {
      */
     loadJsonPromise(name, filePath) {
         return new Promise((resolve, reject) => {
+            this.manager.itemStart(filePath);
             fetch(filePath)
                 .then(response => {
                 if (!response.ok)
@@ -84,10 +85,12 @@ class ResourceLoader {
                 return response.json();
             })
                 .then(data => {
+                this.manager.itemEnd(filePath);
                 this.objects[name] = data;
                 resolve(data);
             })
                 .catch(error => {
+                this.manager.itemError(filePath);
                 reject(error);
             });
         });
@@ -120,12 +123,12 @@ class TableScene {
             this.resourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
             this.resourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
             this.resourceLoader.loadObjMtlPromise("ball", `${RESOURCES_PATH}models/ball.obj`, null),
-            this.resourceLoader.loadJsonPromise("json_all", `${RESOURCES_PATH}models/pooltable.json`),
+            this.resourceLoader.loadJsonPromise("jsonAll", `${RESOURCES_PATH}models/pooltable.json`),
         ];
         Promise.all(resourcePromises)
             .then((resources) => {
-            this.json_all = this.resourceLoader.objects.json_all;
-            this.specs = this.json_all.specs;
+            this.jsonAll = this.resourceLoader.objects.jsonAll;
+            this.specs = this.jsonAll.specs;
             this.objects.table = this.resourceLoader.objects.table;
             this.objects.ball = this.resourceLoader.objects.ball;
             this.objects.cushions = this.resourceLoader.objects.cushions;
@@ -194,7 +197,12 @@ class TableScene {
             this.lightGroup.add(light);
         }
     }
-    defaultBallPosition(ballNumber) {
+    defaultBallPosition(ball) {
+        let ballNumber = 0;
+        if (typeof ball == "string") {
+            const result = ball.match(/\d+/);
+            ballNumber = result ? parseInt(result[0]) : 0;
+        }
         return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, this.specs.BALL_RADIUS);
     }
     /**
@@ -229,14 +237,14 @@ class TableScene {
      * Returns out of bounds string or null p is not out of bounds.
      */
     outOfBoundsString(p) {
-        const railbox = this.json_all.railbox;
+        const railbox = this.jsonAll.railbox;
         if (p.z < this.specs.BALL_RADIUS)
             return "slate";
         if ((Math.abs(p.x) > railbox[0]) || (Math.abs(p.y) > railbox[1]))
             return "box";
         for (let k = 1; k <= 6; k++) {
-            const pc = this.json_all[`pocket_fall_center_${k}`];
-            const pr = this.json_all[`pocket_fall_radius_${k}`];
+            const pc = this.jsonAll[`pocket_fall_center_${k}`];
+            const pr = this.jsonAll[`pocket_fall_radius_${k}`];
             if (p.distanceTo(new THREE.Vector3(pc[0], pc[1], pc[2])) < pr)
                 return "pocket";
         }
