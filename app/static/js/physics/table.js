@@ -18,7 +18,25 @@ class Table {
         }
         console.log(this.tableScene.jsonAll);
     }
+    /**
+     * Returns closest point in to p in the set
+     * S(p1,r1)\cup...\cupS(p6,r6)\cup box\minus (B(p1,r1)\cup...\cup B(p6,r6))
+     */
     getClosestSlatePoint(p) {
+        function project(table, q) {
+            // This should project points inside the balls to the circle
+            // and do nothing outside balls.
+            let projection = null;
+            for (let k = 1; k <= 6; k++) {
+                const center = table.tableScene.jsonAll[`pocket_fall_center_${k}`];
+                const pocketCenter = new THREE.Vector2(center[0], center[1]);
+                const pocketRadius = table.tableScene.jsonAll[`pocket_fall_radius_${k}`];
+                if (cp.distanceTo(pocketCenter) < pocketRadius) {
+                    // cp = pocketCenter + (cp-pocketCenter).normalize()*pocketRadius
+                }
+            }
+            return projection;
+        }
         const box = this.tableScene.jsonAll.railbox;
         let cp = new THREE.Vector2(clamp(p.x, -box[0], box[0]), clamp(p.y, -box[1], box[1]));
         for (let k = 1; k <= 6; k++) {
