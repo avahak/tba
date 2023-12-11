@@ -1,5 +1,6 @@
 export { Table };
 import { Ball } from "./ball.js";
+import { closestPoint } from "../util.js";
 import * as THREE from 'three';
 console.log("table.ts");
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -21,7 +22,17 @@ class Table {
         return new THREE.Vector3();
     }
     getClosestCushionPoint(p) {
-        return new THREE.Vector3();
+        const cushionsPos = this.tableScene.objects.cushions.children[0].geometry.attributes.position;
+        const closestCushion = ["cushion", null, Infinity];
+        for (let k = 0; k < cushionsPos.count / 3; k++) {
+            const cp = closestPoint(p, new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
+            const dist = p.distanceTo(cp);
+            if (dist < closestCushion[2]) {
+                closestCushion[1] = cp;
+                closestCushion[2] = dist;
+            }
+        }
+        return closestCushion[1];
     }
     resetBalls() {
         this.balls.forEach((ball) => {

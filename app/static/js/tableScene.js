@@ -203,6 +203,7 @@ class TableScene {
             const result = ball.match(/\d+/);
             ballNumber = result ? parseInt(result[0]) : 0;
         }
+        console.log(ball, typeof ball, ballNumber);
         return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, this.specs.BALL_RADIUS);
     }
     /**
@@ -261,7 +262,7 @@ class TableScene {
         for (let k = 0; k < cushionsPos.count / 3; k++) {
             const cp = closestPoint(p, new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
             const dist = p.distanceTo(cp) - BR;
-            if (dist < closestCushion[1]) {
+            if (dist < closestCushion[2]) {
                 closestCushion[1] = cp;
                 closestCushion[2] = dist;
             }
