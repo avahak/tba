@@ -1,6 +1,6 @@
 export { Table };
 import { Ball } from "./ball.js";
-import { closestPoint } from "../util.js";
+import { closestPoint, clamp } from "../util.js";
 import * as THREE from 'three';
 console.log("table.ts");
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -19,7 +19,17 @@ class Table {
         console.log(this.tableScene.jsonAll);
     }
     getClosestSlatePoint(p) {
-        return new THREE.Vector3();
+        const box = this.tableScene.jsonAll.railbox;
+        let cp = new THREE.Vector2(clamp(p.x, -box[0], box[0]), clamp(p.y, -box[1], box[1]));
+        for (let k = 1; k <= 6; k++) {
+            const center = this.tableScene.jsonAll[`pocket_fall_center_${k}`];
+            const pocketCenter = new THREE.Vector2(center[0], center[1]);
+            const pocketRadius = this.tableScene.jsonAll[`pocket_fall_radius_${k}`];
+            if (cp.distanceTo(pocketCenter) < pocketRadius) {
+                // cp = pocketCenter + (cp-pocketCenter).normalize()*pocketRadius
+            }
+        }
+        return new THREE.Vector3(cp.x, cp.y, 0);
     }
     getClosestCushionPoint(p) {
         const cushionsPos = this.tableScene.objects.cushions.children[0].geometry.attributes.position;
