@@ -203,7 +203,8 @@ class TableScene {
             const result = ball.match(/\d+/);
             ballNumber = result ? parseInt(result[0]) : 0;
         }
-        console.log(ball, typeof ball, ballNumber);
+        else if (typeof ball == "number")
+            ballNumber = ball;
         return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, this.specs.BALL_RADIUS);
     }
     /**
