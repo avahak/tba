@@ -1,5 +1,6 @@
 export { Ball }
 import { clamp } from '../util.js';
+import { Table } from './table.js';
 import * as THREE from 'three';
 
 console.log("ball.ts");
@@ -28,8 +29,9 @@ class Ball {
     m: number;
     j: number;                  // momentum of inertia
     name: string;
+    table: Table;
 
-    public constructor(p: THREE.Vector3, obj: THREE.Object3D, name: string) {
+    public constructor(p: THREE.Vector3, obj: THREE.Object3D, name: string, table: Table) {
         this.p = p;
         this.obj = obj;
         this.v = new THREE.Vector3();
@@ -41,6 +43,7 @@ class Ball {
         this.m = M;
         this.j = 2.0/5.0*this.m*this.r**2;
         this.name = name;
+        this.table = table;
     }
 
     public applyForce(pos: THREE.Vector3, dir: THREE.Vector3) {
@@ -61,7 +64,14 @@ class Ball {
     public advanceTime(dt: number) {
         if (dt > 0.2)
             dt = 0.2;
-        if (this.v.length()+this.r*this.w.length() < 1.0e-3) {
+        if ((Math.abs(this.p.z-this.r) < 1.0e-2) && (Math.abs(this.v.z) < 1.0e-2)) {
+            // Enforce cloth contact:
+            this.p.z = this.r;
+            this.v.z = 0;
+            if (this.name == "ball_0")
+                console.log("Enforced cloth contact for ball_0.");
+        }
+        if ((this.v.length()+this.r*this.w.length() < 1.0e-3) && (Math.abs(this.p.z-this.r) < 1.0e-3)) {
             this.stop();
             // if (this.name == "ball_0")
             //     console.log("stopped");
@@ -85,26 +95,34 @@ class Ball {
         this.a.set(0, 0, 0);
         this.dw.set(0, 0, 0);
 
-        // Kinetic friction for sliding:
-        const vu = this.v.clone().normalize();
-        const c = 7.0/5.0*FRICTION_ROLL*this.r;
-        const cp = new THREE.Vector3(c*vu.x, c*vu.y, -this.r).setLength(this.r);
-        const cp_v = this.v.clone().add(this.w.clone().cross(cp));
-        cp_v.sub(cp_v.clone().projectOnVector(cp));
-        this.applyForce(this.p.clone().add(cp), cp_v.clone().multiplyScalar(-FRICTION_KINETIC*this.m*G));
-
-        // Kinetic friction for spinning:
-        let spin = this.w.clone().projectOnVector(cp);
-        this.dw.sub(spin.setLength(SPIN_DECELERATION));
-        // console.log(spin);
-
-        // Rolling resistance:
-        const s = FRICTION_ROLL*this.m*G;
-        const pv = new THREE.Vector3(-vu.x*s, -vu.y*s, this.m*G);
-        this.applyForce(this.p.clone().add(cp), pv);
-
         // Gravity:
         this.applyForce(this.p, E3.clone().multiplyScalar(-this.m*G));
+
+        const dist = this.p.distanceTo(this.table.getClosestSlatePoint(this.p)) - this.r;
+        if (dist < EPSILON) {
+            // Kinetic friction for sliding:
+            const vu = this.v.clone().normalize();
+            const c = 7.0/5.0*FRICTION_ROLL*this.r;
+            const cp = new THREE.Vector3(c*vu.x, c*vu.y, -this.r).setLength(this.r);
+            const cp_v = this.v.clone().add(this.w.clone().cross(cp));
+            cp_v.sub(cp_v.clone().projectOnVector(cp));
+            this.applyForce(this.p.clone().add(cp), cp_v.clone().multiplyScalar(-FRICTION_KINETIC*this.m*G));
+
+            // Kinetic friction for spinning:
+            let spin = this.w.clone().projectOnVector(cp);
+            this.dw.sub(spin.setLength(SPIN_DECELERATION));
+            // console.log(spin);
+
+            // Rolling resistance:
+            const s = FRICTION_ROLL*this.m*G;
+            const pv = new THREE.Vector3(-vu.x*s, -vu.y*s, this.m*G);
+            this.applyForce(this.p.clone().add(cp), pv);
+
+            if (Math.abs(this.v.z) < 1.0e-3) {
+                this.v.z = 0;
+                this.a.z = 0;
+            }
+        }
 
         if (this.name == "ball_0") {
             // const theta = Math.atan2(cp.dot(vu), -cp.dot(E3));
@@ -119,9 +137,6 @@ class Ball {
      */
     public integrateEuler(dt: number) {
         this.computeAcceleration();
-
-        this.a.z = 0;
-        this.v.z = 0;
 
         // Advance position:
         this.p.addScaledVector(this.v, dt);
@@ -138,7 +153,6 @@ class Ball {
      */
     public integrateHeun(dt: number) {
         this.computeAcceleration();
-        this.a.z = 0;
 
         const v1 = this.v.clone();
         const a1 = this.a.clone();
@@ -151,7 +165,6 @@ class Ball {
         this.w.addScaledVector(this.dw, dt);
 
         this.computeAcceleration();
-        this.a.z = 0;
 
         this.p.addScaledVector(this.v.clone().sub(v1), 0.5*dt);
         this.v.addScaledVector(this.a.clone().sub(a1), 0.5*dt);

@@ -1,3 +1,4 @@
+// TODO check signs
 export { Collision };
 import { Ball } from './ball.js';
 import { Graph, weightedMean } from '../util.js';
@@ -34,14 +35,14 @@ class ContactPoint {
             const ball2 = this.object2.object;
             const b1v = ball1.v.clone().add(ball1.w.clone().cross(this.n).multiplyScalar(ball1.r));
             const b2v = ball2.v.clone().add(ball2.w.clone().cross(this.n).multiplyScalar(-ball2.r));
-            const v = b2v.clone().sub(b1v);
+            const v = b1v.clone().sub(b2v);
             const vn = v.clone().projectOnVector(this.n);
             const vt = v.clone().sub(vn);
             // Check if balls are moving towards each other:
             return [v, vn, vt];
         }
         // this.object2 is "cushion" or "slate":
-        const v = ball1.v.clone().add(ball1.w.clone().cross(this.n).multiplyScalar(-ball1.r));
+        const v = ball1.v.clone().add(ball1.w.clone().cross(this.n).multiplyScalar(ball1.r));
         const vn = v.clone().projectOnVector(this.n);
         const vt = v.clone().sub(vn);
         return [v, vn, vt];
@@ -99,11 +100,11 @@ class Collision {
             const n = ball2.p.clone().sub(ball1.p).normalize();
             const b1v = ball1.v.clone().add(ball1.w.clone().cross(n).multiplyScalar(ball1.r));
             const b2v = ball2.v.clone().add(ball2.w.clone().cross(n).multiplyScalar(-ball2.r));
-            const v = b2v.clone().sub(b1v);
+            const v = b1v.clone().sub(b2v);
             const vn = v.clone().projectOnVector(n);
             const vt = v.clone().sub(vn);
             // Check if balls are moving towards each other:
-            if (vn.dot(n) < -EPSILON)
+            if (vn.dot(n) > EPSILON)
                 return [n, vn, vt];
         }
         return null;
@@ -121,10 +122,10 @@ class Collision {
     static ballStaticCollisionInfo(ball, p) {
         if (ball.p.distanceTo(p) - ball.r < EPSILON) {
             const n = p.clone().sub(ball.p).normalize();
-            const v = ball.v.clone().add(ball.w.clone().cross(n).multiplyScalar(-ball.r));
+            const v = ball.v.clone().add(ball.w.clone().cross(n).multiplyScalar(ball.r));
             const vn = v.clone().projectOnVector(n);
             const vt = v.clone().sub(vn);
-            if (vn.dot(n) < -EPSILON)
+            if (vn.dot(n) > EPSILON)
                 return [n, vn, vt];
         }
         return null;
@@ -210,11 +211,11 @@ class Collision {
             }
         });
         const cos = Array.from(contactObjectMap.values());
-        console.log("touchinGraph", touchingGraph.getAdjacentPairs());
-        console.log("connected to k1:", component);
-        console.log("cps:", cps);
-        console.log("cos:", cos);
-        console.log("cps p:s:", cps.map((cp) => cp.p));
+        // console.log("touchinGraph", touchingGraph.getAdjacentPairs());
+        // console.log("connected to k1:", component);
+        // console.log("cps:", cps);
+        // console.log("cos:", cos);
+        // console.log("cps p:s:", cps.map((cp) => cp.p));
         return new Collision(table, cps, cos);
     }
     /**
@@ -231,20 +232,24 @@ class Collision {
             if (cp.depth > 0) {
                 const [v, vn, vt] = cp.computeRelativeVelocity();
                 // Apply compression force:
-                const force = cp.depth * Math.sqrt(cp.depth) * (vn.dot(cp.n) > 0 ? 1.0 : COR_BALL);
-                cp.applyForces(vn.clone().multiplyScalar(-force));
+                const cor = (cp.object2.object instanceof Ball ? COR_BALL :
+                    cp.object2.object === "cushion" ? COR_CUSHION :
+                        COR_SLATE);
+                const force = cp.depth * Math.sqrt(cp.depth) * (vn.dot(cp.n) > 0 ? 1.0 : cor * cor);
+                cp.applyForces(cp.n.clone().multiplyScalar(-force));
                 // Apply kinetic friction force..
                 const frictionCoeff = (cp.object2.object instanceof Ball ? FRICTION_BALL_BALL :
                     cp.object2.object === "cushion" ? FRICTION_BALL_CUSHION :
                         FRICTION_BALL_SLATE);
+                // TODO remove comments after debug
                 cp.applyForces(vt.clone().multiplyScalar(-frictionCoeff * force));
             }
         });
     }
     integrate(dt) {
-        this.contactPoints.forEach((cp) => {
-            cp.depth += dt * cp.computeDepthDerivative();
-        });
+        // this.contactPoints.forEach((cp) => {
+        //     cp.depth += dt*cp.computeDepthDerivative();
+        // });
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 const ball = co.object;
@@ -252,24 +257,47 @@ class Collision {
                 ball.w.add(co.dw.clone().multiplyScalar(dt));
             }
         });
+        // TODO Why here instead of up there?
+        this.contactPoints.forEach((cp) => {
+            cp.depth += dt * cp.computeDepthDerivative();
+        });
     }
     isResolved() {
-        this.contactPoints.forEach((cp) => {
-            if (cp.depth > 0)
+        for (let k = 0; k < this.contactPoints.length; k++) {
+            const cp = this.contactPoints[k];
+            if ((cp.depth > EPSILON) || (cp.computeDepthDerivative() > EPSILON)) {
+                // console.log("isResolved() fail:", cp, cp.depth, cp.computeDepthDerivative());
+                // console.log("vn", cp.computeRelativeVelocity()[1]);
                 return false;
-            if (cp.computeDepthDerivative() > 0)
-                return false;
-        });
+            }
+        }
         return true;
     }
     resolve() {
         let iter = 0;
-        const MAX_ITER = 1000;
+        const MAX_ITER = 10000;
+        // console.log("isResolved():", this.isResolved());
+        console.log("before", this.table.balls[0].v.length());
+        let v0 = this.table.balls[0].v.length();
         while ((iter < MAX_ITER) && (!this.isResolved())) {
-            console.log("resolve() iter", iter);
+            // console.log("resolve() iter", iter);
+            // check that cp.computeDepthDerivative() is same as..
+            // const [v, vn, vt] = cp.computeRelativeVelocity();
+            // vn.dot(cp.n)
+            this.contactPoints.forEach((cp) => {
+                const [v, vn, vt] = cp.computeRelativeVelocity();
+                const result1 = cp.computeDepthDerivative();
+                const result2 = vn.dot(cp.n);
+                // console.log("result1:", result1, "result2:", result2);
+                // console.log(cp);
+                // console.log("cp.computeDepthDerivative()", cp.computeDepthDerivative());
+            });
             this.computeAcceleration();
             this.integrate(0.01);
             iter++;
         }
+        console.log("after", this.table.balls[0].v.length());
+        console.log("ratio", this.table.balls[0].v.length() / v0);
+        console.log("resolve() done after #iter =", iter);
     }
 }

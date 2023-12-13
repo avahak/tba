@@ -13,7 +13,7 @@ class Table {
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
             const obj = tableScene.objects[name];
-            const ball = new Ball(obj.position.clone(), obj, name);
+            const ball = new Ball(obj.position.clone(), obj, name, this);
             this.balls.push(ball);
         }
         console.log(this.tableScene.jsonAll);
