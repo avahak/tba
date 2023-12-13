@@ -85,6 +85,31 @@ def dist_ls_ls(ls1: LineSegment2, ls2: LineSegment2):
     t2 = np.clip(t2, 0, 1)
     return np.linalg.norm(ls1.param(t1)-ls2.param(t2)), t1, t2
 
+def intersections_circle_ls(circle_p, circle_r, ls: LineSegment2):
+    # |circle_p - (t*ls_p2 + (1-t)*ls_p1)|^2 = circle_r^2
+    # |circle_p - ls_p1 + t*(ls_p1-ls_p2)|^2 = circle_r^2
+    # |q + t*w|^2 = circle_r^2
+    # |q|^2 + 2*t*<q,w> + t^2*|w|^2 = circle_r^2
+    q = circle_p - ls.z1
+    w = ls.z1 - ls.z2
+    coeff = [np.dot(q, q) - circle_r**2, 2*np.dot(q, w), np.dot(w, w)]
+    determinant = coeff[1]**2 - 4*coeff[2]*coeff[0]
+    intersections = []
+    if (np.abs(determinant) < 1.0e-9):
+        t = -coeff[1] / (2*coeff[2])
+        if (t >= 0.0) and (t <= 1.0):
+            intersections.append(ls.param(t))
+        return intersections
+    if (determinant < 0.0):
+        return []
+    t1 = (-coeff[1] - np.sqrt(determinant)) / (2*coeff[2])
+    t2 = (-coeff[1] + np.sqrt(determinant)) / (2*coeff[2])
+    if (t1 >= 0.0) and (t1 <= 1.0):
+        intersections.append(ls.param(t1))
+    if (t2 >= 0.0) and (t2 <= 1.0):
+        intersections.append(ls.param(t2))
+    return intersections
+
 class Polygon2():
     """A simple 2d-polygon. Not necessarily positively oriented.
     """

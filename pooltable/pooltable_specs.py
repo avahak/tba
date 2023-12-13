@@ -27,7 +27,7 @@
 import numpy as np
 import json, pickle
 
-import geometry3
+import geometry2, geometry3
 
 INCH = 0.0254
 OUNCE = 0.0283495231
@@ -227,15 +227,33 @@ def create_sights_metadata(data):
              "D": plane_E2.reflect(reversed(sights_b)), "E": plane_E2.reflect(plane_E1.reflect(sights_b)),
              "F": plane_E1.reflect(reversed(sights_c)) }
 
-def create_metadata(data):
-    meta = { "specs": data["specs"] }
+def create_pocket_fall_metadata(data, meta, box):
+    box_corners = (np.array((-box[0], box[1])), np.array((box[0], box[1])), np.array((box[0], -box[1])), np.array((-box[0], -box[1])))
+    box_ls = tuple(geometry2.LineSegment2(box_corners[k], box_corners[(k+1)%4]) for k in range(4))
+    slate_corners = []
+
     for k in range(1, 7):
         meta[f"pocket_fall_center_{k}"] = data["points"][f"fall_center_{k}"]
         pocket_type = "SIDE" if (k in (2, 5)) else "CORNER"
         meta[f"pocket_fall_radius_{k}"] = data["specs"][f"{pocket_type}_POCKET_RADIUS"]
-    # Box from rail back to rail back:
-    meta["railbox"] = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_LENGTH"]/4+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_RAIL_HEIGHT"]))
+
+        for ls in box_ls:
+            intersections = geometry2.intersections_circle_ls(meta[f"pocket_fall_center_{k}"][0:2], meta[f"pocket_fall_radius_{k}"], ls)
+            slate_corners.extend(intersections)
+    # corners of the slate where the pocket fall circles intersect the flat slate edges
+    if (len(slate_corners) != 12):
+        raise Exception(f"Error computing pocket_fall_corners: found {len(slate_corners)} instead of 12.")
+    meta[f"pocket_fall_corners"] = slate_corners
+
+def create_metadata(data):
+    meta = { "specs": data["specs"] }
     
+    # Box from rail back to rail back:
+    box = np.array((data["specs"]["TABLE_LENGTH"]/2+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_LENGTH"]/4+data["specs"]["CUSHION_WIDTH"], data["specs"]["TABLE_RAIL_HEIGHT"]))
+    meta["railbox"] = box
+
+    create_pocket_fall_metadata(data, meta, box)
+
     meta["sights"] = create_sights_metadata(data)
     return meta
 

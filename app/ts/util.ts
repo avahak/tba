@@ -1,4 +1,4 @@
-export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard, clamp, loadJSON }
+export { canvasTextBoundingBox, closestPoint, drawArrow, closestIntervalPoint, parseNumberBetween, combineBboxes, copyToClipboard, clamp, loadJSON, Graph, weightedMean }
 import * as THREE from 'three';
 
 console.log("util.ts");
@@ -141,6 +141,18 @@ function clamp(x: number, xMin: number, xMax: number): number {
     return Math.max(Math.min(x, xMax), xMin);
 }
 
+function weightedMean(ps: THREE.Vector3[], ws: number[]) {
+    if ((ws.length != ps.length) || (ws.length < 1))
+        return null;
+    let wSum = 0;
+    for (let k = 0; k < ws.length; k++)
+        wSum += ws[k];
+    const p = new THREE.Vector3();
+    for (let k = 0; k < ws.length; k++)
+        p.add(ps[k].clone().multiplyScalar(ws[k]/wSum));
+    return p;
+}
+
 async function loadJSON(url: string): Promise<any | null> {
     try {
         const response = await fetch(url);
@@ -150,5 +162,78 @@ async function loadJSON(url: string): Promise<any | null> {
     } catch (error: any) {
         console.error(error.message);
         return null;
+    }
+}
+
+interface Graph<T> {
+    addEdge(object1: T, object2: T): void;
+    getAdjacentVertices(object: T): T[];
+    getAdjacentPairs(): [T, T][];
+    connectedComponent(startingObject: T): T[];
+}
+
+/**
+ * Generic graph
+ */
+class Graph<T> implements Graph<T> {
+    // Use a hash table instead of an adjacency list
+    private adjacencyTable: Map<T, Set<T>>;
+    private keepSymmetric: boolean;
+
+    public constructor(keepSymmetric: boolean) {
+        this.adjacencyTable = new Map();
+        this.keepSymmetric = keepSymmetric;
+    }
+
+    public addEdge(object1: T, object2: T): void {
+        if (!this.adjacencyTable.has(object1)) 
+            this.adjacencyTable.set(object1, new Set());
+        this.adjacencyTable.get(object1)!.add(object2);
+
+        if (this.keepSymmetric) {
+            if (!this.adjacencyTable.has(object2)) 
+                this.adjacencyTable.set(object2, new Set());
+            this.adjacencyTable.get(object2)!.add(object1);
+        }
+    }
+
+    public hasEdge(object1: T, object2: T): boolean {
+        if (!this.adjacencyTable.has(object1))
+            return false;
+        return this.adjacencyTable.get(object1)!.has(object2);
+    }
+
+    // Get the list of objects adjacent to a given object
+    public getAdjacentVertices(object: T): T[] {
+        if (!this.adjacencyTable.has(object)) 
+            return [];
+        return Array.from(this.adjacencyTable.get(object)!);
+    }
+
+    // Get the list of all adjacent vertices as ordered pairs
+    public getAdjacentPairs(): [T, T][] {
+        const matrix: [T, T][] = [];
+        for (const [object, adjacentObjects] of this.adjacencyTable.entries()) 
+            for (const touchedObject of adjacentObjects) 
+                matrix.push([object, touchedObject]);
+        return matrix;
+    }
+
+    // Compute connected component for a single object
+    public connectedComponent(startingObject: T): T[] {
+        const visited: Set<T> = new Set();
+        const connectedComponent: T[] = [];
+        const stack: T[] = [startingObject];
+        while (stack.length > 0) {
+            const currentObject = stack.pop();
+            if (visited.has(currentObject!))
+                continue;
+            visited.add(currentObject!);
+            connectedComponent.push(currentObject!);
+            for (const adjacentObject of this.getAdjacentVertices(currentObject!)) 
+                if (!visited.has(adjacentObject)) 
+                    stack.push(adjacentObject);
+        }
+        return connectedComponent;
     }
 }

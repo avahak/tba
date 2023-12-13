@@ -4,7 +4,7 @@
 import { TableScene } from "./tableScene.js";
 import { Table } from "./physics/table.js";
 import { clamp } from "./util.js";
-import { initPhysics, physicsLoop, reset, changeSpeed } from "./physics/physics.js";
+import { initPhysics, physicsLoop, reset, changeSpeed, testCollision } from "./physics/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
@@ -53,11 +53,14 @@ function init() {
     });
 }
 function addToolListeners() {
-    var _a, _b;
+    var _a, _b, _c;
     (_a = document.getElementById("buttonReset")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (event) => {
         reset();
     });
-    (_b = document.getElementById("inputSpeed")) === null || _b === void 0 ? void 0 : _b.addEventListener("input", (event) => {
+    (_b = document.getElementById("buttonTest")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => {
+        testCollision();
+    });
+    (_c = document.getElementById("inputSpeed")) === null || _c === void 0 ? void 0 : _c.addEventListener("input", (event) => {
         changeSpeed(parseFloat(event.target.value));
     });
 }

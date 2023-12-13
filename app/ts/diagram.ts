@@ -171,6 +171,7 @@ function handleScroll(event: WheelEvent) {
 	event.preventDefault(); // Disable the default scroll behavior
 
 	if (tableView.camera instanceof THREE.PerspectiveCamera) {
+		cameraMoved();
 		const factor = Math.exp(0.002*event.deltaY);
 
 		const p = tableView.camera.position.clone();
@@ -178,8 +179,6 @@ function handleScroll(event: WheelEvent) {
 		const dist = -p.z/dir.z;
 		const q = p.clone().add(dir.clone().multiplyScalar(dist));	// q.z = 0
 		tableView.camera.position.copy(q.clone().add(dir.clone().multiplyScalar(-dist*factor)));
-
-		draw();
 	}
 }
 
@@ -239,6 +238,7 @@ function mouseAction(mouseAction: MouseAction) {
 		if (mouseAction.buttons & 2) {
 			// Right mouse button:
 			if (tableView.camera instanceof THREE.PerspectiveCamera) {
+				cameraMoved();
 				tableView.cameraAnimates = false;
 
 				function swizzle(p: THREE.Vector3, inverse: boolean = false): THREE.Vector3 {
@@ -265,6 +265,7 @@ function mouseAction(mouseAction: MouseAction) {
 
 		if (mouseAction.buttons & 4) {
 			// Middle mouse button:
+			cameraMoved();
 			tableView.cameraAnimates = false;
 			const ndcLast = pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp), tableView.element);
 			const p = NDCToWorld2(ndc, 0.0, tableView.camera);
@@ -308,6 +309,7 @@ function reset() {
 }
 
 function changeCamera() {
+	cameraMoved();
 	const cameraLoop = ["orthographic", "perspective", "back"];
 	for (let k = 0; k < cameraLoop.length; k++) {
 		if (activeCamera == cameraLoop[k]) {
@@ -316,8 +318,6 @@ function changeCamera() {
 		}
 	}
 	tableView.setCamera(activeCamera);
-
-	draw();
 }
 
 function setDisplayToAll(elements: NodeListOf<Element>, value: string) {
@@ -359,15 +359,23 @@ function changeState(newState: string) {
 	draw();
 }
 
+function cameraMoved() {
+	const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
+	collection.clear(canvas);
+	// canvas.style.display = "none";
+	draw();
+}
+
 function draw() {
 	// Check that at least some time has elapsed from last draw:
 	const time = performance.now();
-	if (time-lastDrawTime < 20) 
+	if (time-lastDrawTime < 100) 
 		return;
 	lastDrawTime = time;
 
 	const canvas = document.getElementById("overlay-canvas") as HTMLCanvasElement;
 	collection.clear(canvas);
+	// canvas.style.display = "block";
 	if (activeCamera != "perspective") {
 		collection.draw(tableView.camera, canvas);		// TODO REMOVE!
 		collection.drawDebug(activeObject, state, collection.objects, canvas);

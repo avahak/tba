@@ -136,13 +136,13 @@ function handleMouseUp(event) {
 function handleScroll(event) {
     event.preventDefault(); // Disable the default scroll behavior
     if (tableView.camera instanceof THREE.PerspectiveCamera) {
+        cameraMoved();
         const factor = Math.exp(0.002 * event.deltaY);
         const p = tableView.camera.position.clone();
         const dir = tableView.camera.getWorldDirection(new THREE.Vector3()).normalize();
         const dist = -p.z / dir.z;
         const q = p.clone().add(dir.clone().multiplyScalar(dist)); // q.z = 0
         tableView.camera.position.copy(q.clone().add(dir.clone().multiplyScalar(-dist * factor)));
-        draw();
     }
 }
 // Custom mouse left click/drag handler:
@@ -204,6 +204,7 @@ function mouseAction(mouseAction) {
         if (mouseAction.buttons & 2) {
             // Right mouse button:
             if (tableView.camera instanceof THREE.PerspectiveCamera) {
+                cameraMoved();
                 tableView.cameraAnimates = false;
                 function swizzle(p, inverse = false) {
                     if (inverse)
@@ -228,6 +229,7 @@ function mouseAction(mouseAction) {
         }
         if (mouseAction.buttons & 4) {
             // Middle mouse button:
+            cameraMoved();
             tableView.cameraAnimates = false;
             const ndcLast = pixelsToNDC(mouseAction.p.clone().sub(mouseAction.dp), tableView.element);
             const p = NDCToWorld2(ndc, 0.0, tableView.camera);
@@ -262,6 +264,7 @@ function reset() {
     changeActiveObject("");
 }
 function changeCamera() {
+    cameraMoved();
     const cameraLoop = ["orthographic", "perspective", "back"];
     for (let k = 0; k < cameraLoop.length; k++) {
         if (activeCamera == cameraLoop[k]) {
@@ -270,7 +273,6 @@ function changeCamera() {
         }
     }
     tableView.setCamera(activeCamera);
-    draw();
 }
 function setDisplayToAll(elements, value) {
     elements.forEach((element) => {
@@ -308,14 +310,21 @@ function changeState(newState) {
     state = newState;
     draw();
 }
+function cameraMoved() {
+    const canvas = document.getElementById("overlay-canvas");
+    collection.clear(canvas);
+    // canvas.style.display = "none";
+    draw();
+}
 function draw() {
     // Check that at least some time has elapsed from last draw:
     const time = performance.now();
-    if (time - lastDrawTime < 20)
+    if (time - lastDrawTime < 100)
         return;
     lastDrawTime = time;
     const canvas = document.getElementById("overlay-canvas");
     collection.clear(canvas);
+    // canvas.style.display = "block";
     if (activeCamera != "perspective") {
         collection.draw(tableView.camera, canvas); // TODO REMOVE!
         collection.drawDebug(activeObject, state, collection.objects, canvas);

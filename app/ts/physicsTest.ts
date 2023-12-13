@@ -7,7 +7,7 @@ export {};
 import { TableScene } from "./tableScene.js";
 import { Table } from "./physics/table.js";
 import { loadJSON, clamp } from "./util.js";
-import { initPhysics, physicsLoop, reset, changeSpeed } from "./physics/physics.js";
+import { initPhysics, physicsLoop, reset, changeSpeed, testCollision } from "./physics/physics.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -77,6 +77,10 @@ function init() {
 function addToolListeners() {
     document.getElementById("buttonReset")?.addEventListener("click", (event) => {
         reset();
+    });
+
+    document.getElementById("buttonTest")?.addEventListener("click", (event) => {
+        testCollision();
     });
 
     document.getElementById("inputSpeed")?.addEventListener("input", (event) => {

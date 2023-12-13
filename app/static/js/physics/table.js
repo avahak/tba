@@ -19,35 +19,36 @@ class Table {
         console.log(this.tableScene.jsonAll);
     }
     /**
-     * Returns closest point in to p in the set
-     * S(p1,r1)\cup...\cupS(p6,r6)\cup box\minus (B(p1,r1)\cup...\cup B(p6,r6))
+     * Finds closest point on the slate to p. Nontrivial because of the geometry.
      */
     getClosestSlatePoint(p) {
-        function project(table, q) {
-            // This should project points inside the balls to the circle
-            // and do nothing outside balls.
-            let projection = null;
-            for (let k = 1; k <= 6; k++) {
-                const center = table.tableScene.jsonAll[`pocket_fall_center_${k}`];
-                const pocketCenter = new THREE.Vector2(center[0], center[1]);
-                const pocketRadius = table.tableScene.jsonAll[`pocket_fall_radius_${k}`];
-                if (cp.distanceTo(pocketCenter) < pocketRadius) {
-                    // cp = pocketCenter + (cp-pocketCenter).normalize()*pocketRadius
-                }
-            }
-            return projection;
-        }
+        const p2 = new THREE.Vector2(p.x, p.y);
         const box = this.tableScene.jsonAll.railbox;
+        // 1) Clamp cp to box:
         let cp = new THREE.Vector2(clamp(p.x, -box[0], box[0]), clamp(p.y, -box[1], box[1]));
+        // 2) If cp is inside pocket circles, project it to the circle:
         for (let k = 1; k <= 6; k++) {
             const center = this.tableScene.jsonAll[`pocket_fall_center_${k}`];
             const pocketCenter = new THREE.Vector2(center[0], center[1]);
             const pocketRadius = this.tableScene.jsonAll[`pocket_fall_radius_${k}`];
-            if (cp.distanceTo(pocketCenter) < pocketRadius) {
-                // cp = pocketCenter + (cp-pocketCenter).normalize()*pocketRadius
+            if (cp.distanceTo(pocketCenter) < pocketRadius)
+                cp.copy(pocketCenter.clone().add(cp.clone().sub(pocketCenter).setLength(pocketRadius)));
+        }
+        // 3) If point is inside box, return it:
+        if ((Math.abs(cp.x) <= box[0]) && (Math.abs(cp.y) <= box[1]))
+            return new THREE.Vector3(cp.x, cp.y, 0);
+        // 4) if point outside box, return closest point from pocket_fall_corners
+        const corners = this.tableScene.jsonAll[`pocket_fall_corners`];
+        const closest = [Infinity, null];
+        for (let k = 0; k < 12; k++) {
+            const corner = new THREE.Vector2(corners[k][0], corners[k][1]);
+            const dist = p2.distanceTo(corner);
+            if (dist < closest[0]) {
+                closest[0] = dist;
+                closest[1] = corner;
             }
         }
-        return new THREE.Vector3(cp.x, cp.y, 0);
+        return new THREE.Vector3(closest[1].x, closest[1].y, 0);
     }
     getClosestCushionPoint(p) {
         const cushionsPos = this.tableScene.objects.cushions.children[0].geometry.attributes.position;
