@@ -161,6 +161,8 @@ class Collision {
 
     public static detectSlateCollision(ball: Ball, table: Table): boolean {
         // Check collisions with slate:
+        if (ball.isStopped)
+            return false;
         const slate = table.getClosestSlatePoint(ball.p);
         const info = Collision.ballStaticCollisionInfo(ball, slate);
         return (info !== null);
@@ -168,6 +170,8 @@ class Collision {
 
     public static detectCushionCollision(ball: Ball, table: Table): boolean {
         // Check collisions with cushion:
+        if (ball.isStopped)
+            return false;
         if ((Math.abs(ball.p.x)+ball.r < table.tableLength/2) && (Math.abs(ball.p.y)+ball.r < table.tableLength/4))
             return false;
         const cushion = table.getClosestCushionPoint(ball.p);
@@ -365,8 +369,10 @@ class Collision {
         console.log("resolve()", {"iter": iter, "cor(0)": Math.abs(this.table.balls[0].v.z/v0)});
         
         this.contactObjects.forEach((co) => {
-            if (co.object instanceof Ball)
+            if (co.object instanceof Ball) {
                 co.object.continuingSlateContact = false;
+                co.object.isStopped = false;
+            }
         });
     }
 }

@@ -35,6 +35,7 @@ class Ball {
     table: Table;
     continuingSlateContact: boolean;
     slateDistance: number;
+    isStopped: boolean;
 
     public constructor(p: THREE.Vector3, obj: THREE.Object3D, name: string, table: Table) {
         this.p = p;
@@ -51,6 +52,7 @@ class Ball {
         this.table = table;
         this.continuingSlateContact = false;
         this.slateDistance = 0;
+        this.isStopped = false;
         this.reset();
     }
 
@@ -62,6 +64,7 @@ class Ball {
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         this.continuingSlateContact = false;
+        this.isStopped = false;
     }
 
     public applyForce(pos: THREE.Vector3, dir: THREE.Vector3) {
@@ -77,6 +80,7 @@ class Ball {
         this.a.set(0, 0, 0);
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
+        this.isStopped = true;
     }
 
     public enforceContinuingSlateContact() {
@@ -90,6 +94,8 @@ class Ball {
 
     public advanceTime(dt0: number) {
         // this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
+        if (this.isStopped)
+            return;
         if ((this.v.length()+this.r*this.w.length() < 1.0e-3) && (Math.abs(this.p.z-this.r) < 1.0e-3)) {
             this.stop();
             return;

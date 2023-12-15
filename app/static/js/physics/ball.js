@@ -29,6 +29,7 @@ class Ball {
         this.table = table;
         this.continuingSlateContact = false;
         this.slateDistance = 0;
+        this.isStopped = false;
         this.reset();
     }
     reset() {
@@ -39,6 +40,7 @@ class Ball {
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         this.continuingSlateContact = false;
+        this.isStopped = false;
     }
     applyForce(pos, dir) {
         this.a.addScaledVector(dir, 1.0 / this.m);
@@ -51,6 +53,7 @@ class Ball {
         this.a.set(0, 0, 0);
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
+        this.isStopped = true;
     }
     enforceContinuingSlateContact() {
         this.a.z = 0;
@@ -62,6 +65,8 @@ class Ball {
     }
     advanceTime(dt0) {
         // this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
+        if (this.isStopped)
+            return;
         if ((this.v.length() + this.r * this.w.length() < 1.0e-3) && (Math.abs(this.p.z - this.r) < 1.0e-3)) {
             this.stop();
             return;
