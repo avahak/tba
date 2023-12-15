@@ -44,18 +44,22 @@ function physicsLoop() {
     let dt = 0;
     if (!!lastTime)
         dt = speed * (time - lastTime);
-    if (dt > 0.5)
-        dt = 0.5;
+    if (dt > 1)
+        dt = 1;
     lastTime = time;
     // console.log("ball_0", {"p.z": table.balls[0].p.z, "v.z": table.balls[0].v.z});
-    for (let k = 0; k < 16; k++)
-        table.balls[k].advanceTime(dt);
+    let iterNum = Math.max(Math.floor(dt / 0.001), 1);
+    for (let iter = 0; iter < iterNum; iter++) {
+        for (let k = 0; k < 16; k++)
+            table.balls[k].advanceTime(dt / iterNum);
+        if (Collision.detectCollision(table) !== null) {
+            const collision = Collision.fromTable(table);
+            collision === null || collision === void 0 ? void 0 : collision.resolve();
+        }
+    }
+    // TODO Fix this! This is essentially sequential now..
     for (let k = 0; k < 16; k++) {
         table.balls[k].obj.position.copy(table.balls[k].p);
         table.balls[k].obj.quaternion.copy(table.balls[k].q);
     }
-    // if (Collision.detectCollision(table) !== null) {
-    //     const collision = Collision.fromTable(table);
-    //     collision?.resolve();
-    // }
 }

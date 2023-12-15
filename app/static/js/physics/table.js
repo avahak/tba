@@ -16,6 +16,23 @@ class Table {
             const ball = new Ball(obj.position.clone(), obj, name, this);
             this.balls.push(ball);
         }
+        this.tableLength = this.tableScene.specs.TABLE_LENGTH;
+        // Initialize pockets:
+        this.pocketCenters = [];
+        this.pocketRadii = [];
+        for (let k = 1; k <= 6; k++) {
+            const center = this.tableScene.jsonAll[`pocket_fall_center_${k}`];
+            this.pocketCenters.push(new THREE.Vector2(center[0], center[1]));
+            this.pocketRadii.push(this.tableScene.jsonAll[`pocket_fall_radius_${k}`]);
+        }
+        // Initialize cushion triangle points:
+        this.cushionVertices = [];
+        const cushionsPos = this.tableScene.objects.cushions.children[0].geometry.attributes.position;
+        for (let k = 0; k < cushionsPos.count / 3; k++) {
+            this.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k));
+            this.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1));
+            this.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
+        }
         console.log(this.tableScene.jsonAll);
     }
     /**
@@ -27,12 +44,11 @@ class Table {
         // 1) Clamp cp to box:
         let cp = new THREE.Vector2(clamp(p.x, -box[0], box[0]), clamp(p.y, -box[1], box[1]));
         // 2) If cp is inside pocket circles, project it to the circle:
-        for (let k = 1; k <= 6; k++) {
-            const center = this.tableScene.jsonAll[`pocket_fall_center_${k}`];
-            const pocketCenter = new THREE.Vector2(center[0], center[1]);
-            const pocketRadius = this.tableScene.jsonAll[`pocket_fall_radius_${k}`];
-            if (cp.distanceTo(pocketCenter) < pocketRadius)
-                cp.copy(pocketCenter.clone().add(cp.clone().sub(pocketCenter).setLength(pocketRadius)));
+        for (let k = 0; k < 6; k++) {
+            const center = this.pocketCenters[k];
+            const radius = this.pocketRadii[k];
+            if (cp.distanceTo(center) < radius)
+                cp.copy(center.clone().add(cp.clone().sub(center).setLength(radius)));
         }
         // 3) If point is inside box, return it:
         if ((Math.abs(cp.x) <= box[0]) && (Math.abs(cp.y) <= box[1]))
@@ -51,10 +67,9 @@ class Table {
         return new THREE.Vector3(closest[1].x, closest[1].y, 0);
     }
     getClosestCushionPoint(p) {
-        const cushionsPos = this.tableScene.objects.cushions.children[0].geometry.attributes.position;
         const closestCushion = ["cushion", null, Infinity];
-        for (let k = 0; k < cushionsPos.count / 3; k++) {
-            const cp = closestPoint(p, new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1), new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
+        for (let k = 0; k < this.cushionVertices.length / 3; k++) {
+            const cp = closestPoint(p, this.cushionVertices[3 * k], this.cushionVertices[3 * k + 1], this.cushionVertices[3 * k + 2]);
             const dist = p.distanceTo(cp);
             if (dist < closestCushion[2]) {
                 closestCushion[1] = cp;

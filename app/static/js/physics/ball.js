@@ -1,7 +1,5 @@
 // TODO Try Verlet integration
 export { Ball };
-import { clamp } from '../util.js';
-import { Collision } from './collision.js';
 import * as THREE from 'three';
 console.log("ball.ts");
 const EPSILON = 1.0e-9;
@@ -70,9 +68,10 @@ class Ball {
         }
         let dt = dt0;
         let iter = 0;
-        while (dt >= EPSILON) {
-            const ratio = Math.max(this.a.length() / this.v.length(), this.dw.length() / this.w.length());
-            let s = clamp(isNaN(ratio) ? 0.0 : 0.5 / ratio, 0.005 * dt0, Math.min(dt, 0.001));
+        while (dt >= EPSILON) { // Not used atm
+            // const ratio = Math.max(this.a.length()/this.v.length(), this.dw.length()/this.w.length());
+            // let s = clamp(isNaN(ratio) ? 0.0 : 0.5/ratio, Math.min(0.1*dt0, dt), dt);
+            let s = dt;
             // this.integrateEuler(s);
             this.integrateHeun(s);
             dt -= s;
@@ -85,10 +84,10 @@ class Ball {
                 if (this.slateDistance < this.r + 1.0e-3)
                     if (Math.abs(this.v.z) < 1.0e-1)
                         this.enforceContinuingSlateContact();
-            if (Collision.detectCollisionForBall(this, this.table)) {
-                const collision = Collision.fromTable(this.table);
-                collision === null || collision === void 0 ? void 0 : collision.resolve();
-            }
+            // if (Collision.detectCollisionForBall(this, this.table)) {
+            //     const collision = Collision.fromTable(this.table);
+            //     collision?.resolve();
+            // }
             // if (this.name == "ball_0")
             //     console.log(this.p.z-this.r, this.v.z, this.slateDistance-this.r);
         }

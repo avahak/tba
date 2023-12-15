@@ -138,6 +138,8 @@ class Collision {
     }
     static detectCushionCollision(ball, table) {
         // Check collisions with cushion:
+        if ((Math.abs(ball.p.x) + ball.r < table.tableLength / 2) && (Math.abs(ball.p.y) + ball.r < table.tableLength / 4))
+            return false;
         const cushion = table.getClosestCushionPoint(ball.p);
         const info = Collision.ballStaticCollisionInfo(ball, cushion);
         return (info !== null);
@@ -149,6 +151,8 @@ class Collision {
         // Check collisions with other balls:
         for (let k = 0; k < table.balls.length; k++) {
             const ball2 = table.balls[k];
+            if (ball2 === ball)
+                continue;
             const info = Collision.ballBallCollisionInfo(ball, ball2);
             if (info !== null)
                 return true;
@@ -160,9 +164,19 @@ class Collision {
         return false;
     }
     static detectCollision(table) {
-        for (let k = 0; k < table.balls.length; k++)
-            if (Collision.detectCollisionForBall(table.balls[k], table))
-                return k;
+        for (let k1 = 0; k1 < table.balls.length; k1++) {
+            const ball1 = table.balls[k1];
+            for (let k2 = k1 + 1; k2 < table.balls.length; k2++) {
+                const ball2 = table.balls[k2];
+                const info = Collision.ballBallCollisionInfo(ball1, ball2);
+                if (info !== null)
+                    return k1;
+            }
+            if (Collision.detectSlateCollision(ball1, table))
+                return k1;
+            if (Collision.detectCushionCollision(ball1, table))
+                return k1;
+        }
         return null;
     }
     static fromTable(table) {
@@ -274,11 +288,8 @@ class Collision {
     isResolved() {
         for (let k = 0; k < this.contactPoints.length; k++) {
             const cp = this.contactPoints[k];
-            if ((cp.depth > EPSILON) || (cp.computeDepthDerivative() > EPSILON)) {
-                // console.log("isResolved() fail:", cp, cp.depth, cp.computeDepthDerivative());
-                // console.log("vn", cp.computeRelativeVelocity()[1]);
+            if ((cp.depth > EPSILON) || (cp.computeDepthDerivative() > EPSILON))
                 return false;
-            }
         }
         return true;
     }
