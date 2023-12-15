@@ -101,7 +101,6 @@ class Ball {
             return;
         }
         let dt = dt0;
-        let iter = 0;
         while (dt >= EPSILON) {     // Not used atm
             // const ratio = Math.max(this.a.length()/this.v.length(), this.dw.length()/this.w.length());
             // let s = clamp(isNaN(ratio) ? 0.0 : 0.5/ratio, Math.min(0.1*dt0, dt), dt);
@@ -109,7 +108,6 @@ class Ball {
             // this.integrateEuler(s);
             this.integrateHeun(s);
             dt -= s;
-            iter += 1;
 
             // console.log("v.z", Math.abs(this.table.balls[0].v.z));
             this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);

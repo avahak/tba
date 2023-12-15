@@ -12,7 +12,7 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 console.log("tableScene.ts");
 
 const RESOURCES_PATH = "./static/";
-const SHADOW_MAP_SIZE = 1024;
+const SHADOW_MAP_SIZE = 1024*2;
 
 /**
  * Handles async loading of models and textures.
@@ -213,8 +213,11 @@ class TableScene {
 		if (name == "square") {
 			for (let k1 = -1; k1 <= 1; k1 += 2) {
 				for (let k2 = -1; k2 <= 1; k2 += 2) {
-					let light = new THREE.PointLight(0xffffff, 20, 10);
+					let light = new THREE.SpotLight(0xffffff);
 					light.position.set(k1, k2, 4.0);
+					light.intensity = 5;
+					light.decay = 1;
+					light.angle = Math.PI/8;
 					light.castShadow = true;
 					light.shadow.mapSize.copy(new THREE.Vector2(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE));
 					this.lightGroup.add(light);

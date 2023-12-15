@@ -5,12 +5,16 @@ import { Graph, weightedMean } from '../util.js';
 import * as THREE from 'three';
 console.log("collision.ts");
 const EPSILON = 1.0e-9;
-const COR_BALL = 0.9;
-const COR_CUSHION = 0.9;
+const COR_BALL = 0.85;
+const COR_CUSHION = 0.8;
 const COR_SLATE = 0.5;
 const FRICTION_BALL_BALL = 0.2;
-const FRICTION_BALL_CUSHION = 0.1;
+const FRICTION_BALL_CUSHION = 0.2;
 const FRICTION_BALL_SLATE = 0.2;
+// TODO assign hardness values if we implement adaptive timesteps, ignore until then:
+const HARDNESS_BALL = 1.0;
+const HARDNESS_CUSHION = 0.5;
+const HARDNESS_SLATE = 1.0;
 /**
  * Ball, Slate, Cushion
  */
@@ -260,23 +264,21 @@ class Collision {
                 const [v, vn, vt] = cp.computeRelativeVelocity();
                 // Apply compression force:
                 const cor = (cp.object2.object instanceof Ball ? COR_BALL :
-                    cp.object2.object === "cushion" ? COR_CUSHION :
-                        COR_SLATE);
-                const force = cp.depth * Math.sqrt(cp.depth) * (vn.dot(cp.n) > 0 ? 1.0 : cor * cor);
+                    cp.object2.object === "cushion" ? COR_CUSHION : COR_SLATE);
+                const hardness = (cp.object2.object instanceof Ball ? HARDNESS_BALL :
+                    cp.object2.object === "cushion" ? HARDNESS_CUSHION : HARDNESS_SLATE);
+                // cor*cor is correct below because of scaling:
+                const force = hardness * cp.depth * Math.sqrt(cp.depth) * (vn.dot(cp.n) > 0 ? 1.0 : cor * cor);
                 cp.applyForces(cp.n.clone().multiplyScalar(-force));
-                // Apply kinetic friction force..
+                // Apply kinetic friction force:
                 const frictionCoeff = (cp.object2.object instanceof Ball ? FRICTION_BALL_BALL :
                     cp.object2.object === "cushion" ? FRICTION_BALL_CUSHION :
                         FRICTION_BALL_SLATE);
-                // TODO remove comments after debug
                 cp.applyForces(vt.clone().multiplyScalar(-frictionCoeff * force));
             }
         });
     }
     integrate(dt) {
-        // this.contactPoints.forEach((cp) => {
-        //     cp.depth += dt*cp.computeDepthDerivative();
-        // });
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 const ball = co.object;
@@ -284,7 +286,6 @@ class Collision {
                 ball.w.add(co.dw.clone().multiplyScalar(dt));
             }
         });
-        // TODO Why here instead of up there?
         this.contactPoints.forEach((cp) => {
             cp.depth += dt * cp.computeDepthDerivative();
         });
