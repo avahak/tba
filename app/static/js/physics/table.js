@@ -64,13 +64,6 @@ class Table {
         return closestCushion[1];
     }
     resetBalls() {
-        this.balls.forEach((ball) => {
-            ball.p = this.tableScene.defaultBallPosition(ball.name).clone();
-            ball.v.set(0, 0, 0);
-            ball.a.set(0, 0, 0);
-            ball.q.setFromAxisAngle(E2, -Math.PI / 2);
-            ball.w.set(0, 0, 0);
-            ball.dw.set(0, 0, 0);
-        });
+        this.balls.forEach((ball) => ball.reset());
     }
 }

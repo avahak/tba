@@ -1,5 +1,7 @@
+// TODO Try Verlet integration
 export { Ball };
 import { clamp } from '../util.js';
+import { Collision } from './collision.js';
 import * as THREE from 'three';
 console.log("ball.ts");
 const EPSILON = 1.0e-9;
@@ -19,7 +21,7 @@ class Ball {
         this.obj = obj;
         this.v = new THREE.Vector3();
         this.a = new THREE.Vector3();
-        this.q = new THREE.Quaternion().setFromAxisAngle(E2, 0.0);
+        this.q = new THREE.Quaternion();
         this.w = new THREE.Vector3();
         this.dw = new THREE.Vector3();
         this.r = R;
@@ -27,6 +29,18 @@ class Ball {
         this.j = 2.0 / 5.0 * this.m * this.r ** 2;
         this.name = name;
         this.table = table;
+        this.continuingSlateContact = false;
+        this.slateDistance = 0;
+        this.reset();
+    }
+    reset() {
+        this.p = this.table.tableScene.defaultBallPosition(this.name).clone();
+        this.v.set(0, 0, 0);
+        this.a.set(0, 0, 0);
+        this.q.setFromAxisAngle(E2, -Math.PI / 2);
+        this.w.set(0, 0, 0);
+        this.dw.set(0, 0, 0);
+        this.continuingSlateContact = false;
     }
     applyForce(pos, dir) {
         this.a.addScaledVector(dir, 1.0 / this.m);
@@ -40,42 +54,55 @@ class Ball {
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
     }
-    advanceTime(dt) {
-        if (dt > 0.2)
-            dt = 0.2;
-        if ((Math.abs(this.p.z - this.r) < 1.0e-2) && (Math.abs(this.v.z) < 1.0e-2)) {
-            // Enforce cloth contact:
-            this.p.z = this.r;
-            this.v.z = 0;
-            if (this.name == "ball_0")
-                console.log("Enforced cloth contact for ball_0.");
-        }
+    enforceContinuingSlateContact() {
+        this.a.z = 0;
+        this.v.z = 0;
+        this.p.z = this.r;
+        // if (!this.continuingSlateContact)
+        //     console.log(this.name, "enforceContinuingSlateContact");
+        this.continuingSlateContact = true;
+    }
+    advanceTime(dt0) {
+        // this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
         if ((this.v.length() + this.r * this.w.length() < 1.0e-3) && (Math.abs(this.p.z - this.r) < 1.0e-3)) {
             this.stop();
-            // if (this.name == "ball_0")
-            //     console.log("stopped");
             return;
         }
-        let dt0 = dt;
+        let dt = dt0;
         let iter = 0;
         while (dt >= EPSILON) {
             const ratio = Math.max(this.a.length() / this.v.length(), this.dw.length() / this.w.length());
-            let s = clamp(isNaN(ratio) ? 0.0 : 0.5 / ratio, 0.001 * dt0, dt);
+            let s = clamp(isNaN(ratio) ? 0.0 : 0.5 / ratio, 0.005 * dt0, Math.min(dt, 0.001));
             // this.integrateEuler(s);
             this.integrateHeun(s);
             dt -= s;
             iter += 1;
+            // console.log("v.z", Math.abs(this.table.balls[0].v.z));
+            this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
+            if (this.slateDistance > this.r + 1.0e-3)
+                this.continuingSlateContact = false;
+            if (!this.continuingSlateContact)
+                if (this.slateDistance < this.r + 1.0e-3)
+                    if (Math.abs(this.v.z) < 1.0e-1)
+                        this.enforceContinuingSlateContact();
+            if (Collision.detectCollisionForBall(this, this.table)) {
+                const collision = Collision.fromTable(this.table);
+                collision === null || collision === void 0 ? void 0 : collision.resolve();
+            }
+            // if (this.name == "ball_0")
+            //     console.log(this.p.z-this.r, this.v.z, this.slateDistance-this.r);
         }
-        // if (this.name == "ball_0")
-        //     console.log("iter", iter);
     }
     computeAcceleration() {
+        this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
         this.a.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         // Gravity:
+        // if (this.slateDistance > this.r+EPSILON)
         this.applyForce(this.p, E3.clone().multiplyScalar(-this.m * G));
-        const dist = this.p.distanceTo(this.table.getClosestSlatePoint(this.p)) - this.r;
-        if (dist < EPSILON) {
+        // const dist = this.p.distanceTo(this.table.getClosestSlatePoint(this.p)) - this.r;
+        // if (dist < EPSILON) {
+        if (this.slateDistance < this.r + EPSILON) {
             // Kinetic friction for sliding:
             const vu = this.v.clone().normalize();
             const c = 7.0 / 5.0 * FRICTION_ROLL * this.r;
@@ -91,17 +118,10 @@ class Ball {
             const s = FRICTION_ROLL * this.m * G;
             const pv = new THREE.Vector3(-vu.x * s, -vu.y * s, this.m * G);
             this.applyForce(this.p.clone().add(cp), pv);
-            if (Math.abs(this.v.z) < 1.0e-3) {
-                this.v.z = 0;
-                this.a.z = 0;
-            }
+            // this.enforceContinuingSlateContact();
         }
-        if (this.name == "ball_0") {
-            // const theta = Math.atan2(cp.dot(vu), -cp.dot(E3));
-            // console.log("cp", cp);
-            // console.log("THETA", THETA);
-            // console.log("theta (deg)", theta*180/Math.PI);
-        }
+        if (this.continuingSlateContact)
+            this.enforceContinuingSlateContact();
     }
     /**
      * Basic Euler's (forward) method.

@@ -10,10 +10,10 @@ console.log("collision.ts");
 
 const EPSILON = 1.0e-9;
 const COR_BALL = 0.9;
-const COR_CUSHION = 0.8;
+const COR_CUSHION = 0.9;
 const COR_SLATE = 0.5;
 const FRICTION_BALL_BALL = 0.2;
-const FRICTION_BALL_CUSHION = 0.2;
+const FRICTION_BALL_CUSHION = 0.1;
 const FRICTION_BALL_SLATE = 0.2;
 
 /**
@@ -159,35 +159,47 @@ class Collision {
         return null;
     }
 
+    public static detectSlateCollision(ball: Ball, table: Table): boolean {
+        // Check collisions with slate:
+        const slate = table.getClosestSlatePoint(ball.p);
+        const info = Collision.ballStaticCollisionInfo(ball, slate);
+        return (info !== null);
+    }
+
+    public static detectCushionCollision(ball: Ball, table: Table): boolean {
+        // Check collisions with cushion:
+        const cushion = table.getClosestCushionPoint(ball.p);
+        const info = Collision.ballStaticCollisionInfo(ball, cushion);
+        return (info !== null);
+    }
+
     /**
-     * Returns number of one colliding ball if it exists.
+     * Returns true if ball is involved in a collision.
      */
-    public static detectCollision(table: Table): number | null {
-        for (let k1 = 0; k1 < table.balls.length; k1++) {
-            const ball1 = table.balls[k1];
-            // Check collisions with other balls:
-            for (let k2 = k1+1; k2 < table.balls.length; k2++) {
-                const ball2 = table.balls[k2];
-                const info = Collision.ballBallCollisionInfo(ball1, ball2);
-                if (info !== null)
-                    return k1;
-            }
-            // Check collisions with cushions:
-            const cushion = table.getClosestCushionPoint(ball1.p);
-            const infoCushion = Collision.ballStaticCollisionInfo(ball1, cushion);
-            if (infoCushion !== null)
-                return k1;
-            // Check collisions with slate:
-            const slate = table.getClosestSlatePoint(ball1.p);
-            const infoSlate = Collision.ballStaticCollisionInfo(ball1, slate);
-            if (infoSlate !== null)
-                return k1;
+    public static detectCollisionForBall(ball: Ball, table: Table): boolean {
+        // Check collisions with other balls:
+        for (let k = 0; k < table.balls.length; k++) {
+            const ball2 = table.balls[k];
+            const info = Collision.ballBallCollisionInfo(ball, ball2);
+            if (info !== null)
+                return true;
         }
+        if (Collision.detectSlateCollision(ball, table))
+            return true;
+        if (Collision.detectCushionCollision(ball, table))
+            return true;
+        return false;
+    }
+
+    public static detectCollision(table: Table): number | null {
+        for (let k = 0; k < table.balls.length; k++)
+            if (Collision.detectCollisionForBall(table.balls[k], table))
+                return k;
         return null;
     }
 
     public static fromTable(table: Table): Collision | null {
-        const k0 = Collision.detectCollision(table);
+        let k0 = Collision.detectCollision(table); 
         if (k0 === null)
             return null;
         // const ball0 = table.balls[k0];
@@ -314,8 +326,9 @@ class Collision {
         let iter = 0;
         const MAX_ITER = 10000;
         // console.log("isResolved():", this.isResolved());
-        console.log("before", this.table.balls[0].v.length());
-        let v0 = this.table.balls[0].v.length();
+        // console.log("ball_0 v.z", this.table.balls[0].v.z);
+        // console.log("before", this.table.balls[0].v.length());
+        let v0 = this.table.balls[0].v.z;
         while ((iter < MAX_ITER) && (!this.isResolved())) {
             // console.log("resolve() iter", iter);
 
@@ -331,13 +344,18 @@ class Collision {
                 // console.log("cp.computeDepthDerivative()", cp.computeDepthDerivative());
             });
 
-
             this.computeAcceleration();
-            this.integrate(0.01);
+            this.integrate(0.02);
             iter++;
         }
-        console.log("after", this.table.balls[0].v.length());
-        console.log("ratio", this.table.balls[0].v.length()/v0);
-        console.log("resolve() done after #iter =", iter);
+        // console.log("ball_0 v.z", this.table.balls[0].v.z);
+        // console.log("after", this.table.balls[0].v.length());
+        // console.log("ratio", this.table.balls[0].v.length()/v0);
+        console.log("resolve()", {"iter": iter, "cor(0)": Math.abs(this.table.balls[0].v.z/v0)});
+        
+        this.contactObjects.forEach((co) => {
+            if (co.object instanceof Ball)
+                co.object.continuingSlateContact = false;
+        });
     }
 }
