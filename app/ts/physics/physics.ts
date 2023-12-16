@@ -39,8 +39,8 @@ function reset() {
     // table.balls[0].p.set(-0.2, 0, 0.2);
     table.balls[0].p.x = -0.2;
     table.balls[0].p.y = -0.1;
-    table.balls[0].v = new THREE.Vector3(5, 1, 0.5);
-    table.balls[0].w.set(0, -20, 40);
+    table.balls[0].v = new THREE.Vector3(5, 1, 1);
+    table.balls[0].w.set(0, -200, 40);
 
     table.balls[1].p.set(0, 0, r);
     table.balls[2].p.set(0, 2*r, r);
@@ -71,7 +71,14 @@ function physicsLoop() {
             collision?.resolve();
         }
     }
-    // TODO Fix this! This is essentially sequential now..
+
+    // Stop out of bounds balls:
+    for (let k = 0; k < 16; k++) {
+        if (table.balls[k].outOfBounds()) {
+            table.balls[k].reset();
+            table.balls[k].stop();
+        }
+    }
 
     for (let k = 0; k < 16; k++) {
         table.balls[k].obj.position.copy(table.balls[k].p);

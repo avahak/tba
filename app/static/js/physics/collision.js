@@ -1,4 +1,6 @@
-// TODO check signs
+// TODO compute actual "hardness" multipliers from formulas in
+// https://en.wikipedia.org/wiki/Contact_mechanics
+// This page also contains the force-displacement relation F = c*\delta^(3/2)
 export { Collision };
 import { Ball } from './ball.js';
 import { Graph, weightedMean } from '../util.js';
@@ -274,7 +276,7 @@ class Collision {
                 const frictionCoeff = (cp.object2.object instanceof Ball ? FRICTION_BALL_BALL :
                     cp.object2.object === "cushion" ? FRICTION_BALL_CUSHION :
                         FRICTION_BALL_SLATE);
-                cp.applyForces(vt.clone().multiplyScalar(-frictionCoeff * force));
+                cp.applyForces(vt.clone().normalize().multiplyScalar(-frictionCoeff * force));
             }
         });
     }

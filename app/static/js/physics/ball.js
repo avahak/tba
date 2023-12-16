@@ -55,6 +55,15 @@ class Ball {
         this.dw.set(0, 0, 0);
         this.isStopped = true;
     }
+    outOfBounds() {
+        if (this.p.z < -1)
+            return true;
+        const cx = this.table.tableScene.specs.TABLE_LENGTH / 2 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
+        const cy = this.table.tableScene.specs.TABLE_LENGTH / 4 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
+        if ((Math.abs(this.p.x) > cx) || (Math.abs(this.p.y) > cy))
+            return true;
+        return false;
+    }
     enforceContinuingSlateContact() {
         this.a.z = 0;
         this.v.z = 0;
@@ -64,13 +73,12 @@ class Ball {
         this.continuingSlateContact = true;
     }
     advanceTime(dt0) {
-        // this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
         if (this.isStopped)
             return;
-        if ((this.v.length() + this.r * this.w.length() < 1.0e-3) && (Math.abs(this.p.z - this.r) < 1.0e-3)) {
-            this.stop();
-            return;
-        }
+        // if ((this.v.length()+this.r*this.w.length() < 1.0e-2) && (Math.abs(this.p.z-this.r) < 1.0e-3)) {
+        //     this.stop();
+        //     return;
+        // }
         let dt = dt0;
         while (dt >= EPSILON) { // Not used atm
             // const ratio = Math.max(this.a.length()/this.v.length(), this.dw.length()/this.w.length());
@@ -87,10 +95,9 @@ class Ball {
                 if (this.slateDistance < this.r + 1.0e-3)
                     if (Math.abs(this.v.z) < 1.0e-1)
                         this.enforceContinuingSlateContact();
-            // if (Collision.detectCollisionForBall(this, this.table)) {
-            //     const collision = Collision.fromTable(this.table);
-            //     collision?.resolve();
-            // }
+            if (this.slateDistance < this.r + 1.0e-3)
+                if (this.v.length() + this.r * this.w.length() < 1.0e-2)
+                    this.stop();
             // if (this.name == "ball_0")
             //     console.log(this.p.z-this.r, this.v.z, this.slateDistance-this.r);
         }
@@ -110,7 +117,7 @@ class Ball {
             const c = 7.0 / 5.0 * FRICTION_ROLL * this.r;
             const cp = new THREE.Vector3(c * vu.x, c * vu.y, -this.r).setLength(this.r);
             const cp_v = this.v.clone().add(this.w.clone().cross(cp));
-            cp_v.sub(cp_v.clone().projectOnVector(cp));
+            cp_v.sub(cp_v.clone().projectOnVector(cp)).normalize();
             this.applyForce(this.p.clone().add(cp), cp_v.clone().multiplyScalar(-FRICTION_KINETIC * this.m * G));
             // Kinetic friction for spinning:
             let spin = this.w.clone().projectOnVector(cp);
