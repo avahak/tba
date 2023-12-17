@@ -36,7 +36,7 @@ class Ball {
         this.p = this.table.tableScene.defaultBallPosition(this.name).clone();
         this.v.set(0, 0, 0);
         this.a.set(0, 0, 0);
-        this.q.setFromAxisAngle(E2, -Math.PI / 2);
+        this.q.set(0, 0, 0, 1);
         this.w.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         this.continuingSlateContact = false;

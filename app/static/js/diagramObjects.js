@@ -123,8 +123,7 @@ class Ball {
     load(source) {
         this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
         this.name = source.name;
-        const ballObject = this.tableScene.objects[this.name];
-        ballObject.position.copy(this.p);
+        this.updatePositionToScene();
     }
 }
 /**

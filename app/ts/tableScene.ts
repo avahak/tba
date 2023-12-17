@@ -148,20 +148,24 @@ class TableScene {
 		const resourcePromises = [
 			this.resourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
 			this.resourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
-			this.resourceLoader.loadObjMtlPromise("ball", `${RESOURCES_PATH}models/ball.obj`, null),
 			this.resourceLoader.loadJsonPromise("jsonAll", `${RESOURCES_PATH}models/pooltable.json`),
 		];
+
+		const ballGeometry = new THREE.SphereGeometry(1, 40, 20);	// old was 1, 64, 32
+		const ball = new THREE.Mesh(ballGeometry);
+		const ballGroup = new THREE.Group();
+		ballGroup.add(ball);
 	
 		Promise.all(resourcePromises)
 			.then((resources) => {
 				this.jsonAll = this.resourceLoader.objects.jsonAll;
 				this.specs = this.jsonAll.specs;
 				this.objects.table = this.resourceLoader.objects.table;
-				this.objects.ball = this.resourceLoader.objects.ball;
+				this.objects.ball = ballGroup;
 				this.objects.cushions = this.resourceLoader.objects.cushions;
-				let ball = this.objects.ball;
+
 				for (let k = 0; k < 16; k++) {
-					const cball: THREE.Object3D = ball.clone();
+					const cball: THREE.Object3D = ballGroup.clone();
 					cball.traverse((child) => {
 						if (child instanceof THREE.Mesh)
 							child.material = this.resourceLoader.textures[`ball_${k}`];
@@ -169,7 +173,6 @@ class TableScene {
 					let r = this.specs.BALL_RADIUS;
 					cball.scale.set(r, r, r);
 					cball.position.copy(this.defaultBallPosition(k));
-					cball.rotation.set(0.0, 3*Math.PI/2, 0.0);
 					this.objects[`ball_${k}`] = cball;
 				}
 	
