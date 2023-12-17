@@ -84,7 +84,8 @@ class Ball {
     }
 
     public outOfBounds(): boolean {
-        if (this.p.z < -1)
+        const h = this.table.tableScene.specs.TABLE_CASING_HEIGHT - this.table.tableScene.specs.TABLE_RAIL_HEIGHT - this.r;
+        if (this.p.z < -h)
             return true;
         const cx = this.table.tableScene.specs.TABLE_LENGTH/2 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
         const cy = this.table.tableScene.specs.TABLE_LENGTH/4 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
