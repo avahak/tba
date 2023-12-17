@@ -173,10 +173,9 @@ interface Graph<T> {
 }
 
 /**
- * Generic graph
+ * Generic graph.
  */
 class Graph<T> implements Graph<T> {
-    // Use a hash table instead of an adjacency list
     private adjacencyTable: Map<T, Set<T>>;
     private keepSymmetric: boolean;
 
@@ -219,7 +218,9 @@ class Graph<T> implements Graph<T> {
         return matrix;
     }
 
-    // Compute connected component for a single object
+    /** 
+     * Computes connected component for a single object.
+     */
     public connectedComponent(startingObject: T): T[] {
         const visited: Set<T> = new Set();
         const connectedComponent: T[] = [];

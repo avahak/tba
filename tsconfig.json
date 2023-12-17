@@ -110,5 +110,5 @@
   }, 
   "include": [
     "app/ts/*.ts"
-, "app/ts/physics/physics.ts"  ]
+, "app/ts/table/physics.ts", "app/ts/table/tableView.ts", "app/ts/table/tableScene.ts"  ]
 }

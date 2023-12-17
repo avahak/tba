@@ -145,7 +145,7 @@ async function loadJSON(url) {
     }
 }
 /**
- * Generic graph
+ * Generic graph.
  */
 class Graph {
     constructor(keepSymmetric) {
@@ -181,7 +181,9 @@ class Graph {
                 matrix.push([object, touchedObject]);
         return matrix;
     }
-    // Compute connected component for a single object
+    /**
+     * Computes connected component for a single object.
+     */
     connectedComponent(startingObject) {
         const visited = new Set();
         const connectedComponent = [];

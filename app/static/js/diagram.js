@@ -6,14 +6,15 @@
 */
 export { initDiagram };
 import { ObjectCollection, Arrow, Text } from "./diagramObjects.js";
-import { TableView } from "./tableView.js";
-import { TableScene } from "./tableScene.js";
+import { Table } from "./table/table.js";
+import { TableScene } from "./table/tableScene.js";
+import { TableView } from "./table/tableView.js";
 import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
 import { pixelsToNDC, NDCToWorld2 } from "./transformation.js";
 import * as THREE from 'three';
 console.log("diagram.ts");
 let mouseLast = {};
-let tableScene;
+let table;
 let tableView;
 // Current 
 let activeCamera = "orthographic";
@@ -23,13 +24,14 @@ let collection;
 let lastDrawTime = performance.now();
 initDiagram();
 function initDiagram() {
-    tableScene = new TableScene();
+    const tableScene = new TableScene();
     const element = document.getElementById("three-box");
     document.addEventListener('tableSceneLoaded', () => {
+        table = new Table(tableScene);
         tableView = new TableView(element, tableScene);
         tableView.setCamera(activeCamera);
         tableView.animate();
-        collection = new ObjectCollection(tableScene);
+        collection = new ObjectCollection(table);
         changeActiveObject("");
         tableView.renderCallback = () => draw();
         addMouseListeners(element);
@@ -300,8 +302,11 @@ function checkActiveObjectValidity() {
     }
 }
 function deleteObject(objectName) {
-    if (objectName.startsWith("ball"))
-        collection.objects[objectName].resetBall();
+    if (objectName.startsWith("ball")) {
+        const ball = collection.objects[objectName];
+        ball.reset();
+        ball.updatePositionToScene();
+    }
     else
         delete collection.objects[objectName];
     draw();

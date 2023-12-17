@@ -1,10 +1,10 @@
 /**
  * Testing physics.
  */
-import { TableScene } from "./tableScene.js";
-import { Table } from "./physics/table.js";
+import { TableScene } from "./table/tableScene.js";
+import { Table } from "./table/table.js";
 import { clamp } from "./util.js";
-import { initPhysics, physicsLoop, reset, changeSpeed, testCollision } from "./physics/physics.js";
+import { initPhysics, physicsLoop, reset, changeSpeed, testCollision } from "./table/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
@@ -30,6 +30,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     element.appendChild(renderer.domElement);
     document.addEventListener('tableSceneLoaded', () => {
+        table = new Table(tableScene);
         tableScene.setLights("square");
         if (!!tableScene.cushionEdgeCylinders)
             tableScene.cushionEdgeCylinders.visible = false;
@@ -46,7 +47,6 @@ function init() {
             resize();
         });
         resize();
-        table = new Table(tableScene);
         initPhysics(table);
         addToolListeners();
         animate();

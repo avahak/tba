@@ -4,6 +4,7 @@ export { Ball }
 import { clamp } from '../util.js';
 import { Table } from './table.js';
 import { Collision } from './collision.js';
+import { NDCToWorld3 } from "../transformation.js"
 import * as THREE from 'three';
 
 console.log("ball.ts");
@@ -215,4 +216,54 @@ class Ball {
         this.w.addScaledVector(this.dw.clone().sub(dw1), 0.5*dt);
     }
 
+    /* Methods from old diagramObjects.ts Ball: */
+
+    public move(ndc: THREE.Vector2, camera: THREE.Camera) {
+        const ballObject = this.table.tableScene.objects[this.name];
+        let intersect = NDCToWorld3(ndc, this.table.tableScene.specs.BALL_RADIUS, camera);
+        if (!!intersect) {
+            const oldBallPosition = ballObject.position.clone();
+            ballObject.position.x = intersect.x;
+            ballObject.position.y = intersect.y;
+            const resolved = this.table.tableScene.resolveIntersections(this.name, ballObject.position);
+            let oob = this.table.tableScene.outOfBoundsString(resolved);
+            if ((this.table.tableScene.intersections(this.name, resolved).length == 0) && (!oob))
+                ballObject.position.copy(resolved);
+            else
+                ballObject.position.copy(oldBallPosition);
+            if (oob == "pocket") {
+                this.reset();
+                this.updatePositionToScene();
+            }
+        }
+        this.updatePositionFromScene();
+    }
+
+    /**
+     * Updates this.p and this.q taking values from the scene.
+     */
+    public updatePositionFromScene() {
+        const ballObject = this.table.tableScene.objects[this.name];
+        this.p.copy(ballObject.position);
+        this.q.copy(ballObject.quaternion);
+    }
+
+    /**
+     * Updates ball position and rotation in scene taking values from this.p and this.q.
+     */
+    public updatePositionToScene() {
+        const ballObject = this.table.tableScene.objects[this.name];
+        ballObject.position.copy(this.p);
+        ballObject.quaternion.copy(this.q);
+    }
+
+    public serialize() {
+        return { "p": this.p, "name": this.name };
+    }
+
+    public load(source: any) {
+        this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
+        this.name = source.name;
+        this.updatePositionToScene()
+    }
 }

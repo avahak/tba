@@ -4,7 +4,7 @@
  */
 
 export { TableScene };
-import { closestPoint } from "./util.js";
+import { closestPoint } from "../util.js";
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
@@ -20,7 +20,7 @@ const SHADOW_MAP_SIZE = 1024*2;
 class ResourceLoader {
 	public textureLoader: THREE.TextureLoader;
 	public textures: { [key: string]: THREE.MeshStandardMaterial };	// loaded textures
-	public objects: { [key: string]: any };				// loaded objects
+	public objects: { [key: string]: THREE.Object3D };				// loaded objects
 	public manager: THREE.LoadingManager;
 
 	public constructor(manager: THREE.LoadingManager | null = null) {
@@ -118,7 +118,7 @@ class TableScene {
 	public scene: THREE.Scene;
 	public objectGroup: THREE.Group;
 	public lightGroup: THREE.Group;
-	public objects: any;
+	public objects: { [key: string]: THREE.Object3D };
 	public jsonAll: any;
 	public specs: any;
 	public cushionEdgeCylinders: THREE.Object3D | undefined;
@@ -235,7 +235,7 @@ class TableScene {
 	}
 
 	public defaultBallPosition(ball: number | string | null): THREE.Vector3 {
-		let ballNumber: number = 0;
+		let ballNumber = 0;
 		if (typeof ball == "string") {
 			const result = ball.match(/\d+/);
 			ballNumber = result ? parseInt(result[0]) : 0;
@@ -297,7 +297,7 @@ class TableScene {
 	 */
 	public intersections(ballName: string, p: THREE.Vector3): any[] {
 		const BR = this.specs.BALL_RADIUS;
-		const cushionsPos = this.objects.cushions.children[0].geometry.attributes.position;
+		const cushionsPos = (this.objects.cushions.children[0] as THREE.Mesh).geometry.attributes.position;
 		const closestCushion: [string, THREE.Vector3 | null, number] = ["cushion", null, Infinity];
 		for (let k = 0; k < cushionsPos.count/3; k++) {
 			const cp = closestPoint(p, 

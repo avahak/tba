@@ -3,8 +3,9 @@
  * - handle zoom and window.devicePixelRatio.
  */
 import { ObjectCollection } from "./diagramObjects.js";
-import { TableScene } from "./tableScene.js";
+import { TableScene } from "./table/tableScene.js";
 import { loadJSON, clamp } from "./util.js";
+import { Table } from "./table/table.js";
 import * as THREE from 'three';
 const E3 = new THREE.Vector3(0, 0, 1);
 const VIEWER_SIZE = new THREE.Vector2(650, 400);
@@ -12,6 +13,7 @@ let widgets; // cannot use object but Map can use any kind of keys
 let tableScene;
 let camera;
 let renderer;
+let renderCounter = 0;
 init();
 function init() {
     tableScene = new TableScene();
@@ -60,7 +62,8 @@ function initElement(element, diagram) {
     canvas.height = VIEWER_SIZE.y;
     element.appendChild(canvas);
     let canvasContext = canvas.getContext("2d");
-    const collection = new ObjectCollection(tableScene);
+    const table = new Table(tableScene);
+    const collection = new ObjectCollection(table);
     collection.load(diagram);
     const cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI / 2, phi: Math.PI / 2 - 0.02 };
     const widgetInfo = { collection: collection, canvas: canvas, canvasContext: canvasContext, cameraPose: cameraPose };
@@ -76,19 +79,23 @@ function handleMouseWheel(element, event) {
 function handleMouseMove(element, event) {
     let widgetInfo = widgets.get(element);
     const cp = widgetInfo.cameraPose;
+    let renderNeeded = false;
     if (event.buttons & 1) {
         // Left mouse button:
         const dir = new THREE.Vector3(cp.r * Math.cos(cp.phi) * Math.cos(cp.theta), cp.r * Math.cos(cp.phi) * Math.sin(cp.theta), 0).normalize();
         const dir2 = dir.clone().cross(E3).normalize();
         cp.p.add(dir.multiplyScalar(-0.001 * event.movementY * cp.r));
         cp.p.add(dir2.multiplyScalar(0.001 * event.movementX * cp.r));
+        renderNeeded = true;
     }
     if (event.buttons & 2) {
         // Right mouse button:
         cp.phi = clamp(cp.phi + 0.01 * event.movementY, 0.1, Math.PI / 2 - 0.02);
         cp.theta = cp.theta - 0.01 * event.movementX;
+        renderNeeded = true;
     }
-    renderElement(element);
+    if (renderNeeded)
+        renderElement(element);
 }
 function poseCamera(cp) {
     const dir = new THREE.Vector3(cp.r * Math.cos(cp.phi) * Math.cos(cp.theta), cp.r * Math.cos(cp.phi) * Math.sin(cp.theta), cp.r * Math.sin(cp.phi));
@@ -107,6 +114,8 @@ function renderElement(element) {
     widgetInfo.collection.clear(widgetInfo.canvas);
     widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
     widgetInfo.collection.draw(camera, widgetInfo.canvas);
+    renderCounter++;
+    // console.log("renderElement calls:", renderCounter);
 }
 function resize() {
     // renderer.setPixelRatio(window.devicePixelRatio);

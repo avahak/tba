@@ -6,9 +6,10 @@
 export {};
 
 import { ObjectCollection } from "./diagramObjects.js";
-import { TableScene } from "./tableScene.js";
+import { TableScene } from "./table/tableScene.js";
 import { loadJSON, clamp } from "./util.js";
-import { Ball } from "./diagramObjects.js";
+import { Ball } from "./table/ball.js";
+import { Table } from "./table/table.js";
 import * as THREE from 'three';
 
 interface CameraPose {
@@ -32,6 +33,8 @@ let widgets: Map<Element, WidgetInfo>;   // cannot use object but Map can use an
 let tableScene: TableScene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
+
+let renderCounter = 0;
 
 init();
 
@@ -87,7 +90,8 @@ function initElement(element: HTMLElement, diagram: any) {
     element.appendChild(canvas);
     let canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-    const collection = new ObjectCollection(tableScene);
+    const table = new Table(tableScene);
+    const collection = new ObjectCollection(table);
     collection.load(diagram);
 
     const cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI/2, phi: Math.PI/2-0.02 }
@@ -106,19 +110,23 @@ function handleMouseWheel(element: HTMLElement, event: WheelEvent) {
 function handleMouseMove(element: HTMLElement, event: MouseEvent) {
     let widgetInfo = widgets.get(element) as WidgetInfo;
     const cp = widgetInfo.cameraPose;
+    let renderNeeded = false;
     if (event.buttons & 1) {
         // Left mouse button:
         const dir = new THREE.Vector3(cp.r*Math.cos(cp.phi)*Math.cos(cp.theta), cp.r*Math.cos(cp.phi)*Math.sin(cp.theta), 0).normalize();
         const dir2 = dir.clone().cross(E3).normalize();
         cp.p.add(dir.multiplyScalar(-0.001*event.movementY*cp.r));
         cp.p.add(dir2.multiplyScalar(0.001*event.movementX*cp.r));
+        renderNeeded = true;
     }
     if (event.buttons & 2) {
         // Right mouse button:
         cp.phi = clamp(cp.phi + 0.01*event.movementY, 0.1, Math.PI/2-0.02);
         cp.theta = cp.theta - 0.01*event.movementX;
+        renderNeeded = true;
     }
-    renderElement(element);
+    if (renderNeeded)
+        renderElement(element);
 }
 
 function poseCamera(cp: CameraPose) {
@@ -142,6 +150,9 @@ function renderElement(element: HTMLElement) {
     widgetInfo.collection.clear(widgetInfo.canvas);
     widgetInfo.canvasContext.drawImage(renderer.domElement, 0, 0);
     widgetInfo.collection.draw(camera, widgetInfo.canvas);
+
+    renderCounter++;
+    // console.log("renderElement calls:", renderCounter);
 }
 
 function resize() {

@@ -6,9 +6,11 @@
 */
 
 export { initDiagram };
-import { ObjectCollection, Arrow, Text, Ball } from "./diagramObjects.js"
-import { TableView } from "./tableView.js";
-import { TableScene } from "./tableScene.js";
+import { ObjectCollection, Arrow, Text } from "./diagramObjects.js"
+import { Ball } from "./table/ball.js";
+import { Table } from "./table/table.js";
+import { TableScene } from "./table/tableScene.js";
+import { TableView } from "./table/tableView.js";
 import { copyToClipboard, parseNumberBetween, clamp, loadJSON } from "./util.js";
 import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from "./transformation.js"
 import * as THREE from 'three';
@@ -24,8 +26,8 @@ type MouseAction = {
 	movement: THREE.Vector2;
 };
 
-let mouseLast: { [key: number]: any } = {};
-let tableScene: TableScene;
+let mouseLast: { [key: number]: THREE.Vector2 } = {};
+let table: Table;
 let tableView: TableView;
 
 // Current 
@@ -39,15 +41,16 @@ let lastDrawTime: number = performance.now();
 initDiagram();
 
 function initDiagram() {
-    tableScene = new TableScene();
+	const tableScene = new TableScene();
 	const element = document.getElementById("three-box") as HTMLElement;
 
 	document.addEventListener('tableSceneLoaded', () => {
+		table = new Table(tableScene);
 		tableView = new TableView(element, tableScene);
 		tableView.setCamera(activeCamera);
 		tableView.animate();
 		
-		collection = new ObjectCollection(tableScene);
+		collection = new ObjectCollection(table);
 		changeActiveObject("");
 		tableView.renderCallback = () => draw();
 
@@ -330,14 +333,14 @@ function checkActiveObjectValidity() {
 	if (activeObject[0].startsWith("arrow")) {
 		if ((state == "add_arrow_start") || (state == "add_arrow_end"))
 			return;
-		const arrow = collection.objects[activeObject[0]];
+		const arrow = collection.objects[activeObject[0]] as Arrow;
 		if (arrow.p1.distanceTo(arrow.p2) < 0.02) {
 			// degenerate arrow - delete
 			deleteObject(activeObject[0]);
 			changeActiveObject("");
 		}
 	} else if (activeObject[0].startsWith("text")) {
-		const text = collection.objects[activeObject[0]];
+		const text = collection.objects[activeObject[0]] as Text;
 		if (!text.text) {
 			// degenerate text - delete
 			deleteObject(activeObject[0]);
@@ -347,9 +350,11 @@ function checkActiveObjectValidity() {
 }
 
 function deleteObject(objectName: string) {
-	if (objectName.startsWith("ball"))
-		(collection.objects[objectName] as Ball).resetBall();
-	else
+	if (objectName.startsWith("ball")) {
+		const ball = collection.objects[objectName] as Ball;
+		ball.reset();
+		ball.updatePositionToScene();
+	} else
 		delete collection.objects[objectName];
 	draw();
 }

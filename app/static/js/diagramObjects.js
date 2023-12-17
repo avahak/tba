@@ -1,9 +1,9 @@
 /**
  * Handles states of movable objects of the diagram.
  */
-export { Text, Arrow, Ball, ObjectCollection };
+export { Text, Arrow, ObjectCollection };
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
-import { pixelsToNDC, NDCToPixels, NDCToWorld3, NDCToWorld2, world2ToNDC } from "./transformation.js";
+import { pixelsToNDC, NDCToPixels, NDCToWorld2, world2ToNDC } from "./transformation.js";
 import * as THREE from 'three';
 console.log("diagram-objects.ts");
 class Arrow {
@@ -72,71 +72,16 @@ class Text {
     }
 }
 Text.counter = 0;
-class Ball {
-    constructor(name, tableScene) {
-        this.name = name;
-        this.tableScene = tableScene;
-        const ballObject = this.tableScene.objects[this.name];
-        this.p = ballObject.position.clone();
-    }
-    move(ndc, camera) {
-        const ballObject = this.tableScene.objects[this.name];
-        let intersect = NDCToWorld3(ndc, this.tableScene.specs.BALL_RADIUS, camera);
-        if (!!intersect) {
-            const oldBallPosition = ballObject.position.clone();
-            ballObject.position.x = intersect.x;
-            ballObject.position.y = intersect.y;
-            const resolved = this.tableScene.resolveIntersections(this.name, ballObject.position);
-            let oob = this.tableScene.outOfBoundsString(resolved);
-            if ((this.tableScene.intersections(this.name, resolved).length == 0) && (!oob))
-                ballObject.position.copy(resolved);
-            else
-                ballObject.position.copy(oldBallPosition);
-            if (oob == "pocket")
-                this.resetBall();
-        }
-        this.updatePositionFromScene();
-    }
-    /**
-     * Updates this.p taking value from ball position in scene.
-     */
-    updatePositionFromScene() {
-        const ballObject = this.tableScene.objects[this.name];
-        this.p.copy(ballObject.position);
-    }
-    /**
-     * Updates ball position in scene taking value from this.p.
-     */
-    updatePositionToScene() {
-        const ballObject = this.tableScene.objects[this.name];
-        ballObject.position.copy(this.p);
-    }
-    resetBall() {
-        const ballObject = this.tableScene.objects[this.name];
-        const defaultPos = this.tableScene.defaultBallPosition(this.name);
-        ballObject.position.copy(defaultPos);
-        this.updatePositionFromScene();
-    }
-    serialize() {
-        return { "p": this.p, "name": this.name };
-    }
-    load(source) {
-        this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
-        this.name = source.name;
-        this.updatePositionToScene();
-    }
-}
 /**
  * Stores arrows, texts, and positions of balls and has methods to handle them.
  */
 class ObjectCollection {
-    constructor(tableScene) {
-        this.tableScene = tableScene;
+    constructor(table) {
+        this.table = table;
         this.objects = {};
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
-            const ball = new Ball(name, this.tableScene);
-            this.objects[name] = ball;
+            this.objects[name] = this.table.balls[k];
         }
     }
     move(object, ndc, camera) {
@@ -166,7 +111,7 @@ class ObjectCollection {
         }
     }
     getObject(ndc, camera) {
-        let obj = this.tableScene.findObjectNameOnMouse(ndc, camera);
+        let obj = this.table.tableScene.findObjectNameOnMouse(ndc, camera);
         if ((!!obj) && obj.startsWith("ball_"))
             return [obj, ""];
         let closest = ["", Infinity];
@@ -247,8 +192,11 @@ class ObjectCollection {
     }
     reset() {
         Object.keys(this.objects).forEach((key) => {
-            if (key.startsWith("ball"))
-                this.objects[key].resetBall();
+            if (key.startsWith("ball")) {
+                const ball = this.objects[key];
+                ball.reset();
+                ball.updatePositionToScene();
+            }
             else
                 delete this.objects[key];
         });
@@ -273,12 +221,10 @@ class ObjectCollection {
     }
     load(data) {
         this.reset();
+        // Extract ball related data:
+        this.table.load(data);
         for (const objName in data) {
-            if (objName.startsWith("ball")) {
-                const ball = this.objects[objName];
-                ball.load(data[objName]);
-            }
-            else if (objName.startsWith("arrow")) {
+            if (objName.startsWith("arrow")) {
                 const arrow = new Arrow(new THREE.Vector2(), new THREE.Vector2());
                 arrow.load(data[objName]);
                 this.objects[objName] = arrow;
