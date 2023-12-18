@@ -115,4 +115,11 @@ class Table {
             }
         }
     }
+
+    public ballPositions() {
+        const data: {[key: string]: any} = {};
+        for (let k = 0; k < 16; k++) 
+            data[`ball_${k}`] = { "p": this.balls[k].p, "q": this.balls[k].q };
+        return data;
+    }
 }

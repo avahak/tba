@@ -7,6 +7,7 @@ import { TableScene } from "./table/tableScene.js";
 import { Table } from "./table/table.js";
 import { clamp, loadJSON } from "./util.js";
 import { initPhysics, physicsLoop, reset, changeSpeed } from "./table/physics.js";
+import { Collision } from "./table/collision.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);

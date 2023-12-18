@@ -51,12 +51,9 @@ function physicsLoop() {
     const time = performance.now()/1000;
     let dt = 0;
     if (!!lastTime)
-        dt = speed*(time-lastTime);
-    if (dt > 0.2)
-        dt = 0.2;
+        dt = Math.min(speed*(time-lastTime), 0.2);
     lastTime = time;
 
-    // console.log("ball_0", {"p.z": table.balls[0].p.z, "v.z": table.balls[0].v.z});
     let iterNum = Math.max(Math.floor(dt/0.0001), 1);
     for (let iter = 0; iter < iterNum; iter++) {
         for (let k = 0; k < 16; k++)
