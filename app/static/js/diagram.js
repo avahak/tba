@@ -72,36 +72,35 @@ function addMouseListeners(element) {
 function loadDiagram() {
     var _a;
     const diagramURL = (_a = document.getElementById("canvas-container")) === null || _a === void 0 ? void 0 : _a.dataset["diagramUrl"];
-    let initialValuesUsed = false;
+    console.log("url", diagramURL);
     if (!!diagramURL) {
         loadJSON(diagramURL).then((data) => {
             if (!!data) {
                 console.log("data", data);
                 collection.load(data);
-                initialValuesUsed = true;
+                console.log("Initial values loaded.");
             }
         });
     }
-    if (initialValuesUsed)
-        console.log("Initial values loaded.");
-    else
-        console.log("No initial values.");
 }
 function addButtonClickEventListeners() {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     (_a = document.getElementById("buttonAddArrow")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
         addArrow();
     });
     (_b = document.getElementById("buttonAddText")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => {
         addText();
     });
-    (_c = document.getElementById("buttonReset")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", () => {
+    (_c = document.getElementById("buttonVelocity")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", () => {
+        toggleBallVelocity();
+    });
+    (_d = document.getElementById("buttonReset")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", () => {
         reset();
     });
-    (_d = document.getElementById("buttonCamera")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", () => {
+    (_e = document.getElementById("buttonCamera")) === null || _e === void 0 ? void 0 : _e.addEventListener("click", () => {
         changeCamera();
     });
-    (_e = document.getElementById("buttonSave")) === null || _e === void 0 ? void 0 : _e.addEventListener("click", () => {
+    (_f = document.getElementById("buttonSave")) === null || _f === void 0 ? void 0 : _f.addEventListener("click", () => {
         save();
     });
 }
@@ -265,6 +264,13 @@ function reset() {
     changeState("");
     changeActiveObject("");
 }
+function toggleBallVelocity() {
+    const ball = collection.objects[activeObject[0]];
+    if (ball.v.length() > 0.01)
+        ball.v.set(0, 0, 0);
+    else
+        ball.v.set(1, 0, 0);
+}
 function changeCamera() {
     cameraMoved();
     const cameraLoop = ["orthographic", "perspective", "back"];
@@ -341,10 +347,12 @@ function changeActiveObject(newActiveObject, newActiveObjectPart = "", propagate
         deleteObject(activeObject[0]);
     activeObject = [newActiveObject, newActiveObjectPart];
     // 1) if activeObject is "", disable tool-bar
-    setDisplayToAll(document.querySelectorAll('.tool-bar'), (activeObject[0] == "" || activeObject[0].startsWith("ball")) ? "none" : "block");
+    setDisplayToAll(document.querySelectorAll('.tool-bar'), (activeObject[0] == "") ? "none" : "block");
     // 2) hide all "object-option":s
     setDisplayToAll(document.querySelectorAll('.object-option'), "none");
     // 3) show all "arrow-option" or "text-option"
+    if (activeObject[0].startsWith("ball"))
+        setDisplayToAll(document.querySelectorAll('.ball-option'), "flex");
     if (activeObject[0].startsWith("arrow"))
         setDisplayToAll(document.querySelectorAll('.arrow-option'), "flex");
     if (activeObject[0].startsWith("text"))

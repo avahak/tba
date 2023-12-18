@@ -243,27 +243,32 @@ class Ball {
      * Updates this.p and this.q taking values from the scene.
      */
     public updatePositionFromScene() {
-        const ballObject = this.table.tableScene.objects[this.name];
-        this.p.copy(ballObject.position);
-        this.q.copy(ballObject.quaternion);
+        this.p.copy(this.obj.position);
+        this.q.copy(this.obj.quaternion);
     }
 
     /**
      * Updates ball position and rotation in scene taking values from this.p and this.q.
      */
     public updatePositionToScene() {
-        const ballObject = this.table.tableScene.objects[this.name];
-        ballObject.position.copy(this.p);
-        ballObject.quaternion.copy(this.q);
+        this.obj.position.copy(this.p);
+        this.obj.quaternion.copy(this.q);
     }
 
     public serialize() {
-        return { "p": this.p, "name": this.name };
+        let obj: { [key: string]: any };
+        obj = { "p": this.p, "name": this.name };
+        if (this.v.length() > 0.01)
+            obj["v"] = this.v;
+        return obj;
     }
 
     public load(source: any) {
-        this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
-        this.name = source.name;
+        this.reset();
+        this.p.set(source.p.x, source.p.y, source.p?.z ?? 0);
+        if (source.hasOwnProperty("v")) {
+            this.v.set(source.v.x, source.v.y, source.v?.z ?? 0);
+        }
         this.updatePositionToScene()
     }
 }

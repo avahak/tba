@@ -193,24 +193,30 @@ class Ball {
      * Updates this.p and this.q taking values from the scene.
      */
     updatePositionFromScene() {
-        const ballObject = this.table.tableScene.objects[this.name];
-        this.p.copy(ballObject.position);
-        this.q.copy(ballObject.quaternion);
+        this.p.copy(this.obj.position);
+        this.q.copy(this.obj.quaternion);
     }
     /**
      * Updates ball position and rotation in scene taking values from this.p and this.q.
      */
     updatePositionToScene() {
-        const ballObject = this.table.tableScene.objects[this.name];
-        ballObject.position.copy(this.p);
-        ballObject.quaternion.copy(this.q);
+        this.obj.position.copy(this.p);
+        this.obj.quaternion.copy(this.q);
     }
     serialize() {
-        return { "p": this.p, "name": this.name };
+        let obj;
+        obj = { "p": this.p, "name": this.name };
+        if (this.v.length() > 0.01)
+            obj["v"] = this.v;
+        return obj;
     }
     load(source) {
-        this.p = new THREE.Vector3(source.p.x, source.p.y, source.p.z);
-        this.name = source.name;
+        var _a, _b, _c, _d;
+        this.reset();
+        this.p.set(source.p.x, source.p.y, (_b = (_a = source.p) === null || _a === void 0 ? void 0 : _a.z) !== null && _b !== void 0 ? _b : 0);
+        if (source.hasOwnProperty("v")) {
+            this.v.set(source.v.x, source.v.y, (_d = (_c = source.v) === null || _c === void 0 ? void 0 : _c.z) !== null && _d !== void 0 ? _d : 0);
+        }
         this.updatePositionToScene();
     }
 }

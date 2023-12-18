@@ -25,8 +25,8 @@ function NDCToPixels(ndc, element) {
     return p;
 }
 /**
-     * Returns point on plane z=height where ray from camera to mouse intersects it.
-     */
+ * Returns point on plane z=height where ray from camera to mouse intersects it.
+ */
 function NDCToWorld3(ndc, height, camera) {
     const ndc1 = new THREE.Vector3(ndc.x, ndc.y, -1);
     const ndc2 = new THREE.Vector3(ndc.x, ndc.y, 1);

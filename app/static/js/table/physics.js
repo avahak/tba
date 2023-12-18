@@ -1,4 +1,4 @@
-export { initPhysics, physicsLoop, reset, changeSpeed, testCollision };
+export { initPhysics, physicsLoop, reset, changeSpeed };
 import { Collision } from "./collision.js";
 import * as THREE from 'three';
 console.log("physics.ts");
@@ -19,9 +19,6 @@ function changeSpeed(value) {
         speed = 0;
     else
         speed = Math.exp(6 * value / maxValue);
-}
-function testCollision() {
-    Collision.fromTable(table);
 }
 function reset() {
     table.resetBalls();
@@ -44,11 +41,11 @@ function physicsLoop() {
     let dt = 0;
     if (!!lastTime)
         dt = speed * (time - lastTime);
-    if (dt > 1)
-        dt = 1;
+    if (dt > 0.2)
+        dt = 0.2;
     lastTime = time;
     // console.log("ball_0", {"p.z": table.balls[0].p.z, "v.z": table.balls[0].v.z});
-    let iterNum = Math.max(Math.floor(dt / 0.001), 1);
+    let iterNum = Math.max(Math.floor(dt / 0.0001), 1);
     for (let iter = 0; iter < iterNum; iter++) {
         for (let k = 0; k < 16; k++)
             table.balls[k].advanceTime(dt / iterNum);

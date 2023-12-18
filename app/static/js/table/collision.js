@@ -247,7 +247,7 @@ class Collision {
         // console.log("touchinGraph", touchingGraph.getAdjacentPairs());
         // console.log("connected to k1:", component);
         // console.log("cps:", cps);
-        // console.log("cos:", cos);
+        console.log("Objects:", cos.filter((obj) => obj.object instanceof Ball).map((obj) => obj.object.name));
         // console.log("cps p:s:", cps.map((cp) => cp.p));
         return new Collision(table, cps, cos);
     }
@@ -306,7 +306,6 @@ class Collision {
         // console.log("isResolved():", this.isResolved());
         // console.log("ball_0 v.z", this.table.balls[0].v.z);
         // console.log("before", this.table.balls[0].v.length());
-        let v0 = this.table.balls[0].v.z;
         while ((iter < MAX_ITER) && (!this.isResolved())) {
             // console.log("resolve() iter", iter);
             // check that cp.computeDepthDerivative() is same as..
@@ -321,13 +320,10 @@ class Collision {
                 // console.log("cp.computeDepthDerivative()", cp.computeDepthDerivative());
             });
             this.computeAcceleration();
-            this.integrate(0.02);
+            this.integrate(0.05);
             iter++;
         }
-        // console.log("ball_0 v.z", this.table.balls[0].v.z);
-        // console.log("after", this.table.balls[0].v.length());
-        // console.log("ratio", this.table.balls[0].v.length()/v0);
-        console.log("resolve()", { "iter": iter, "cor(0)": Math.abs(this.table.balls[0].v.z / v0) });
+        console.log("resolve()", { "iter": iter });
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 co.object.continuingSlateContact = false;

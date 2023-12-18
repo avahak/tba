@@ -101,20 +101,16 @@ function addMouseListeners(element: HTMLElement) {
 
 function loadDiagram() {
 	const diagramURL = document.getElementById("canvas-container")?.dataset["diagramUrl"];
-	let initialValuesUsed = false;
+	console.log("url", diagramURL);
 	if (!!diagramURL) {
 		loadJSON(diagramURL).then((data: any) => {
 			if (!!data) {
 				console.log("data", data);
 				collection.load(data);
-				initialValuesUsed = true;
+				console.log("Initial values loaded.");
 			}
 		});
 	}
-	if (initialValuesUsed)
-		console.log("Initial values loaded.");
-	else 
-		console.log("No initial values.");
 }
 
 function addButtonClickEventListeners() {
@@ -123,6 +119,9 @@ function addButtonClickEventListeners() {
 	});
 	document.getElementById("buttonAddText")?.addEventListener("click", () => {
 		addText();
+	});
+	document.getElementById("buttonVelocity")?.addEventListener("click", () => {
+		toggleBallVelocity();
 	});
 	document.getElementById("buttonReset")?.addEventListener("click", () => {
 		reset();
@@ -311,6 +310,14 @@ function reset() {
 	changeActiveObject("");
 }
 
+function toggleBallVelocity() {
+	const ball = collection.objects[activeObject[0]] as Ball;
+	if (ball.v.length() > 0.01)
+		ball.v.set(0, 0, 0);
+	else
+		ball.v.set(1, 0, 0);
+}
+
 function changeCamera() {
 	cameraMoved();
 	const cameraLoop = ["orthographic", "perspective", "back"];
@@ -394,10 +401,12 @@ function changeActiveObject(newActiveObject: string, newActiveObjectPart: string
 
 	activeObject = [newActiveObject, newActiveObjectPart];
 	// 1) if activeObject is "", disable tool-bar
-	setDisplayToAll(document.querySelectorAll('.tool-bar'), (activeObject[0] == "" || activeObject[0].startsWith("ball")) ? "none" : "block");
+	setDisplayToAll(document.querySelectorAll('.tool-bar'), (activeObject[0] == "") ? "none" : "block");
 	// 2) hide all "object-option":s
 	setDisplayToAll(document.querySelectorAll('.object-option'), "none");
 	// 3) show all "arrow-option" or "text-option"
+	if (activeObject[0].startsWith("ball"))
+		setDisplayToAll(document.querySelectorAll('.ball-option'), "flex");
 	if (activeObject[0].startsWith("arrow"))
 		setDisplayToAll(document.querySelectorAll('.arrow-option'), "flex");
 	if (activeObject[0].startsWith("text"))

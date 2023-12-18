@@ -5,8 +5,8 @@
 export {};
 import { TableScene } from "./table/tableScene.js";
 import { Table } from "./table/table.js";
-import { clamp } from "./util.js";
-import { initPhysics, physicsLoop, reset, changeSpeed, testCollision } from "./table/physics.js";
+import { clamp, loadJSON } from "./util.js";
+import { initPhysics, physicsLoop, reset, changeSpeed } from "./table/physics.js";
 import * as THREE from 'three';
 
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -79,7 +79,21 @@ function addToolListeners() {
     });
 
     document.getElementById("buttonTest")?.addEventListener("click", (event) => {
-        testCollision();
+        // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
+        const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
+        if (!!diagramURL) {
+            loadJSON(diagramURL).then((data: any) => {
+                if (!!data) {
+                    console.log("data", data);
+                    table.resetBalls();
+                    table.load(data);
+                    table.balls.forEach((ball) => {
+                        ball.v.multiplyScalar(10);
+                    });
+                    console.log("Initial values loaded.");
+                }
+            });
+        }
     });
 
     document.getElementById("inputSpeed")?.addEventListener("input", (event) => {

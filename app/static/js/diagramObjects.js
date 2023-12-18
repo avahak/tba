@@ -2,6 +2,7 @@
  * Handles states of movable objects of the diagram.
  */
 export { Text, Arrow, ObjectCollection };
+import { Ball } from "./table/ball.js";
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
 import { pixelsToNDC, NDCToPixels, NDCToWorld2, world2ToNDC } from "./transformation.js";
 import * as THREE from 'three';
@@ -89,7 +90,13 @@ class ObjectCollection {
         const objectPart = object[1];
         if (objectName.startsWith("ball")) {
             const ball = this.objects[objectName];
-            ball.move(ndc, camera);
+            if (objectPart == "velocity") {
+                let pv = NDCToWorld2(ndc, 0.0, camera);
+                let v = new THREE.Vector2(pv.x - ball.p.x, pv.y - ball.p.y);
+                ball.v.set(v.x, v.y, 0);
+            }
+            else
+                ball.move(ndc, camera);
         }
         else if (objectName.startsWith("text")) {
             let p = NDCToWorld2(ndc, 0.0, camera);
@@ -110,18 +117,30 @@ class ObjectCollection {
             }
         }
     }
+    /**
+     * TODO Rewrite this in a more scalable way - each object should offer
+     * a list of geometry and control points and the closest object should be
+     * selected based on these.
+     */
     getObject(ndc, camera) {
         let obj = this.table.tableScene.findObjectNameOnMouse(ndc, camera);
         if ((!!obj) && obj.startsWith("ball_"))
             return [obj, ""];
         let closest = ["", Infinity];
-        const w = NDCToWorld2(ndc, 0, camera);
+        const w0 = NDCToWorld2(ndc, 0, camera);
+        const wh = NDCToWorld2(ndc, this.table.tableScene.jsonAll.specs.BALL_RADIUS, camera);
         for (const key in this.objects) {
-            if (key.startsWith("ball"))
+            if (key.startsWith("ball")) {
+                // Check if user wants to change ball velocity:
+                const ball = this.objects[key];
+                const pv = new THREE.Vector2(ball.p.x + ball.v.x, ball.p.y + ball.v.y);
+                if (pv.distanceTo(wh) < 0.02)
+                    return [key, "velocity"];
                 continue;
+            }
             const obj = this.objects[key];
-            const cp = obj.closestPoint(w);
-            const dist = cp.distanceTo(w);
+            const cp = obj.closestPoint(w0);
+            const dist = cp.distanceTo(w0);
             if (dist < closest[1]) {
                 closest[0] = key;
                 closest[1] = dist;
@@ -132,9 +151,9 @@ class ObjectCollection {
             let part = "";
             const obj = this.objects[closest[0]];
             if (obj instanceof Arrow) {
-                if (w.distanceTo(obj.p1) < 0.05)
+                if (w0.distanceTo(obj.p1) < 0.05)
                     part = "p1";
-                else if (w.distanceTo(obj.p2) < 0.05)
+                else if (w0.distanceTo(obj.p2) < 0.05)
                     part = "p2";
             }
             return [closest[0], part];
@@ -149,7 +168,23 @@ class ObjectCollection {
         const ctx = canvas.getContext('2d');
         for (const key in this.objects) {
             let obj = this.objects[key];
-            if (obj instanceof Arrow) {
+            if (obj instanceof Ball) {
+                if (obj.v.length() > 0.01) {
+                    const p = new THREE.Vector2(obj.p.x, obj.p.y);
+                    const q1 = new THREE.Vector2(obj.p.x + obj.v.x, obj.p.y + obj.v.y);
+                    const q2 = new THREE.Vector2(obj.p.x + obj.v.clone().setLength(2.5).x, obj.p.y + obj.v.clone().setLength(2.5).y);
+                    let pixel1 = NDCToPixels(world2ToNDC(p, obj.r, camera), canvas);
+                    let pixel2 = NDCToPixels(world2ToNDC(q1, obj.r, camera), canvas);
+                    let pixel3 = NDCToPixels(world2ToNDC(q2, obj.r, camera), canvas);
+                    ctx.strokeStyle = "#333";
+                    ctx.lineWidth = 0.2;
+                    drawArrow(ctx, pixel1, pixel3);
+                    ctx.strokeStyle = "#333";
+                    ctx.lineWidth = 2;
+                    drawArrow(ctx, pixel1, pixel2);
+                }
+            }
+            else if (obj instanceof Arrow) {
                 let q1 = NDCToPixels(world2ToNDC(obj.p1, 0, camera), canvas);
                 let q2 = NDCToPixels(world2ToNDC(obj.p2, 0, camera), canvas);
                 ctx.strokeStyle = obj.color;

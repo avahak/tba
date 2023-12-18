@@ -85,9 +85,10 @@ class Table {
             if (objName.startsWith("ball")) {
                 const result = objName.match(/\d+/);
                 const ballNumber = result ? parseInt(result[0]) : 0;
-                const ball = this.balls[ballNumber];
-                if (!!ball)
+                if (ballNumber in this.balls) {
+                    const ball = this.balls[ballNumber];
                     ball.load(data[objName]);
+                }
             }
         }
     }
