@@ -159,7 +159,6 @@ class TableScene {
 		Promise.all(resourcePromises)
 			.then((resources) => {
 				this.tableJson = this.resourceLoader.objects.tableJson;
-				console.log("tableScene tableJson", this.tableJson);
 				this.specs = this.tableJson.specs;
 				this.objects.table = this.resourceLoader.objects.table;
 				this.objects.ball = ballGroup;

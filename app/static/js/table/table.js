@@ -8,6 +8,7 @@ const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
 class Table {
     constructor(tableScene, tableJson) {
+        Table.tableJson = tableJson;
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
@@ -16,7 +17,6 @@ class Table {
             this.balls.push(ball);
         }
         // Initialize pockets:
-        Table.tableJson = tableJson;
         Table.pocketCenters = [];
         Table.pocketRadii = [];
         for (let k = 1; k <= 6; k++) {
