@@ -29,6 +29,7 @@ class Table {
 
         // Initialize pockets:
         Table.tableJson = tableJson;
+        console.log("tableJson", Table.tableJson);
         Table.pocketCenters = []
         Table.pocketRadii = []
         for (let k = 1; k <= 6; k++) {
