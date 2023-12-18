@@ -3,6 +3,7 @@
 // This page also contains the force-displacement relation F = c*\delta^(3/2)
 export { Collision };
 import { Ball } from './ball.js';
+import { Table } from './table.js';
 import { Graph, weightedMean } from '../util.js';
 import * as THREE from 'three';
 console.log("collision.ts");
@@ -146,9 +147,10 @@ class Collision {
     }
     static detectCushionCollision(ball, table) {
         // Check collisions with cushion:
+        const tableLength = Table.tableJson.specs.TABLE_LENGTH;
         if (ball.isStopped)
             return false;
-        if ((Math.abs(ball.p.x) + ball.r < table.tableLength / 2) && (Math.abs(ball.p.y) + ball.r < table.tableLength / 4))
+        if ((Math.abs(ball.p.x) + ball.r < tableLength / 2) && (Math.abs(ball.p.y) + ball.r < tableLength / 4))
             return false;
         const cushion = table.getClosestCushionPoint(ball.p);
         const info = Collision.ballStaticCollisionInfo(ball, cushion);

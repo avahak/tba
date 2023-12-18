@@ -122,7 +122,7 @@ class TableScene {
         const resourcePromises = [
             this.resourceLoader.loadObjMtlPromise("cushions", `${RESOURCES_PATH}models/cushions.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
             this.resourceLoader.loadObjMtlPromise("table", `${RESOURCES_PATH}models/pooltable.obj`, `${RESOURCES_PATH}models/pooltable.mtl`),
-            this.resourceLoader.loadJsonPromise("jsonAll", `${RESOURCES_PATH}models/pooltable.json`),
+            this.resourceLoader.loadJsonPromise("tableJson", `${RESOURCES_PATH}models/pooltable.json`),
         ];
         const ballGeometry = new THREE.SphereGeometry(1, 40, 20); // old was 1, 64, 32
         const ball = new THREE.Mesh(ballGeometry);
@@ -130,8 +130,8 @@ class TableScene {
         ballGroup.add(ball);
         Promise.all(resourcePromises)
             .then((resources) => {
-            this.jsonAll = this.resourceLoader.objects.jsonAll;
-            this.specs = this.jsonAll.specs;
+            this.tableJson = this.resourceLoader.objects.tableJson;
+            this.specs = this.tableJson.specs;
             this.objects.table = this.resourceLoader.objects.table;
             this.objects.ball = ballGroup;
             this.objects.cushions = this.resourceLoader.objects.cushions;
@@ -243,14 +243,14 @@ class TableScene {
      * Returns out of bounds string or null p is not out of bounds.
      */
     outOfBoundsString(p) {
-        const railbox = this.jsonAll.railbox;
+        const railbox = this.tableJson.railbox;
         if (p.z < this.specs.BALL_RADIUS)
             return "slate";
         if ((Math.abs(p.x) > railbox[0]) || (Math.abs(p.y) > railbox[1]))
             return "box";
         for (let k = 1; k <= 6; k++) {
-            const pc = this.jsonAll[`pocket_fall_center_${k}`];
-            const pr = this.jsonAll[`pocket_fall_radius_${k}`];
+            const pc = this.tableJson[`pocket_fall_center_${k}`];
+            const pr = this.tableJson[`pocket_fall_radius_${k}`];
             if (p.distanceTo(new THREE.Vector3(pc[0], pc[1], pc[2])) < pr)
                 return "pocket";
         }

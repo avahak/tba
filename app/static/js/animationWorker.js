@@ -3,15 +3,18 @@
  * PROBLEM: data passed to web worker needs to be serializable, but table is not...
  * TODO Kinda should separate table from tableScene...
  */
+import { Table } from "./table/table.js";
 import { loadJSON } from "./util.js";
 import { Collision } from "./table/collision.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
-async function loadDiagram(table) {
+let table;
+async function loadDiagram() {
     // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
-    const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
+    // const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
+    const diagramURL = `https://vahakangasma.azurewebsites.net/diagram?id=a4aaed1b4ee344b08979f469ea74fcad`;
     try {
         loadJSON(diagramURL).then((data) => {
             if (!!data) {
@@ -22,7 +25,8 @@ async function loadDiagram(table) {
                     ball.v.multiplyScalar(10);
                 });
                 console.log("Initial values loaded.");
-                testAnimationBuilding(data);
+                const animation = testAnimationBuilding();
+                self.postMessage({ "message": "success", "data": animation });
             }
         });
     }
@@ -30,7 +34,7 @@ async function loadDiagram(table) {
         console.error('Error loading diagram:', error);
     }
 }
-function testAnimationBuilding(table) {
+function testAnimationBuilding() {
     const data = {};
     let startTime = performance.now() / 1000;
     let MAX_SIMULATION_TIME = 10;
@@ -75,7 +79,13 @@ function testAnimationBuilding(table) {
     console.log(data[parseFloat(Object.keys(data)[10])]);
 }
 self.addEventListener('message', (event) => {
-    if (event.data === 'start') {
-        loadDiagram(( !== null &&  !== void 0 ?  : ) ?  : ); // TODO FIX
+    if (event.data.message == "init_table") {
+        const cushionVertices = event.data.cushionVertices;
+        const tableJson = event.data.tableJson;
+        table = new Table(null, tableJson);
+        Table.assignCushionVertices(cushionVertices);
+    }
+    else if (event.data.message == "load_diagram") {
+        loadDiagram();
     }
 });

@@ -1,5 +1,6 @@
 // TODO Try Verlet integration
 export { Ball };
+import { Table } from './table.js';
 import { NDCToWorld3 } from "../transformation.js";
 import * as THREE from 'three';
 console.log("ball.ts");
@@ -15,8 +16,8 @@ const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
 class Ball {
-    constructor(p, obj, name, table) {
-        this.p = p;
+    constructor(obj, name, table) {
+        this.p = new THREE.Vector3();
         this.obj = obj;
         this.v = new THREE.Vector3();
         this.a = new THREE.Vector3();
@@ -34,7 +35,7 @@ class Ball {
         this.reset();
     }
     reset() {
-        this.p = this.table.tableScene.defaultBallPosition(this.name).clone();
+        this.p = this.table.defaultBallPosition(this.name).clone();
         this.v.set(0, 0, 0);
         this.a.set(0, 0, 0);
         this.q.set(0, 0, 0, 1);
@@ -57,11 +58,11 @@ class Ball {
         this.isStopped = true;
     }
     outOfBounds() {
-        const h = this.table.tableScene.specs.TABLE_CASING_HEIGHT - this.table.tableScene.specs.TABLE_RAIL_HEIGHT - this.r;
+        const h = Table.tableJson.specs.TABLE_CASING_HEIGHT - Table.tableJson.specs.TABLE_RAIL_HEIGHT - this.r;
         if (this.p.z < -h)
             return true;
-        const cx = this.table.tableScene.specs.TABLE_LENGTH / 2 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
-        const cy = this.table.tableScene.specs.TABLE_LENGTH / 4 + this.table.tableScene.specs.TABLE_RAIL_WIDTH + this.r;
+        const cx = Table.tableJson.specs.TABLE_LENGTH / 2 + Table.tableJson.specs.TABLE_RAIL_WIDTH + this.r;
+        const cy = Table.tableJson.specs.TABLE_LENGTH / 4 + Table.tableJson.specs.TABLE_RAIL_WIDTH + this.r;
         if ((Math.abs(this.p.x) > cx) || (Math.abs(this.p.y) > cy))
             return true;
         return false;
@@ -169,16 +170,16 @@ class Ball {
         this.w.addScaledVector(this.dw.clone().sub(dw1), 0.5 * dt);
     }
     /* Methods from old diagramObjects.ts Ball: */
-    move(ndc, camera) {
-        const ballObject = this.table.tableScene.objects[this.name];
-        let intersect = NDCToWorld3(ndc, this.table.tableScene.specs.BALL_RADIUS, camera);
+    move(ndc, camera, tableScene) {
+        const ballObject = tableScene.objects[this.name];
+        let intersect = NDCToWorld3(ndc, tableScene.specs.BALL_RADIUS, camera);
         if (!!intersect) {
             const oldBallPosition = ballObject.position.clone();
             ballObject.position.x = intersect.x;
             ballObject.position.y = intersect.y;
-            const resolved = this.table.tableScene.resolveIntersections(this.name, ballObject.position);
-            let oob = this.table.tableScene.outOfBoundsString(resolved);
-            if ((this.table.tableScene.intersections(this.name, resolved).length == 0) && (!oob))
+            const resolved = tableScene.resolveIntersections(this.name, ballObject.position);
+            let oob = tableScene.outOfBoundsString(resolved);
+            if ((tableScene.intersections(this.name, resolved).length == 0) && (!oob))
                 ballObject.position.copy(resolved);
             else
                 ballObject.position.copy(oldBallPosition);
@@ -193,15 +194,19 @@ class Ball {
      * Updates this.p and this.q taking values from the scene.
      */
     updatePositionFromScene() {
-        this.p.copy(this.obj.position);
-        this.q.copy(this.obj.quaternion);
+        if (this.obj != null) {
+            this.p.copy(this.obj.position);
+            this.q.copy(this.obj.quaternion);
+        }
     }
     /**
      * Updates ball position and rotation in scene taking values from this.p and this.q.
      */
     updatePositionToScene() {
-        this.obj.position.copy(this.p);
-        this.obj.quaternion.copy(this.q);
+        if (this.obj != null) {
+            this.obj.position.copy(this.p);
+            this.obj.quaternion.copy(this.q);
+        }
     }
     serialize() {
         let obj;

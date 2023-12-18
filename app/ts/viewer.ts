@@ -90,7 +90,7 @@ function initElement(element: HTMLElement, diagram: any) {
     element.appendChild(canvas);
     let canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-    const table = new Table(tableScene);
+    const table = new Table(tableScene, tableScene.tableJson);
     const collection = new ObjectCollection(table);
     collection.load(diagram);
 

@@ -3,6 +3,7 @@
  */
 export { Text, Arrow, ObjectCollection };
 import { Ball } from "./table/ball.js";
+import { Table } from "./table/table.js";
 import { canvasTextBoundingBox, drawArrow, closestIntervalPoint, combineBboxes } from "./util.js";
 import { pixelsToNDC, NDCToPixels, NDCToWorld2, world2ToNDC } from "./transformation.js";
 import * as THREE from 'three';
@@ -85,7 +86,7 @@ class ObjectCollection {
             this.objects[name] = this.table.balls[k];
         }
     }
-    move(object, ndc, camera) {
+    move(object, ndc, camera, tableScene) {
         const objectName = object[0];
         const objectPart = object[1];
         if (objectName.startsWith("ball")) {
@@ -96,7 +97,7 @@ class ObjectCollection {
                 ball.v.set(v.x, v.y, 0);
             }
             else
-                ball.move(ndc, camera);
+                ball.move(ndc, camera, tableScene);
         }
         else if (objectName.startsWith("text")) {
             let p = NDCToWorld2(ndc, 0.0, camera);
@@ -122,13 +123,13 @@ class ObjectCollection {
      * a list of geometry and control points and the closest object should be
      * selected based on these.
      */
-    getObject(ndc, camera) {
-        let obj = this.table.tableScene.findObjectNameOnMouse(ndc, camera);
+    getObject(ndc, camera, tableScene) {
+        let obj = tableScene.findObjectNameOnMouse(ndc, camera);
         if ((!!obj) && obj.startsWith("ball_"))
             return [obj, ""];
         let closest = ["", Infinity];
         const w0 = NDCToWorld2(ndc, 0, camera);
-        const wh = NDCToWorld2(ndc, this.table.tableScene.jsonAll.specs.BALL_RADIUS, camera);
+        const wh = NDCToWorld2(ndc, Table.tableJson.specs.BALL_RADIUS, camera);
         for (const key in this.objects) {
             if (key.startsWith("ball")) {
                 // Check if user wants to change ball velocity:

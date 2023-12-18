@@ -3,7 +3,7 @@
  */
 import { TableScene } from "./table/tableScene.js";
 import { Table } from "./table/table.js";
-import { clamp, loadJSON } from "./util.js";
+import { clamp } from "./util.js";
 import { initPhysics, physicsLoop, reset, changeSpeed } from "./table/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
@@ -30,7 +30,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     element.appendChild(renderer.domElement);
     document.addEventListener('tableSceneLoaded', () => {
-        table = new Table(tableScene);
+        table = new Table(tableScene, tableScene.tableJson);
         tableScene.setLights("square");
         if (!!tableScene.cushionEdgeCylinders)
             tableScene.cushionEdgeCylinders.visible = false;
@@ -58,21 +58,7 @@ function addToolListeners() {
         reset();
     });
     (_b = document.getElementById("buttonTest")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => {
-        // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
-        const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
-        if (!!diagramURL) {
-            loadJSON(diagramURL).then((data) => {
-                if (!!data) {
-                    console.log("data", data);
-                    table.resetBalls();
-                    table.load(data);
-                    table.balls.forEach((ball) => {
-                        ball.v.multiplyScalar(10);
-                    });
-                    console.log("Initial values loaded.");
-                }
-            });
-        }
+        buttonTest();
     });
     (_c = document.getElementById("inputSpeed")) === null || _c === void 0 ? void 0 : _c.addEventListener("input", (event) => {
         changeSpeed(parseFloat(event.target.value));
@@ -112,4 +98,12 @@ function resize() {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     renderer.setSize(element.offsetWidth, element.offsetHeight);
+}
+function buttonTest() {
+    const worker = new Worker("./animationWorker.js");
+    worker.addEventListener('message', (event) => {
+        console.log("event.data", event.data);
+    });
+    worker.postMessage({ "message": "init_table", "cushionVertices": Table.cushionVertices, "tableJson": Table.tableJson });
+    worker.postMessage({ "message": "load_diagram" });
 }
