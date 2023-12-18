@@ -19,6 +19,7 @@ class Table {
     public static cushionVertices: THREE.Vector3[];
 
     public constructor(tableScene: TableScene | null, tableJson: any) {
+        Table.tableJson = tableJson;
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
@@ -28,8 +29,6 @@ class Table {
         }
 
         // Initialize pockets:
-        Table.tableJson = tableJson;
-        console.log("tableJson", Table.tableJson);
         Table.pocketCenters = []
         Table.pocketRadii = []
         for (let k = 1; k <= 6; k++) {
