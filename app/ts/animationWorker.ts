@@ -95,6 +95,8 @@ function testAnimationBuilding() {
 }
 
 self.addEventListener('message', (event) => {
+    console.log("event", event);
+    console.log("event.data", event.data);
     if (event.data.message == "init_table") {
         console.log("animationWorker: init_table");
         const cushionVertices = event.data.cushionVertices;
