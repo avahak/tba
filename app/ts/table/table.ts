@@ -18,7 +18,7 @@ class Table {
     public static pocketRadii: number[];
     public static cushionVertices: THREE.Vector3[];
 
-    public constructor(tableScene: TableScene, tableJson: any) {
+    public constructor(tableScene: TableScene | null, tableJson: any) {
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;

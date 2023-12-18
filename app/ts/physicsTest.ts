@@ -47,7 +47,7 @@ function init() {
     element.appendChild(renderer.domElement);
 
     document.addEventListener('tableSceneLoaded', () => {
-        table = new Table(tableScene);
+        table = new Table(tableScene, tableScene.tableJson);
         tableScene.setLights("square");
         if (!!tableScene.cushionEdgeCylinders)
 		    tableScene.cushionEdgeCylinders.visible = false;
@@ -80,21 +80,7 @@ function addToolListeners() {
     });
 
     document.getElementById("buttonTest")?.addEventListener("click", (event) => {
-        // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
-        const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
-        if (!!diagramURL) {
-            loadJSON(diagramURL).then((data: any) => {
-                if (!!data) {
-                    console.log("data", data);
-                    table.resetBalls();
-                    table.load(data);
-                    table.balls.forEach((ball) => {
-                        ball.v.multiplyScalar(10);
-                    });
-                    console.log("Initial values loaded.");
-                }
-            });
-        }
+        buttonTest();
     });
 
     document.getElementById("inputSpeed")?.addEventListener("input", (event) => {
@@ -143,4 +129,13 @@ function resize() {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     renderer.setSize(element.offsetWidth, element.offsetHeight);
+}
+
+function buttonTest() {
+    const worker = new Worker("./animationWorker.js");
+    worker.addEventListener('message', (event) => {
+        console.log("event.data", event.data);
+    });
+    worker.postMessage({"message": "init_table", "cushionVertices": Table.cushionVertices, "tableJson": Table.tableJson});
+    worker.postMessage({"message": "load_diagram"});
 }

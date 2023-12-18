@@ -16,7 +16,9 @@ const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
 
-async function loadDiagram(table: Table) {
+let table: Table;
+
+async function loadDiagram() {
     // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
     const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
     try {
@@ -29,7 +31,8 @@ async function loadDiagram(table: Table) {
                     ball.v.multiplyScalar(10);
                 });
                 console.log("Initial values loaded.");
-                testAnimationBuilding(data);
+                const animation = testAnimationBuilding();
+                self.postMessage({"message": "success", "data": animation});
             }
         });
     } catch (error) {
@@ -37,7 +40,7 @@ async function loadDiagram(table: Table) {
     }
 }
 
-function testAnimationBuilding(table: Table) {
+function testAnimationBuilding() {
     const data: {[key: number]: any} = {};
     let startTime = performance.now()/1000;
     let MAX_SIMULATION_TIME = 10;
@@ -90,7 +93,12 @@ function testAnimationBuilding(table: Table) {
 }
 
 self.addEventListener('message', (event) => {
-    if (event.data === 'start') {
-        loadDiagram(???);   // TODO FIX
+    if (event.data.message == "init_table") {
+        const cushionVertices = event.data.cushionVertices;
+        const tableJson = event.data.tableJson;
+        table = new Table(null, tableJson);
+        Table.assignCushionVertices(cushionVertices);
+    } else if (event.data.message == "load_diagram") {
+        loadDiagram();
     }
 });
