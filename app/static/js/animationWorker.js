@@ -26,6 +26,7 @@ async function loadDiagram() {
                 });
                 console.log("Initial values loaded.");
                 const animation = testAnimationBuilding();
+                console.log("animationWorker done");
                 self.postMessage({ "message": "success", "data": animation });
             }
         });
@@ -80,12 +81,15 @@ function testAnimationBuilding() {
 }
 self.addEventListener('message', (event) => {
     if (event.data.message == "init_table") {
+        console.log("animationWorker: init_table");
         const cushionVertices = event.data.cushionVertices;
         const tableJson = event.data.tableJson;
         table = new Table(null, tableJson);
         Table.assignCushionVertices(cushionVertices);
+        console.log("table", table);
     }
     else if (event.data.message == "load_diagram") {
+        console.log("animationWorker: load_diagram");
         loadDiagram();
     }
 });

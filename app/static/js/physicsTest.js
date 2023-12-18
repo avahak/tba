@@ -100,9 +100,7 @@ function resize() {
     renderer.setSize(element.offsetWidth, element.offsetHeight);
 }
 function buttonTest() {
-    console.log("trying to start web worker:");
     const worker = new Worker("static/js/animationWorker.js");
-    console.log("worker:", worker);
     worker.addEventListener('message', (event) => {
         console.log("event.data", event.data);
     });
