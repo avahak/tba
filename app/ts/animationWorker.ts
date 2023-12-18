@@ -20,7 +20,8 @@ let table: Table;
 
 async function loadDiagram() {
     // http://localhost:5000/diagram?id=dd852d320ef3404b92759d9644b1ded7
-    const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
+    // const diagramURL = `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`;
+    const diagramURL = `https://vahakangasma.azurewebsites.net/diagram?id=a4aaed1b4ee344b08979f469ea74fcad`;
     try {
         loadJSON(diagramURL).then((data: any) => {
             if (!!data) {
