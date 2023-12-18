@@ -176,9 +176,10 @@ class Collision {
 
     public static detectCushionCollision(ball: Ball, table: Table): boolean {
         // Check collisions with cushion:
+        const tableLength = Table.tableJson.specs.TABLE_LENGTH;
         if (ball.isStopped)
             return false;
-        if ((Math.abs(ball.p.x)+ball.r < table.tableLength/2) && (Math.abs(ball.p.y)+ball.r < table.tableLength/4))
+        if ((Math.abs(ball.p.x)+ball.r < tableLength/2) && (Math.abs(ball.p.y)+ball.r < tableLength/4))
             return false;
         const cushion = table.getClosestCushionPoint(ball.p);
         const info = Collision.ballStaticCollisionInfo(ball, cushion);

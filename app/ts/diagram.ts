@@ -45,7 +45,7 @@ function initDiagram() {
 	const element = document.getElementById("three-box") as HTMLElement;
 
 	document.addEventListener('tableSceneLoaded', () => {
-		table = new Table(tableScene);
+		table = new Table(tableScene, tableScene.tableJson);
 		tableView = new TableView(element, tableScene);
 		tableView.setCamera(activeCamera);
 		tableView.animate();
@@ -190,7 +190,7 @@ function mouseAction(mouseAction: MouseAction) {
 	// console.log("mouseAction", mouseAction);
 	if ((mouseAction.action == "down") && (mouseAction.button == 0)) {
 		if (state == "") {
-			const obj = collection.getObject(ndc, tableView.camera);
+			const obj = collection.getObject(ndc, tableView.camera, tableView.tableScene);
 			changeState("move");
 			changeActiveObject(obj[0], obj[1]);
 		} else if (state == "move") {
@@ -224,13 +224,13 @@ function mouseAction(mouseAction: MouseAction) {
 			let arrow = collection.objects[activeObject[0]] as Arrow;
 			arrow.p2 = NDCToWorld2(ndc, 0.0, tableView.camera);
 		} else if (state == "add_text") {
-			collection.move(activeObject, ndc, tableView.camera);
+			collection.move(activeObject, ndc, tableView.camera, tableView.tableScene);
 		}
 	
 		if (mouseAction.buttons & 1) {
 			// Left mouse button:
 			if (state == "move") {
-				collection.move(activeObject, ndc, tableView.camera);
+				collection.move(activeObject, ndc, tableView.camera, tableView.tableScene);
 			} else if (state == "add_arrow_end") {
 				let arrow = collection.objects[activeObject[0]] as Arrow;
 				arrow.p2 = NDCToWorld2(ndc, 0.0, tableView.camera);

@@ -115,7 +115,7 @@ class ObjectCollection {
         }
     }
 
-    public move(object: string[], ndc: THREE.Vector2, camera: THREE.Camera) {
+    public move(object: string[], ndc: THREE.Vector2, camera: THREE.Camera, tableScene: TableScene) {
         const objectName = object[0];
         const objectPart = object[1];
         if (objectName.startsWith("ball")) {
@@ -125,7 +125,7 @@ class ObjectCollection {
                 let v = new THREE.Vector2(pv.x-ball.p.x, pv.y-ball.p.y);
                 ball.v.set(v.x, v.y, 0);
             } else
-                ball.move(ndc, camera)
+                ball.move(ndc, camera, tableScene);
         } else if (objectName.startsWith("text")) {
             let p = NDCToWorld2(ndc, 0.0, camera);
             let text = this.objects[objectName] as Text;
@@ -150,14 +150,14 @@ class ObjectCollection {
      * a list of geometry and control points and the closest object should be 
      * selected based on these.
      */
-    public getObject(ndc: THREE.Vector2, camera: THREE.Camera): string[] {
-        let obj = this.table.tableScene.findObjectNameOnMouse(ndc, camera);
+    public getObject(ndc: THREE.Vector2, camera: THREE.Camera, tableScene: TableScene): string[] {
+        let obj = tableScene.findObjectNameOnMouse(ndc, camera);
 		if ((!!obj) && obj.startsWith("ball_"))
         return [obj, ""];
     
         let closest: [string, number] = ["", Infinity];
         const w0 = NDCToWorld2(ndc, 0, camera);
-        const wh = NDCToWorld2(ndc, this.table.tableScene.jsonAll.specs.BALL_RADIUS, camera);
+        const wh = NDCToWorld2(ndc, Table.tableJson.specs.BALL_RADIUS, camera);
         for (const key in this.objects) {
             if (key.startsWith("ball")) {
                 // Check if user wants to change ball velocity:
