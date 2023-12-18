@@ -132,7 +132,9 @@ function resize() {
 }
 
 function buttonTest() {
-    const worker = new Worker("./animationWorker.js");
+    console.log("trying to start web worker:");
+    const worker = new Worker("animationWorker.js");
+    console.log("worker:", worker);
     worker.addEventListener('message', (event) => {
         console.log("event.data", event.data);
     });
