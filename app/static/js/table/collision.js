@@ -11,13 +11,13 @@ const EPSILON = 1.0e-9;
 const COR_BALL = 0.85;
 const COR_CUSHION = 0.8;
 const COR_SLATE = 0.5;
-const FRICTION_BALL_BALL = 0.2;
+const FRICTION_BALL_BALL = 0.1;
 const FRICTION_BALL_CUSHION = 0.2;
 const FRICTION_BALL_SLATE = 0.2;
 // TODO assign hardness values if we implement adaptive timesteps, ignore until then:
-const HARDNESS_BALL = 1.0;
-const HARDNESS_CUSHION = 0.5;
-const HARDNESS_SLATE = 1.0;
+const HARDNESS_BALL = 1;
+const HARDNESS_CUSHION = 1;
+const HARDNESS_SLATE = 1;
 /**
  * Ball, Slate, Cushion
  */
@@ -84,6 +84,8 @@ class Collision {
         this.table = table;
         this.contactPoints = cps;
         this.contactObjects = cos;
+        this.iter = 0;
+        this.isResolved = false;
     }
     /**
      * This method assumes that the balls are touching and returns information about
@@ -294,38 +296,23 @@ class Collision {
             cp.depth += dt * cp.computeDepthDerivative();
         });
     }
-    isResolved() {
+    updateIsResolved() {
+        if (this.isResolved || (this.iter >= Collision.MAX_ITER)) {
+            this.isResolved = true;
+            return true;
+        }
         for (let k = 0; k < this.contactPoints.length; k++) {
             const cp = this.contactPoints[k];
-            if ((cp.depth > EPSILON) || (cp.computeDepthDerivative() > EPSILON))
+            if ((cp.depth > EPSILON) || (cp.computeDepthDerivative() > EPSILON)) {
+                this.isResolved = false;
                 return false;
+            }
         }
+        this.isResolved = true;
         return true;
     }
-    resolve() {
-        let iter = 0;
-        const MAX_ITER = 10000;
-        // console.log("isResolved():", this.isResolved());
-        // console.log("ball_0 v.z", this.table.balls[0].v.z);
-        // console.log("before", this.table.balls[0].v.length());
-        while ((iter < MAX_ITER) && (!this.isResolved())) {
-            // console.log("resolve() iter", iter);
-            // check that cp.computeDepthDerivative() is same as..
-            // const [v, vn, vt] = cp.computeRelativeVelocity();
-            // vn.dot(cp.n)
-            this.contactPoints.forEach((cp) => {
-                const [v, vn, vt] = cp.computeRelativeVelocity();
-                const result1 = cp.computeDepthDerivative();
-                const result2 = vn.dot(cp.n);
-                // console.log("result1:", result1, "result2:", result2);
-                // console.log(cp);
-                // console.log("cp.computeDepthDerivative()", cp.computeDepthDerivative());
-            });
-            this.computeAcceleration();
-            this.integrate(0.05);
-            iter++;
-        }
-        console.log("resolve()", { "iter": iter });
+    finish() {
+        console.log("resolve()", { "iter": this.iter });
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 co.object.continuingSlateContact = false;
@@ -333,4 +320,22 @@ class Collision {
             }
         });
     }
+    resolveStep(maxSteps) {
+        if (this.isResolved)
+            return;
+        const iterEnd = this.iter + maxSteps;
+        while ((this.iter < iterEnd) && (!this.isResolved)) {
+            this.iter++;
+            this.computeAcceleration();
+            this.integrate(Collision.TIME_STEP);
+            this.updateIsResolved();
+        }
+        if (this.isResolved)
+            this.finish();
+    }
+    resolve() {
+        this.resolveStep(Collision.MAX_ITER);
+    }
 }
+Collision.MAX_ITER = 10000;
+Collision.TIME_STEP = 0.02;

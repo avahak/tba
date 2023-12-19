@@ -27,7 +27,7 @@ function initDiagram() {
     const tableScene = new TableScene();
     const element = document.getElementById("three-box");
     document.addEventListener('tableSceneLoaded', () => {
-        table = new Table(tableScene, tableScene.tableJson);
+        table = new Table(tableScene);
         tableView = new TableView(element, tableScene);
         tableView.setCamera(activeCamera);
         tableView.animate();

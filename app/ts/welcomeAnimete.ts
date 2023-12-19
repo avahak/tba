@@ -1,6 +1,8 @@
 /**
- * Testing physics.
+ * Animation for the welcome page.
  */
+
+console.log("welcomeAnimate.ts");
 
 export {};
 import { TableScene } from "./table/tableScene.js";

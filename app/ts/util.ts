@@ -66,6 +66,13 @@ function closestPoint(p: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3, c: T
 }
 
 /**
+ * @returns true if user is using touch device.
+ */
+function isTouchDevice(): boolean {
+    return ('ontouchstart' in window);
+}
+
+/**
  * Returns bounding box for text drawn on canvas element.
  */
 function canvasTextBoundingBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): THREE.Vector2[] {

@@ -62,7 +62,7 @@ function initElement(element, diagram) {
     canvas.height = VIEWER_SIZE.y;
     element.appendChild(canvas);
     let canvasContext = canvas.getContext("2d");
-    const table = new Table(tableScene, tableScene.tableJson);
+    const table = new Table(tableScene);
     const collection = new ObjectCollection(table);
     collection.load(diagram);
     const cameraPose = { p: new THREE.Vector3(), r: 2.55, theta: -Math.PI / 2, phi: Math.PI / 2 - 0.02 };

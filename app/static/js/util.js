@@ -56,6 +56,12 @@ function closestPoint(p, a, b, c) {
     return a.clone().multiplyScalar(lambdas.x).add(b.clone().multiplyScalar(lambdas.y)).add(c.clone().multiplyScalar(lambdas.z));
 }
 /**
+ * @returns true if user is using touch device.
+ */
+function isTouchDevice() {
+    return ('ontouchstart' in window);
+}
+/**
  * Returns bounding box for text drawn on canvas element.
  */
 function canvasTextBoundingBox(ctx, text, x, y) {

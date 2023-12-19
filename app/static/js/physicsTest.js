@@ -4,17 +4,17 @@
 import { TableScene } from "./table/tableScene.js";
 import { Table } from "./table/table.js";
 import { clamp } from "./util.js";
-import { initPhysics, physicsLoop, reset, changeSpeed } from "./table/physics.js";
+import { PhysicsLoop } from "./table/physics.js";
 import * as THREE from 'three';
 const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
-let table;
 let tableScene;
 let camera;
 let renderer;
 let element;
 let cameraPose;
+let physicsLoop;
 init();
 function init() {
     tableScene = new TableScene();
@@ -30,7 +30,8 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     element.appendChild(renderer.domElement);
     document.addEventListener('tableSceneLoaded', () => {
-        table = new Table(tableScene, tableScene.tableJson);
+        const table = new Table(tableScene);
+        physicsLoop = new PhysicsLoop(table);
         tableScene.setLights("square");
         if (!!tableScene.cushionEdgeCylinders)
             tableScene.cushionEdgeCylinders.visible = false;
@@ -47,7 +48,6 @@ function init() {
             resize();
         });
         resize();
-        initPhysics(table);
         addToolListeners();
         animate();
     });
@@ -55,13 +55,24 @@ function init() {
 function addToolListeners() {
     var _a, _b, _c;
     (_a = document.getElementById("buttonReset")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (event) => {
-        reset();
+        physicsLoop.reset();
     });
     (_b = document.getElementById("buttonTest")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => {
-        buttonTest();
+        const diagrams = [
+            `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`,
+            `https://vahakangasma.azurewebsites.net/api/89d89c3a89d24dd5966ca096c34d80b9`,
+            `https://vahakangasma.azurewebsites.net/api/050a6ca3d06e4698b1b3f9b6f7af259e`
+        ];
+        let k = Math.floor(Math.random() * 3);
+        physicsLoop.loadDiagram(diagrams[k]);
     });
     (_c = document.getElementById("inputSpeed")) === null || _c === void 0 ? void 0 : _c.addEventListener("input", (event) => {
-        changeSpeed(parseFloat(event.target.value));
+        const t = parseFloat(event.target.value);
+        const speed = Math.exp(-6 * t / 8);
+        if (t == parseFloat(event.target.min))
+            physicsLoop.setSpeed(0);
+        else
+            physicsLoop.setSpeed(speed);
     });
 }
 function handleMouseWheel(event) {
@@ -88,7 +99,7 @@ function poseCamera() {
     camera.lookAt(cameraPose.p);
 }
 function animate() {
-    physicsLoop();
+    physicsLoop.simulate(30 / 1000);
     poseCamera();
     renderer.render(tableScene.scene, camera);
     requestAnimationFrame(animate);
@@ -98,12 +109,4 @@ function resize() {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     renderer.setSize(element.offsetWidth, element.offsetHeight);
-}
-function buttonTest() {
-    const worker = new Worker("static/js/animationWorker.js");
-    worker.addEventListener('message', (event) => {
-        console.log("event.data", event.data);
-    });
-    worker.postMessage({ "message": "init_table", "cushionVertices": Table.cushionVertices, "tableJson": Table.tableJson });
-    worker.postMessage({ "message": "load_diagram" });
 }

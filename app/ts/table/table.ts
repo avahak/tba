@@ -1,5 +1,6 @@
 export { Table };
 import { Ball } from "./ball.js";
+import { Collision } from "./collision.js";
 import { TableScene } from "./tableScene.js";
 import { closestPoint, clamp } from "../util.js";
 import * as THREE from 'three';
@@ -18,8 +19,8 @@ class Table {
     public static pocketRadii: number[];
     public static cushionVertices: THREE.Vector3[];
 
-    public constructor(tableScene: TableScene | null, tableJson: any) {
-        Table.tableJson = tableJson;
+    public constructor(tableScene: TableScene) {
+        Table.tableJson = tableScene.tableJson;
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
@@ -37,15 +38,6 @@ class Table {
             Table.pocketRadii.push(Table.tableJson[`pocket_fall_radius_${k}`]);
         }
 
-        if (!!tableScene)
-            Table.assignCushionVertices(Table.extractCushionVertices(tableScene));
-    }
-
-    public static assignCushionVertices(cushionVertices: any) {
-        Table.cushionVertices = cushionVertices;
-    }
-
-    public static extractCushionVertices(tableScene: TableScene) {
         Table.cushionVertices = [];
         const cushionsPos = (tableScene.objects.cushions.children[0] as THREE.Mesh).geometry.attributes.position;
         for (let k = 0; k < cushionsPos.count/3; k++) {
@@ -53,7 +45,6 @@ class Table {
             Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+1));
             Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+2));
         }
-        return Table.cushionVertices; 
     }
 
     /**
@@ -135,5 +126,30 @@ class Table {
         } else if (typeof ball == "number")
             ballNumber = ball;
         return new THREE.Vector3(-1.0+0.1*ballNumber, 0.86, Table.tableJson.specs.BALL_RADIUS);
+    }
+
+    public handleCollisions() {
+        let collisionDetected = (Collision.detectCollision(this) !== null);
+        if (collisionDetected) {
+            const collision = Collision.fromTable(this);
+            collision?.resolve();
+            return collision;
+        }
+        return null;
+    }
+
+    public stopOutOfBoundBalls() {
+        // Stop out of bounds balls:
+        for (let k = 0; k < 16; k++) {
+            if (this.balls[k].outOfBounds()) {
+                this.balls[k].reset();
+                this.balls[k].stop();
+            }
+        }
+    }
+
+    public updateToScene() {
+        for (let k = 0; k < 16; k++) 
+            this.balls[k].updatePositionToScene();
     }
 }

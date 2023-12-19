@@ -1,5 +1,6 @@
 export { Table };
 import { Ball } from "./ball.js";
+import { Collision } from "./collision.js";
 import { closestPoint, clamp } from "../util.js";
 import * as THREE from 'three';
 console.log("table.ts");
@@ -7,8 +8,8 @@ const E1 = new THREE.Vector3(1, 0, 0);
 const E2 = new THREE.Vector3(0, 1, 0);
 const E3 = new THREE.Vector3(0, 0, 1);
 class Table {
-    constructor(tableScene, tableJson) {
-        Table.tableJson = tableJson;
+    constructor(tableScene) {
+        Table.tableJson = tableScene.tableJson;
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
@@ -24,13 +25,6 @@ class Table {
             Table.pocketCenters.push(new THREE.Vector2(center[0], center[1]));
             Table.pocketRadii.push(Table.tableJson[`pocket_fall_radius_${k}`]);
         }
-        if (!!tableScene)
-            Table.assignCushionVertices(Table.extractCushionVertices(tableScene));
-    }
-    static assignCushionVertices(cushionVertices) {
-        Table.cushionVertices = cushionVertices;
-    }
-    static extractCushionVertices(tableScene) {
         Table.cushionVertices = [];
         const cushionsPos = tableScene.objects.cushions.children[0].geometry.attributes.position;
         for (let k = 0; k < cushionsPos.count / 3; k++) {
@@ -38,7 +32,6 @@ class Table {
             Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 1));
             Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3 * k + 2));
         }
-        return Table.cushionVertices;
     }
     /**
      * Finds closest point on the slate to p. Nontrivial because of the geometry.
@@ -113,5 +106,27 @@ class Table {
         else if (typeof ball == "number")
             ballNumber = ball;
         return new THREE.Vector3(-1.0 + 0.1 * ballNumber, 0.86, Table.tableJson.specs.BALL_RADIUS);
+    }
+    handleCollisions() {
+        let collisionDetected = (Collision.detectCollision(this) !== null);
+        if (collisionDetected) {
+            const collision = Collision.fromTable(this);
+            collision === null || collision === void 0 ? void 0 : collision.resolve();
+            return collision;
+        }
+        return null;
+    }
+    stopOutOfBoundBalls() {
+        // Stop out of bounds balls:
+        for (let k = 0; k < 16; k++) {
+            if (this.balls[k].outOfBounds()) {
+                this.balls[k].reset();
+                this.balls[k].stop();
+            }
+        }
+    }
+    updateToScene() {
+        for (let k = 0; k < 16; k++)
+            this.balls[k].updatePositionToScene();
     }
 }
