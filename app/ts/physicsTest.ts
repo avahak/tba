@@ -89,9 +89,10 @@ function addToolListeners() {
     });
 
     document.getElementById("inputSpeed")?.addEventListener("input", (event) => {
-        const t = parseFloat((event.target as HTMLInputElement).value);
-        const speed = Math.exp(-6*t/8);
-        if (t == parseFloat((event.target as HTMLInputElement).min))
+        const t = parseInt((event.target as HTMLInputElement).value);
+        const speed = Math.exp(6*t/8);
+        console.log(speed);
+        if (t == parseInt((event.target as HTMLInputElement).min))
             physicsLoop.setSpeed(0);
         else 
             physicsLoop.setSpeed(speed);

@@ -29,11 +29,19 @@ class ContactObject {
     public object: Ball | "slate" | "cushion";
     public a: THREE.Vector3;
     public dw: THREE.Vector3;
+    public vInitial: THREE.Vector3;
+    public wInitial: THREE.Vector3;
 
     public constructor(object: Ball | "slate" | "cushion") {
         this.object = object;
         this.a = new THREE.Vector3();
         this.dw = new THREE.Vector3();
+        this.vInitial = new THREE.Vector3();
+        this.wInitial = new THREE.Vector3();
+        if (object instanceof Ball) {
+            this.vInitial.copy(object.v);
+            this.wInitial.copy(object.w);
+        }
     }
 }
 
@@ -108,6 +116,7 @@ class Collision {
 
     public iter: number;
     public isResolved: boolean;
+    public totalImpulseMagnitude: number;
 
     private constructor(table: Table, cps: ContactPoint[], cos: ContactObject[]) {
         this.table = table;
@@ -116,6 +125,7 @@ class Collision {
 
         this.iter = 0;
         this.isResolved = false;
+        this.totalImpulseMagnitude = 0;
     }
 
     /**
@@ -288,11 +298,7 @@ class Collision {
             }
         });
         const cos = Array.from(contactObjectMap.values());
-        // console.log("touchinGraph", touchingGraph.getAdjacentPairs());
-        // console.log("connected to k1:", component);
-        // console.log("cps:", cps);
-        console.log("Objects:", cos.filter((obj) => obj.object instanceof Ball).map((obj) => (obj.object as Ball).name));
-        // console.log("cps p:s:", cps.map((cp) => cp.p));
+        // console.log("Objects:", cos.filter((obj) => obj.object instanceof Ball).map((obj) => (obj.object as Ball).name));
         return new Collision(table, cps, cos);
     }
 
@@ -359,13 +365,27 @@ class Collision {
     }
 
     public finish() {
-        console.log("resolve()", {"iter": this.iter});
+        this.totalImpulseMagnitude = 0;
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 co.object.continuingSlateContact = false;
                 co.object.isStopped = false;
+
+                let dv = co.object.v.clone().sub(co.vInitial).multiplyScalar(co.object.m);
+                let dw = co.object.w.clone().sub(co.wInitial).multiplyScalar(co.object.j);
+                this.totalImpulseMagnitude += dv.length()**2 + dw.length()**2;
             }
         });
+        this.totalImpulseMagnitude = Math.sqrt(this.totalImpulseMagnitude);
+        const event = new CustomEvent("Collision", {
+            detail: {
+                table: this.table,
+                iter: this.iter,
+                mag: this.totalImpulseMagnitude,
+            },
+        });
+		document.dispatchEvent(event);
+        console.log("resolve()", {"iter": this.iter, "mag": this.totalImpulseMagnitude});
     }
 
     public resolveStep(maxSteps: number) {

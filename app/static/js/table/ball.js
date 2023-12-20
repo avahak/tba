@@ -30,9 +30,23 @@ class Ball {
         this.name = name;
         this.table = table;
         this.continuingSlateContact = false;
-        this.slateDistance = 0;
         this.isStopped = false;
         this.reset();
+    }
+    clone() {
+        const clonedBall = new Ball(this.obj, this.name, this.table);
+        clonedBall.p = this.p.clone();
+        clonedBall.v = this.v.clone();
+        clonedBall.a = this.a.clone();
+        clonedBall.q = this.q.clone();
+        clonedBall.w = this.w.clone();
+        clonedBall.dw = this.dw.clone();
+        clonedBall.r = this.r;
+        clonedBall.m = this.m;
+        clonedBall.j = this.j;
+        clonedBall.continuingSlateContact = this.continuingSlateContact;
+        clonedBall.isStopped = this.isStopped;
+        return clonedBall;
     }
     reset() {
         this.p = this.table.defaultBallPosition(this.name).clone();
@@ -91,14 +105,14 @@ class Ball {
             this.integrateHeun(s);
             dt -= s;
             // console.log("v.z", Math.abs(this.table.balls[0].v.z));
-            this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
-            if (this.slateDistance > this.r + 1.0e-3)
+            const slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
+            if (slateDistance > this.r + 1.0e-3)
                 this.continuingSlateContact = false;
             if (!this.continuingSlateContact)
-                if (this.slateDistance < this.r + 1.0e-3)
+                if (slateDistance < this.r + 1.0e-3)
                     if (Math.abs(this.v.z) < 1.0e-1)
                         this.enforceContinuingSlateContact();
-            if (this.slateDistance < this.r + 1.0e-3)
+            if (slateDistance < this.r + 1.0e-3)
                 if (this.v.length() + this.r * this.w.length() < 1.0e-2)
                     this.stop();
             // if (this.name == "ball_0")
@@ -106,7 +120,7 @@ class Ball {
         }
     }
     computeAcceleration() {
-        this.slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
+        const slateDistance = this.table.getClosestSlatePoint(this.p).distanceTo(this.p);
         this.a.set(0, 0, 0);
         this.dw.set(0, 0, 0);
         // Gravity:
@@ -114,7 +128,7 @@ class Ball {
         this.applyForce(this.p, E3.clone().multiplyScalar(-this.m * G));
         // const dist = this.p.distanceTo(this.table.getClosestSlatePoint(this.p)) - this.r;
         // if (dist < EPSILON) {
-        if (this.slateDistance < this.r + EPSILON) {
+        if (slateDistance < this.r + EPSILON) {
             // Kinetic friction for sliding:
             const vu = this.v.clone().normalize();
             const c = 7.0 / 5.0 * FRICTION_ROLL * this.r;
@@ -223,5 +237,8 @@ class Ball {
             this.v.set(source.v.x, source.v.y, (_d = (_c = source.v) === null || _c === void 0 ? void 0 : _c.z) !== null && _d !== void 0 ? _d : 0);
         }
         this.updatePositionToScene();
+    }
+    energy() {
+        return (this.m * this.v.length() ** 2 + this.j * this.w.length() ** 2) / 2;
     }
 }

@@ -13,14 +13,36 @@ const E3 = new THREE.Vector3(0, 0, 1);
 
 class Table {
     public balls: Ball[];
+    public tableScene: TableScene | null;
 
     public static tableJson: any;
     public static pocketCenters: THREE.Vector2[];
     public static pocketRadii: number[];
     public static cushionVertices: THREE.Vector3[];
 
-    public constructor(tableScene: TableScene) {
-        Table.tableJson = tableScene.tableJson;
+    public constructor(tableScene: TableScene | null) {
+        this.tableScene = tableScene;
+        if (!!tableScene) {
+            Table.tableJson = tableScene.tableJson;
+
+            // Initialize pockets:
+            Table.pocketCenters = []
+            Table.pocketRadii = []
+            for (let k = 1; k <= 6; k++) {
+                const center = Table.tableJson[`pocket_fall_center_${k}`];
+                Table.pocketCenters.push(new THREE.Vector2(center[0], center[1]));
+                Table.pocketRadii.push(Table.tableJson[`pocket_fall_radius_${k}`]);
+            }
+
+            Table.cushionVertices = [];
+            const cushionsPos = (tableScene.objects.cushions.children[0] as THREE.Mesh).geometry.attributes.position;
+            for (let k = 0; k < cushionsPos.count/3; k++) {
+                Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k));
+                Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+1));
+                Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+2));
+            }
+        }
+
         this.balls = [];
         for (let k = 0; k < 16; k++) {
             const name = `ball_${k}`;
@@ -28,25 +50,8 @@ class Table {
             const ball = new Ball(obj, name, this);
             this.balls.push(ball);
         }
-
-        // Initialize pockets:
-        Table.pocketCenters = []
-        Table.pocketRadii = []
-        for (let k = 1; k <= 6; k++) {
-            const center = Table.tableJson[`pocket_fall_center_${k}`];
-            Table.pocketCenters.push(new THREE.Vector2(center[0], center[1]));
-            Table.pocketRadii.push(Table.tableJson[`pocket_fall_radius_${k}`]);
-        }
-
-        Table.cushionVertices = [];
-        const cushionsPos = (tableScene.objects.cushions.children[0] as THREE.Mesh).geometry.attributes.position;
-        for (let k = 0; k < cushionsPos.count/3; k++) {
-            Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k));
-            Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+1));
-            Table.cushionVertices.push(new THREE.Vector3().fromBufferAttribute(cushionsPos, 3*k+2));
-        }
     }
-
+    
     /**
      * Finds closest point on the slate to p. Nontrivial because of the geometry.
      */
@@ -151,5 +156,34 @@ class Table {
     public updateToScene() {
         for (let k = 0; k < 16; k++) 
             this.balls[k].updatePositionToScene();
+    }
+
+    /**
+     * Creates a copy of the table.
+     */
+    public clone(): Table {
+        const table = new Table(this.tableScene);
+        for (let k = 0; k < 16; k++) 
+            table.balls[k] = this.balls[k].clone();
+        return table;
+    }
+
+    public setTableScene(tableScene: TableScene | null) {
+        this.tableScene = tableScene;
+        for (let k = 0; k < 16; k++) {
+            const name = `ball_${k}`;
+            const obj = (!!tableScene) ? tableScene.objects[name] : null;
+            table.balls[k].obj = obj;
+        }
+    }
+
+    /**
+     * @returns total energy of the balls on the table.
+     */
+    public energy(): number {
+        let result = 0;
+        for (let k = 0; k < 16; k++)
+            result += this.balls[k].energy();
+        return result;
     }
 }

@@ -108,12 +108,14 @@ def logs():
     return render_template("logs.html", enum_entries=enumerate(reversed(entries)), f_time=get_time_diff)
 
 @main.route('/sqlalchemy_logs')
+@can_act_as_required("Admin")
 def sqlalchemy_logs():
     with open(f"{current_app.config.get('LOG_FILE_DIRECTORY')}/sqlalchemy.log", 'r') as f:
         s = "<br>".join(f.readlines())
     return f"{s}"
 
 @main.route('/sqlalchemy_engine_logs')
+@can_act_as_required("Admin")
 def sqlalchemy_engine_logs():
     with open(f"{current_app.config.get('LOG_FILE_DIRECTORY')}/sqlalchemy_engine.log", 'r') as f:
         s = "<br>".join(f.readlines())
@@ -138,6 +140,7 @@ def mandelbrot():
 #     return "Create all done."
 
 @main.route("/recreate_database")
+@can_act_as_required("Admin")
 def recreate_database():
     """Drops the database and creates it again. Then creates the tables.
     WARNING! Destroys all data in the database.
@@ -164,12 +167,14 @@ def recreate_database():
     return "Success! Database recreated."
 
 @main.route("/fake")
+@can_act_as_required("Admin")
 def fake():
     fake_roles()
     fake_users(23)
     return "Fake done."
 
 @main.route("/show")
+@can_act_as_required("Admin")
 def show():
     users = User.query.all()
     roles = Role.query.all()
@@ -265,6 +270,10 @@ def shots():
 @main.route('/physics')
 def physics():
     return render_template("physics.html")
+
+@main.route('/welcome')
+def welcome():
+    return render_template("welcome.html")
 
 @main.route("/")
 def front():

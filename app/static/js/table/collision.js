@@ -26,6 +26,12 @@ class ContactObject {
         this.object = object;
         this.a = new THREE.Vector3();
         this.dw = new THREE.Vector3();
+        this.vInitial = new THREE.Vector3();
+        this.wInitial = new THREE.Vector3();
+        if (object instanceof Ball) {
+            this.vInitial.copy(object.v);
+            this.wInitial.copy(object.w);
+        }
     }
 }
 class ContactPoint {
@@ -86,6 +92,7 @@ class Collision {
         this.contactObjects = cos;
         this.iter = 0;
         this.isResolved = false;
+        this.totalImpulseMagnitude = 0;
     }
     /**
      * This method assumes that the balls are touching and returns information about
@@ -248,11 +255,7 @@ class Collision {
             }
         });
         const cos = Array.from(contactObjectMap.values());
-        // console.log("touchinGraph", touchingGraph.getAdjacentPairs());
-        // console.log("connected to k1:", component);
-        // console.log("cps:", cps);
-        console.log("Objects:", cos.filter((obj) => obj.object instanceof Ball).map((obj) => obj.object.name));
-        // console.log("cps p:s:", cps.map((cp) => cp.p));
+        // console.log("Objects:", cos.filter((obj) => obj.object instanceof Ball).map((obj) => (obj.object as Ball).name));
         return new Collision(table, cps, cos);
     }
     /**
@@ -312,13 +315,26 @@ class Collision {
         return true;
     }
     finish() {
-        console.log("resolve()", { "iter": this.iter });
+        this.totalImpulseMagnitude = 0;
         this.contactObjects.forEach((co) => {
             if (co.object instanceof Ball) {
                 co.object.continuingSlateContact = false;
                 co.object.isStopped = false;
+                let dv = co.object.v.clone().sub(co.vInitial).multiplyScalar(co.object.m);
+                let dw = co.object.w.clone().sub(co.wInitial).multiplyScalar(co.object.j);
+                this.totalImpulseMagnitude += dv.length() ** 2 + dw.length() ** 2;
             }
         });
+        this.totalImpulseMagnitude = Math.sqrt(this.totalImpulseMagnitude);
+        const event = new CustomEvent("Collision", {
+            detail: {
+                table: this.table,
+                iter: this.iter,
+                mag: this.totalImpulseMagnitude,
+            },
+        });
+        document.dispatchEvent(event);
+        console.log("resolve()", { "iter": this.iter, "mag": this.totalImpulseMagnitude });
     }
     resolveStep(maxSteps) {
         if (this.isResolved)

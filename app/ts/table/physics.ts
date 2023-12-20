@@ -63,8 +63,13 @@ class PhysicsLoop {
             } catch (error) {
                 console.error('Error loading diagram:', error);
             }
-        } else 
+        } else {
+            this.table.resetBalls();
             this.table.load(diagram);
+            this.table.balls.forEach((ball) => {
+                ball.v.multiplyScalar(3);
+            });
+        }
     }
 
     public setSpeed(speed: number) {
@@ -78,13 +83,13 @@ class PhysicsLoop {
             return;
         }
         while ((performance.now()/1000 < time+maxTime) && (time-this.state.internalTime > 1.0e-9)) {
-            const dt = Math.min(0.001, this.speed*(time-this.state.internalTime));
+            const dt = Math.min(0.001, (time-this.state.internalTime)*this.speed);
             for (let k = 0; k < 16; k++)
                 this.table.balls[k].advanceTime(dt);
             this.table.handleCollisions();
-            this.state.internalTime += dt*this.speed;
+            this.state.internalTime += dt/this.speed;
         }
-        console.log("time taken (ms): ", performance.now()-time*1000);
+        // console.log("time taken (ms): ", performance.now()-time*1000);
         this.table.stopOutOfBoundBalls();
         this.table.updateToScene();
         this.state.internalTime = time;
