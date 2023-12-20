@@ -60,9 +60,12 @@ class PhysicsLoop {
     simulate(maxTime) {
         const time = performance.now() / 1000;
         if ((this.speed < 1.0e-9) || (this.state.internalTime == null)) {
+            this.table.updateToScene();
             this.state.internalTime = time;
             return;
         }
+        // Advance maximum 0.1s:
+        this.state.internalTime = Math.max(this.state.internalTime, time - 0.1 * this.speed);
         while ((performance.now() / 1000 < time + maxTime) && (time - this.state.internalTime > 1.0e-9)) {
             const dt = Math.min(0.001, (time - this.state.internalTime) * this.speed);
             for (let k = 0; k < 16; k++)

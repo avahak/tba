@@ -53,6 +53,11 @@ function init() {
         const table = new Table(tableScene);
         physicsLoop = new PhysicsLoop(table);
         tableScene.setLights("square");
+        // Dim the lights a bit:
+        tableScene.lightGroup.traverse((child) => {
+            if (child instanceof THREE.Light) 
+                child.intensity = child.intensity*0.1;
+        });
         if (!!tableScene.cushionEdgeCylinders)
 		    tableScene.cushionEdgeCylinders.visible = false;
         element.addEventListener('mousemove', (event) => handleMouseMove(event));
@@ -70,20 +75,34 @@ function init() {
         });
         resize();
 
+        makeFeaturesButtons()
+
         shotAnimator = new ShotAnimator(table);
     });
 }
 
+function makeFeaturesButtons() {
+    console.log("makeFeaturesButtons");
+    document.querySelectorAll(".div-feature").forEach((element) => {
+        const url = (element as HTMLElement).dataset.url;
+        if (!!url)
+            element.addEventListener("click", (event) => { window.location.href = url });
+    });
+}
+
 function handleMouseMove(event: MouseEvent) {
-    if (event.buttons & 4) {
-        // Left mouse button:
-        const dir = new THREE.Vector3(cameraPose.r*Math.cos(cameraPose.phi)*Math.cos(cameraPose.theta), cameraPose.r*Math.cos(cameraPose.phi)*Math.sin(cameraPose.theta), 0).normalize();
-        const dir2 = dir.clone().cross(E3).normalize();
-        cameraPose.p.add(dir.multiplyScalar(-0.001*event.movementY*cameraPose.r));
-        cameraPose.p.add(dir2.multiplyScalar(0.001*event.movementX*cameraPose.r));
-    }
-    if (event.buttons & 2) {
-        // Right mouse button:
+    // if (event.buttons & 4) {
+    //     // Left mouse button:
+    //     const dir = new THREE.Vector3(cameraPose.r*Math.cos(cameraPose.phi)*Math.cos(cameraPose.theta), cameraPose.r*Math.cos(cameraPose.phi)*Math.sin(cameraPose.theta), 0).normalize();
+    //     const dir2 = dir.clone().cross(E3).normalize();
+    //     cameraPose.p.add(dir.multiplyScalar(-0.001*event.movementY*cameraPose.r));
+    //     cameraPose.p.add(dir2.multiplyScalar(0.001*event.movementX*cameraPose.r));
+    // }
+    // if (event.buttons & 2) { // Right mouse button:
+    // }
+
+    if (event.buttons) {
+        // Any button:
         cameraPose.phi = clamp(cameraPose.phi + 0.005*event.movementY, 0.1, Math.PI/2-0.02);
         cameraPose.theta = cameraPose.theta - 0.005*event.movementX;
     }
@@ -115,6 +134,7 @@ class ShotAnimator {
     public diagrams: any[];
     public cameraController: CameraController;
     public firstCollisionDone: boolean;
+    public firstCollisionTime: number;
     public iter: number;
 
     public constructor(table: Table) {
@@ -123,6 +143,7 @@ class ShotAnimator {
         this.diagrams = [];
         this.cameraController = new CameraController();
         this.firstCollisionDone = false;
+        this.firstCollisionTime = 0;
         const diagramURLs = [
             `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`,
             `https://vahakangasma.azurewebsites.net/api/89d89c3a89d24dd5966ca096c34d80b9`,
@@ -131,34 +152,41 @@ class ShotAnimator {
         this.iter = 0;
         const diagramLoadPromises: Promise<any>[] = [];
         diagramURLs.forEach((diagramURL) => diagramLoadPromises.push(loadJSON(diagramURL)));
+        document.addEventListener("Collision", (event) => {
+            // console.log("collision event heard", (event as CustomEvent).detail);
+            if (!this.firstCollisionDone) {
+                // if (this.iter%2 == 1)
+                //     physicsLoop.setSpeed(0.01);
+                this.firstCollisionDone = true;
+                this.firstCollisionTime = performance.now()/1000;
+            }
+        });
         Promise.all(diagramLoadPromises).then((results) => {
             this.diagrams = results;
             console.log("ShotAnimator loading done", results[1]);
             this.table.load(this.diagrams[this.iter%this.diagrams.length]);
+            for (let k = 0; k < 16; k++)
+                this.table.balls[k].v.multiplyScalar(10);
             this.animate();
-        });
-        document.addEventListener("Collision", (event) => {
-            // console.log("collision event heard", (event as CustomEvent).detail);
-            if (!this.firstCollisionDone) {
-                if (this.iter%2 == 1)
-                    physicsLoop.setSpeed(0.01);
-                this.firstCollisionDone = true;
-            }
         });
     }
 
     public animate() {
-        physicsLoop.setSpeed((physicsLoop.speed+0.001)/1.001);
-        physicsLoop.simulate(30/1000);
-        cameraPose.p.copy(this.table.balls[0].p);
+        // physicsLoop.setSpeed((physicsLoop.speed+0.001)/1.001);
+        if (!this.firstCollisionDone)
+            cameraPose.p.copy(this.table.balls[0].p);
         poseCamera();
+        physicsLoop.setSpeed(0.2);
+        physicsLoop.simulate(30/1000);
         renderer.render(tableScene.scene, camera);
         requestAnimationFrame(this.animate);
-        if (this.table.energy() < 1.0e-9) {
+        if ((this.table.energy() < 1.0e-9) || ((this.firstCollisionDone) && (performance.now()/1000-this.firstCollisionTime > 12))) {
             this.iter++;
             this.table.load(this.diagrams[this.iter%this.diagrams.length]);
             this.firstCollisionDone = false;
+            for (let k = 0; k < 16; k++)
+                this.table.balls[k].v.multiplyScalar([10, 8, 3][this.iter%this.diagrams.length]);
         }
-        cameraPose.theta += 0.0005;
+        cameraPose.theta += 0.0003;
     }
 }

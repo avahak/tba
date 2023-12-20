@@ -1,4 +1,4 @@
-from flask import redirect, url_for
+from flask import abort, redirect, url_for
 from flask_login import current_user
 import threading
 from functools import wraps
@@ -11,7 +11,8 @@ def can_act_as_required(role_name):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not current_user.can_act_as(role_name):
-                return redirect(url_for("main.front"))
+                abort(403, "You don't have permission to access this resource.")
+                # return redirect(url_for("main.front"))
             return fn(*args, **kwargs)
         return wrapper
     return decorator
