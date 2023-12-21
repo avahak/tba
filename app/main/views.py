@@ -271,10 +271,10 @@ def shots():
 def physics():
     return render_template("physics.html")
 
-@main.route('/welcome')
+@main.route('/')
 def welcome():
     return render_template("welcome.html")
 
-@main.route("/")
+@main.route("/front")
 def front():
     return render_template("front.html")

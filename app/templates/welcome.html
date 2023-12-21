@@ -40,52 +40,52 @@
     </div>
     <div id="div-overlay">
         <div class="div-under-construction div-under-construction-1 striped-background">
-            <p class="font-under-construction">(*) Under construction (*)</p>
+            <p class="font-under-construction">(*) Under construction! (*)</p>
         </div>
         <div class="div-under-construction div-under-construction-2 striped-background">
             <p class="font-under-construction">(*) Work in progress! (*)</p>
         </div>
-        <div class="position-top">
+        <div id="div-top" class="position-top">
             <p class="font-huge white">Three Balls Ahead</p>
+            <p class="font-large white">Tools to empower your game.</p>
         </div>
-        <div class="position-middle">
-            <p class="font-large white">Modern tools to empower your game.</p>
+        <div id="div-bottom" class="position-bottom">
             <a href="{{ url_for('main.front') }}">
                 <button id="button-get-started"><strong>Get Started</strong></button>
             </a>
-            <!-- <p class="font-medium">Think three balls ahead.</p> -->
-        </div>
-        <div id="div-bottom" class="position-bottom white row">
-            <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
-                <div class="div-feature" data-url="{{ url_for('main.diagram') }}">
-                    <p class="font-medium">Pool Diagrams</p>
-                    <p class="font-small">
-                        Design pool diagrams with with a physics assisted tool(*).
-                    </p>
+            <div class="white row mt-3">
+                <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
+                    <div class="div-feature" data-url="{{ url_for('main.diagram') }}">
+                        <p class="font-medium">Pool Diagrams</p>
+                        <p class="font-small">
+                            Design pool diagrams with with a physics assisted tool(*).
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
-                <div class="div-feature" data-url="{{ url_for('main.shots') }}">
-                    <p class="font-medium">Share Shots</p>
-                    <p class="font-small">
-                        Embed interactive diagrams on your website(*). 
-                    </p>
+                <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
+                    <div class="div-feature" data-url="{{ url_for('main.shots') }}">
+                        <p class="font-medium">Share Shots</p>
+                        <p class="font-small">
+                            Link diagrams easily.
+                            Embed interactive diagrams on your own website(*). 
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
-                <div class="div-feature" data-url="{{ url_for('main.physics') }}">
-                    <p class="font-medium">Simulate Pool</p>
-                    <p class="font-small">
-                        Simulate ball behavior with physics based engine.
-                    </p>
+                <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
+                    <div class="div-feature" data-url="{{ url_for('main.physics') }}">
+                        <p class="font-medium">Simulate Pool</p>
+                        <p class="font-small">
+                            Simulate shots with a physics based engine.
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
-                <div class="div-feature" data-url="{{ url_for('main.front') }}">
-                    <p class="font-medium">More Coming</p>
-                    <p class="font-small">
-                        Fixing bugs. Better physics. More content.
-                    </p>
+                <div class="d-none d-md-block col-6 col-lg-3 m-0 p-0">
+                    <div class="div-feature" data-url="{{ url_for('main.front') }}">
+                        <p class="font-medium">Coming Soon</p>
+                        <p class="font-small">
+                            Better physics. Other content.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

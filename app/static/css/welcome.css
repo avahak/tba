@@ -25,6 +25,7 @@ p {
     position: absolute;
     border-radius: 20px;
     padding: 0 70px;
+    border: 2px solid black;
 }
 
 .div-under-construction-1 {
@@ -45,6 +46,7 @@ p {
     font-weight: bolder;
     color: rgb(255, 219, 219);
     text-shadow: 2px 2px 3px #000;
+    white-space: nowrap;
 }
 
 #button-get-started {
@@ -74,9 +76,19 @@ p {
     pointer-events: none;
 }
 
+#div-top {
+    padding: 50px;
+    /* background: rgba(34, 23, 23, 0.1); */
+    /* background: radial-gradient(ellipse, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 70%); */
+    /* border-radius: 100px; */
+}
+
 #div-bottom {
     width: 90%;
     pointer-events: auto;
+    display: block;
+    justify-content: center;
+    text-align: center;
 }
 
 .div-feature {
@@ -85,11 +97,14 @@ p {
     padding: 0.5em;
     margin: 1em;
     cursor: pointer;
+    border: 1px green solid;
+    user-select: none;
 }
 .div-feature:hover {
     background: rgba(85, 85, 85);
     box-shadow: 4px 2px 2px rgb(0, 0, 0);
-    transform: translate(-5px, -5px);
+    transform: translate(0px, -10px);
+    border: 1px green solid;
 }
 
 .white {
@@ -97,19 +112,19 @@ p {
 }
 
 .font-huge {
-    font-size: 5em;
+    font-size: 4em;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     text-shadow: 0px 0px 20px #000;
 }
 
 .font-large {
-    font-size: 3em;
+    font-size: 2em;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     text-shadow: 0px 0px 15px #000;
 }
 
 .font-medium {
-    font-size: 1.5em;
+    font-size: 1.25em;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     text-shadow: 0px 0px 10px #000;
 }
