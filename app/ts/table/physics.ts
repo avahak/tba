@@ -54,9 +54,6 @@ class PhysicsLoop {
                     if (!!data) {
                         this.table.resetBalls();
                         this.table.load(data);
-                        this.table.balls.forEach((ball) => {
-                            ball.v.multiplyScalar(3);
-                        });
                         console.log("Diagram loaded.");
                     }
                 });

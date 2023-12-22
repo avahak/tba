@@ -259,15 +259,15 @@ class ShotAnimator {
         // TODO get rid of these:
         for (let k = 0; k < 16; k++)
             this.table.balls[k].v.multiplyScalar([3, 8, 4, 8][this.iter % this.diagrams.length]);
-        if (this.iter == 1) {
+        if (this.iter % this.diagrams.length == 1) {
             const v = this.table.balls[0].v;
             this.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));
         }
-        if (this.iter == 3) {
+        if (this.iter % this.diagrams.length == 3) {
             this.table.balls[0].w.y = -20;
             this.table.balls[0].w.z = 20;
         }
-        if (this.iter == 2) {
+        if (this.iter % this.diagrams.length == 2) {
             this.table.balls[0].v.z = 0.4 * this.table.balls[0].v.length();
             const v = this.table.balls[0].v;
             this.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));

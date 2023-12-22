@@ -58,13 +58,32 @@ function addToolListeners() {
         physicsLoop.reset();
     });
     (_b = document.getElementById("buttonTest")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => {
+        var _a;
+        // TODO remove all this:
         const diagrams = [
-            `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`,
+            `https://vahakangasma.azurewebsites.net/api/050a6ca3d06e4698b1b3f9b6f7af259e`,
+            `https://vahakangasma.azurewebsites.net/api/4979da7dcb3e4517b92a3f6a5bb8346d`,
+            `https://vahakangasma.azurewebsites.net/api/b4b4a5344a924a48aae151817d7d4cdb`,
             `https://vahakangasma.azurewebsites.net/api/89d89c3a89d24dd5966ca096c34d80b9`,
-            `https://vahakangasma.azurewebsites.net/api/050a6ca3d06e4698b1b3f9b6f7af259e`
         ];
-        let k = Math.floor(Math.random() * 3);
-        physicsLoop.loadDiagram(diagrams[k]);
+        let iter = Math.floor(Math.random() * diagrams.length);
+        (_a = physicsLoop.loadDiagram(diagrams[iter])) === null || _a === void 0 ? void 0 : _a.then(() => {
+            for (let k = 0; k < 16; k++)
+                physicsLoop.table.balls[k].v.multiplyScalar([3, 8, 4, 8][iter % diagrams.length]);
+            if (iter % diagrams.length == 1) {
+                const v = physicsLoop.table.balls[0].v;
+                physicsLoop.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));
+            }
+            if (iter % diagrams.length == 3) {
+                physicsLoop.table.balls[0].w.y = -20;
+                physicsLoop.table.balls[0].w.z = 20;
+            }
+            if (iter % diagrams.length == 2) {
+                physicsLoop.table.balls[0].v.z = 0.4 * physicsLoop.table.balls[0].v.length();
+                const v = physicsLoop.table.balls[0].v;
+                physicsLoop.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));
+            }
+        });
     });
     (_c = document.getElementById("inputSpeed")) === null || _c === void 0 ? void 0 : _c.addEventListener("input", (event) => {
         const t = parseInt(event.target.value);
