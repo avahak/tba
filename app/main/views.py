@@ -162,10 +162,12 @@ def _recreate_database():
     finally:
         if connection:
             connection.close()
+    fake_roles()
+    fake_users(1)
     return "Success! Database recreated."
 
 @main.route("/recreate_database")
-# @can_act_as_required("Admin")
+@can_act_as_required("Admin")
 def recreate_database():
     return _recreate_database()
 
