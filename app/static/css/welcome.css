@@ -4,6 +4,7 @@ body {
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    user-select: none;
 }
 
 p {
@@ -99,7 +100,6 @@ p {
     margin: 1em;
     cursor: pointer;
     border: 1px green solid;
-    user-select: none;
 }
 .div-feature:hover {
     background: rgba(85, 85, 85);

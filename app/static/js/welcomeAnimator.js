@@ -107,12 +107,16 @@ class CameraPose {
         camera.lookAt(this.p);
     }
     static interpolate(pose1, pose2, t) {
-        t = clamp(t, 0, 1);
-        return new CameraPose(weightedMean([pose1.p, pose2.p], [t, 1 - t]), t * pose2.r + (1 - t) * pose1.r, t * pose2.theta + (1 - t) * pose1.theta, t * pose2.phi + (1 - t) * pose1.phi);
+        t = clamp(0.5 - 0.5 * Math.cos(t * Math.PI), 0, 1);
+        // To interpolate between pose1.theta and pose2.theta we should work modulo 2*PI:
+        const theta1 = pose1.theta;
+        const dTheta = ((pose2.theta - pose1.theta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+        const theta = theta1 + t * dTheta;
+        return new CameraPose(weightedMean([pose1.p, pose2.p], [1 - t, t]), t * pose2.r + (1 - t) * pose1.r, theta, t * pose2.phi + (1 - t) * pose1.phi);
     }
 }
 CameraPose.cameraPoseBack = new CameraPose(new THREE.Vector3(0, 0, -0.45), 2.5, -Math.PI, 0.6);
-CameraPose.cameraPoseFront = new CameraPose(new THREE.Vector3(0, 0, -0.45), 2.5, Math.PI, 0.6);
+CameraPose.cameraPoseFront = new CameraPose(new THREE.Vector3(0, 0, -0.45), 2.5, 0, 0.6);
 CameraPose.cameraPoseOverhead = new CameraPose(new THREE.Vector3(0.0, 0.0, -0.45), 3, -Math.PI / 2, 1.57);
 CameraPose.cameraPosePocket3 = new CameraPose(new THREE.Vector3(0.7, 0, -0.2), 1.5, -0.8, 0.5);
 class SceneController {
@@ -124,10 +128,13 @@ class SceneController {
         this.camera.up = E3;
         this.firstCollisionDone = false;
         this.firstCollisionTime = 0;
-        this.userInputTime = 0;
-        this.cameraPose = new CameraPose(new THREE.Vector3(0, 0, -0.2), 1, -Math.PI / 2, 0.85);
+        this.isUserInputPose = false;
+        this.lastPoseChange = performance.now() / 1000;
+        this.currentPoseNumber = 0;
         this.cameraPoseFollow = new CameraPose(new THREE.Vector3(0, 0, -0.2), 1, -Math.PI, 0.6);
         this.reset();
+        this.cameraPose = CameraPose.cameraPoseOverhead.clone();
+        this.cameraPoseLast = this.cameraPose.clone();
         document.addEventListener("Collision", (event) => {
             // console.log("collision event heard", (event as CustomEvent).detail);
             if (!this.firstCollisionDone) {
@@ -135,14 +142,27 @@ class SceneController {
                 //     physicsLoop.setSpeed(0.01);
                 this.firstCollisionDone = true;
                 this.firstCollisionTime = performance.now() / 1000;
-                this.endTime = Math.min(performance.now() / 1000 + 5, this.endTime);
+                this.endTime = Math.min(performance.now() / 1000 + SceneController.SHOT_MAX_DURATION_AFTER_COLLISION, this.endTime);
             }
         });
     }
+    poseState() {
+        const time = performance.now() / 1000;
+        if (time - this.lastPoseChange < SceneController.POSE_TRANSITION)
+            return "transition";
+        if (time - this.lastPoseChange < SceneController.POSE_DURATION)
+            return "constant";
+        return "expired";
+    }
     moveCamera(movementX, movementY) {
-        this.userInputTime = performance.now() / 1000;
+        const time = performance.now() / 1000;
+        this.isUserInputPose = true;
+        // if (this.poseState() == "constant") {
+        this.cameraPose = this.cameraPose.clone();
         this.cameraPose.phi = clamp(this.cameraPose.phi + 0.005 * movementY, 0.1, Math.PI / 2 - 0.02);
         this.cameraPose.theta = this.cameraPose.theta - 0.005 * movementX;
+        this.lastPoseChange = time - SceneController.POSE_TRANSITION;
+        // }
     }
     /**
      * @returns true if it is time to load next shot.
@@ -153,10 +173,21 @@ class SceneController {
         const time = performance.now() / 1000;
         // this.cameraPose.theta += 0.0003;
         this.controlFade();
-        // this.poseCamera(this.cameraPoseBack);
-        if (time > this.userInputTime + 3)
-            this.cameraPose = CameraPose.interpolate(CameraPose.cameraPoseBack, CameraPose.cameraPoseOverhead, Math.random());
-        this.cameraPose = CameraPose.cameraPosePocket3;
+        // Interpolate between poses on a timer:
+        const poses = [CameraPose.cameraPoseOverhead, this.cameraPoseFollow, CameraPose.cameraPoseFront, CameraPose.cameraPosePocket3, this.cameraPoseFollow, CameraPose.cameraPoseBack];
+        const state = this.poseState();
+        if (state == "transition") {
+            const t = clamp((time - this.lastPoseChange) / SceneController.POSE_TRANSITION, 0, 1);
+            this.cameraPose = CameraPose.interpolate(this.cameraPoseLast, poses[this.currentPoseNumber], t);
+            this.isUserInputPose = false;
+        }
+        if ((state == "constant") && (!this.isUserInputPose))
+            this.cameraPose = poses[this.currentPoseNumber];
+        if (state == "expired") {
+            this.cameraPoseLast = this.cameraPose;
+            this.currentPoseNumber = (this.currentPoseNumber + 1) % poses.length;
+            this.lastPoseChange = time;
+        }
         this.cameraPose.poseCamera(this.camera);
         // if (this.firstCollisionDone)
         //     this.poseCamera(this.cameraPose);
@@ -170,25 +201,28 @@ class SceneController {
     }
     controlFade() {
         const time = performance.now() / 1000;
-        const transitionTime = 1;
         let fade = 1;
-        if (time - this.startTime < transitionTime) {
+        if (time - this.startTime < SceneController.FADE_TRANSITION) {
             // fade up
-            fade = Math.pow(clamp((time - this.startTime) / transitionTime, 0, 1), 3);
+            fade = Math.pow(clamp((time - this.startTime) / SceneController.FADE_TRANSITION, 0, 1), 3);
         }
-        if (this.endTime - time < transitionTime) {
+        if (this.endTime - time < SceneController.FADE_TRANSITION) {
             // fade down
-            fade = Math.pow(clamp((this.endTime - time) / transitionTime, 0, 1), 3);
+            fade = Math.pow(clamp((this.endTime - time) / SceneController.FADE_TRANSITION, 0, 1), 3);
         }
         setFade(fade);
     }
     reset() {
         this.firstCollisionDone = false;
         this.startTime = performance.now() / 1000;
-        this.endTime = this.startTime + 10;
-        this.cameraPose = CameraPose.cameraPoseOverhead.clone();
+        this.endTime = this.startTime + SceneController.SHOT_MAX_DURATION;
     }
 }
+SceneController.SHOT_MAX_DURATION_AFTER_COLLISION = 10;
+SceneController.SHOT_MAX_DURATION = 15;
+SceneController.FADE_TRANSITION = 0.5;
+SceneController.POSE_TRANSITION = 4;
+SceneController.POSE_DURATION = 4 + 5; // Has to be > POSE_TRANSITION
 class ShotAnimator {
     constructor(table) {
         this.animate = this.animate.bind(this);
@@ -197,16 +231,16 @@ class ShotAnimator {
         this.sceneController = new SceneController(table);
         this.iter = 0;
         const diagramURLs = [
-            `http://localhost:5000/api/57c4f394a70e4a1fbe75b1bc67d70367`,
+            `https://vahakangasma.azurewebsites.net/api/050a6ca3d06e4698b1b3f9b6f7af259e`,
+            `https://vahakangasma.azurewebsites.net/api/4979da7dcb3e4517b92a3f6a5bb8346d`,
+            `https://vahakangasma.azurewebsites.net/api/b4b4a5344a924a48aae151817d7d4cdb`,
             `https://vahakangasma.azurewebsites.net/api/89d89c3a89d24dd5966ca096c34d80b9`,
-            `https://vahakangasma.azurewebsites.net/api/050a6ca3d06e4698b1b3f9b6f7af259e`
         ];
         const diagramLoadPromises = [];
         diagramURLs.forEach((diagramURL) => diagramLoadPromises.push(loadJSON(diagramURL)));
         Promise.all(diagramLoadPromises).then((results) => {
             this.animate();
             this.diagrams = results;
-            console.log("ShotAnimator loading done", results[1]);
             this.loadNext();
         });
     }
@@ -222,11 +256,21 @@ class ShotAnimator {
     }
     loadNext() {
         this.table.load(this.diagrams[this.iter % this.diagrams.length]);
+        // TODO get rid of these:
         for (let k = 0; k < 16; k++)
-            this.table.balls[k].v.multiplyScalar([10, 8, 3][this.iter % this.diagrams.length]);
+            this.table.balls[k].v.multiplyScalar([3, 8, 4, 8][this.iter % this.diagrams.length]);
         if (this.iter == 1) {
+            const v = this.table.balls[0].v;
+            this.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));
+        }
+        if (this.iter == 3) {
             this.table.balls[0].w.y = -20;
             this.table.balls[0].w.z = 20;
+        }
+        if (this.iter == 2) {
+            this.table.balls[0].v.z = 0.4 * this.table.balls[0].v.length();
+            const v = this.table.balls[0].v;
+            this.table.balls[0].w.copy(new THREE.Vector3(v.y, -v.x, 0).multiplyScalar(10));
         }
         this.iter++;
     }
