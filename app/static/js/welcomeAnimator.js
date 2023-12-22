@@ -138,8 +138,6 @@ class SceneController {
         document.addEventListener("Collision", (event) => {
             // console.log("collision event heard", (event as CustomEvent).detail);
             if (!this.firstCollisionDone) {
-                // if (this.iter%2 == 1)
-                //     physicsLoop.setSpeed(0.01);
                 this.firstCollisionDone = true;
                 this.firstCollisionTime = performance.now() / 1000;
                 this.endTime = Math.min(performance.now() / 1000 + SceneController.SHOT_MAX_DURATION_AFTER_COLLISION, this.endTime);
@@ -189,10 +187,6 @@ class SceneController {
             this.lastPoseChange = time;
         }
         this.cameraPose.poseCamera(this.camera);
-        // if (this.firstCollisionDone)
-        //     this.poseCamera(this.cameraPose);
-        // else 
-        //     this.poseCamera(this.cameraPoseBack);
         if ((this.table.energy() < 1.0e-9) || (time > this.endTime)) {
             this.reset();
             return true;
@@ -245,10 +239,9 @@ class ShotAnimator {
         });
     }
     animate() {
-        // physicsLoop.setSpeed((physicsLoop.speed+0.001)/1.001);
-        const loadNextNeeded = this.sceneController.animateLoop();
         physicsLoop.setSpeed(0.1);
         physicsLoop.simulate(30 / 1000);
+        const loadNextNeeded = this.sceneController.animateLoop();
         renderer.render(tableScene.scene, this.sceneController.camera);
         requestAnimationFrame(this.animate);
         if (loadNextNeeded)
