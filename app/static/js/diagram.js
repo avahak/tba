@@ -330,7 +330,7 @@ function cameraMoved() {
 function draw() {
     // Check that at least some time has elapsed from last draw:
     const time = performance.now();
-    if (time - lastDrawTime < 100)
+    if (time - lastDrawTime < 50)
         return;
     lastDrawTime = time;
     const canvas = document.getElementById("overlay-canvas");

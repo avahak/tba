@@ -5,7 +5,27 @@
 
 {% block content %}
 <div class="container">
+    <div style="margin-top:20%;margin-bottom:20%;">
+        <p class="h1 text-warning">Under construction!</p>
+        <p>Idea for the website is to connect pool diagrams and the physics of pool to
+            allow the creation of more physically accurate pool shot diagrams. This is still work in progress
+            but some functionality exists.
+        <li>
+            <a href="{{ url_for('main.shots') }}">Shots page</a> demonstrates the basic idea of interactive diagrams
+            and how they can be embedded on a web page.
+        </li>
+        <li>
+            <a href="{{ url_for('main.diagram') }}">Diagrams page</a> is a basic diagram creation tool.
+        </li>
+        <li>
+            <a href="{{ url_for('main.welcome') }}">Welcome page</a> and the physics page demonstrate pool table physics.
+            Original idea for the website was to connect pool diagrams and the physics of pool to
+            allow the creation of more physically accurate pool shot diagrams. This is work in progress.
+        </li>
+        <p class="mt-2">- Contact info: <a href="{{ url_for('userkit.feedback') }}">A Vähäkangas</a></p>
+    </div>
     <div class="row">
+        <p class="h1 my-3">For Debugging:</p>
         <div class="col col-sm-4">
             <h1>General</h1>
             <ul>

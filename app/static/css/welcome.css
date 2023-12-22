@@ -29,13 +29,13 @@ p {
 }
 
 .div-under-construction-1 {
-    top: 30%;
+    top: 10%;
     right: 5%;
     transform: rotate(20deg);
 }
 
 .div-under-construction-2 {
-    top: 40%;
+    top: 20%;
     right: 5%;
     transform: rotate(30deg);
 }
@@ -55,13 +55,14 @@ p {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     background: rgb(151, 210, 144);
     border: 0;
-    padding: 0.1em 2em;
+    padding: 0.1em 1.5em;
     border-radius: 10px;
     pointer-events: auto;
 }
 #button-get-started:hover {
     background: rgb(178, 234, 172);
     box-shadow: 10px 5px 5px rgb(0, 0, 0);
+    transform: scale(1.05);
 }
 
 #div-overlay {
@@ -103,7 +104,7 @@ p {
 .div-feature:hover {
     background: rgba(85, 85, 85);
     box-shadow: 4px 2px 2px rgb(0, 0, 0);
-    transform: translate(0px, -10px);
+    transform: scale(1.1);
     border: 1px green solid;
 }
 
@@ -149,4 +150,14 @@ p {
 .position-bottom {
     position: fixed;
     bottom: 5%;
+}
+
+#overlay-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: rgba(12, 25, 38, 1);
 }
