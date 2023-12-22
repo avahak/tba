@@ -160,6 +160,8 @@ db_url = load.get("DATABASE_URL", "")
 db_name = load.get("DATABASE_NAME", "")
 
 class DevelopmentConfig(Config):
+    SQLALCHEMY_BASE_URI = db_url if db_url else ""
+    SQLALCHEMY_NAME = db_name if db_name else ""
     SQLALCHEMY_DATABASE_URI = db_url+"/"+db_name if db_url else ("sqlite:///" + os.path.join(basedir, f"{db_name}-dev.sqlite"))
     CONFIG_SETTING = "development"
 
@@ -168,6 +170,8 @@ class TestingConfig(Config):
     CONFIG_SETTING = "testing"
 
 class ProductionConfig(Config):
+    SQLALCHEMY_BASE_URI = db_url if db_url else ""
+    SQLALCHEMY_NAME = db_name if db_name else ""
     SQLALCHEMY_DATABASE_URI = db_url+"/"+db_name if db_url else ("sqlite://" + os.path.join(basedir, f"{db_name}.sqlite"))
     CONFIG_SETTING = "production"
     

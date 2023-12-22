@@ -1,6 +1,7 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager, logger
+# from . import db, logger
 from .tokens import *
 from datetime import datetime
 

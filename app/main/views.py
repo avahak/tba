@@ -1,7 +1,6 @@
 import sys, os, uuid, re
 import numpy as np
 import datetime
-import base64
 from flask import *
 from flask_cors import cross_origin
 from . import main
@@ -139,14 +138,12 @@ def mandelbrot():
 #     db.create_all()
 #     return "Create all done."
 
-@main.route("/recreate_database")
-@can_act_as_required("Admin")
-def recreate_database():
+def _recreate_database():
     """Drops the database and creates it again. Then creates the tables.
     WARNING! Destroys all data in the database.
     """
-    url = current_app.config.get("DATABASE_URL", "")
-    name = current_app.config.get("DATABASE_NAME", "")
+    url = current_app.config.get("SQLALCHEMY_BASE_URI", "")
+    name = current_app.config.get("SQLALCHEMY_NAME", "")
     connection = None
     try:
         if url:
@@ -155,6 +152,7 @@ def recreate_database():
             connection.execute(text(f"DROP DATABASE IF EXISTS {name};"))
             connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {name};"))
             connection.execute(text(f"USE {name};"))
+
         else:
             db.drop_all()
         db.create_all()
@@ -165,6 +163,11 @@ def recreate_database():
         if connection:
             connection.close()
     return "Success! Database recreated."
+
+@main.route("/recreate_database")
+# @can_act_as_required("Admin")
+def recreate_database():
+    return _recreate_database()
 
 @main.route("/fake")
 @can_act_as_required("Admin")
